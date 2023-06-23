@@ -5,6 +5,8 @@ go 1.19
 require (
 	github.com/99designs/gqlgen v0.17.33
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.15.0
 	github.com/vektah/gqlparser/v2 v2.5.3
 )

@@ -6,6 +6,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graph"
@@ -17,7 +18,14 @@ func main() {
 	conf := environment.ReadEnvConfig()
 	conf.Print()
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	sqlxDb := sqlx.MustConnect("postgres", conf.SqlxConnString)
+	defer sqlxDb.Close()
+
+	resolver := &graph.Resolver{
+		DB: sqlxDb,
+	}
+
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
