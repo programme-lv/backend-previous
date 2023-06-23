@@ -9,7 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/programme-lv/backend/internal/environment"
-	"github.com/programme-lv/backend/internal/graph"
+	"github.com/programme-lv/backend/internal/graphql"
 )
 
 const defaultPort = "3001"
@@ -20,12 +20,13 @@ func main() {
 
 	sqlxDb := sqlx.MustConnect("postgres", conf.SqlxConnString)
 	defer sqlxDb.Close()
+	log.Println("Connected to database")
 
-	resolver := &graph.Resolver{
+	resolver := &graphql.Resolver{
 		DB: sqlxDb,
 	}
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

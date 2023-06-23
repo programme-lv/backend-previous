@@ -4,8 +4,8 @@ schema:
 
 # Where should the generated server code go
 exec:
-  filename: ../internal/graph/generated.go
-  package: graph
+  filename: ../internal/graphql/generated.go
+  package: graphql
 
 # Uncomment to enable federation
 # federation:
@@ -14,13 +14,13 @@ exec:
 
 # Where should any generated models go
 model:
-  filename: ../internal/graph/models_gen.go
-  package: graph
+  filename: ../internal/graphql/models_gen.go
+  package: graphql
 
 # Where should the resolver implementations go.
 resolver:
   layout: follow-schema
-  dir: ../internal/graph
+  dir: ../internal/graphql
 
 # Optional: turn on use `gqlgen:"fieldName"` tags in your models
 # struct_tag: json
@@ -34,4 +34,4 @@ resolver:
 # gqlgen will search for any type files to embed in a failing schema
 # (Because a schema without types is invalid)
 # autobind:
-  # - ../internal/graph
+  # - ../internal/graphql

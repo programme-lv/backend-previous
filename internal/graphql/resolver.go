@@ -1,4 +1,4 @@
-package graph
+package graphql
 
 import (
 	"github.com/jmoiron/sqlx"
