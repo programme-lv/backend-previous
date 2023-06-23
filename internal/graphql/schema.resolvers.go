@@ -16,9 +16,19 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 // Login is the resolver for the login field.
 func (r *queryResolver) Login(ctx context.Context, username string, password string) (*User, error) {
+	// just to test whether sql works
+	// return row count in table flyway_schema_history as user id
+
+	rows := r.DB.QueryRow("SELECT COUNT(*) FROM flyway_schema_history")
+	var count int
+	err := rows.Scan(&count)
+	if err != nil {
+		return nil, err
+	}
+
 	// temporary
 	return &User{
-		ID:       "1",
+		ID:       fmt.Sprintf("%d", count),
 		Username: "test",
 	}, nil
 }
