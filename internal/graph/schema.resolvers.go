@@ -16,7 +16,11 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 // Login is the resolver for the login field.
 func (r *queryResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+	// temporary
+	return &User{
+		ID:       "1",
+		Username: "test",
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/99designs/gqlgen v0.17.33
-	github.com/go-chi/chi/v5 v5.0.8
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/spf13/viper v1.15.0
 	github.com/vektah/gqlparser/v2 v2.5.3
@@ -16,6 +15,8 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect

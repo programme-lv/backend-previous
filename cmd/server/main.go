@@ -1,22 +1,28 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 
 	"github.com/programme-lv/backend/internal/environment"
+	"github.com/programme-lv/backend/internal/graph"
 )
+
+const defaultPort = "3001"
 
 func main() {
 	conf := environment.ReadEnvConfig()
 	conf.Print()
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("sveika, pasaule!"))
-	})
-	http.ListenAndServe(":3000", r)
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("http://localhost:%s/ = GraphQL playground", defaultPort)
+	log.Printf("http://localhost:%s/query = GraphQL query endpoint", defaultPort)
+	log.Fatal(http.ListenAndServe(":"+defaultPort, nil))
 }
