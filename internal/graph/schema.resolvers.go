@@ -9,12 +9,21 @@ import (
 	"fmt"
 )
 
+// Register is the resolver for the register field.
+func (r *mutationResolver) Register(ctx context.Context, username string, password string) (*User, error) {
+	panic(fmt.Errorf("not implemented: Register - register"))
+}
+
 // Login is the resolver for the login field.
 func (r *queryResolver) Login(ctx context.Context, username string, password string) (*User, error) {
 	panic(fmt.Errorf("not implemented: Login - login"))
 }
 
+// Mutation returns MutationResolver implementation.
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

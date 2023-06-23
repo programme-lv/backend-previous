@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -ex
 # resolve the directory containing this script
 export SCRIPT_DIR=`dirname $0`
 pushd $SCRIPT_DIR
