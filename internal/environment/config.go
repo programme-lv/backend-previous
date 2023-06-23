@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 
@@ -45,7 +46,12 @@ func (c *EnvConfig) Print() {
 	v := reflect.ValueOf(*c)
 	typeOfS := v.Type()
 	for i := 0; i < v.NumField(); i++ {
-		t.AppendRow(table.Row{typeOfS.Field(i).Name, v.Field(i).Interface()})
+		strRepresentation := fmt.Sprintf("%v", v.Field(i).Interface())
+		LENGTH_LIMIT := 30
+		if len(strRepresentation) > LENGTH_LIMIT {
+			strRepresentation = strRepresentation[:LENGTH_LIMIT] + "..."
+		}
+		t.AppendRow(table.Row{typeOfS.Field(i).Name, strRepresentation})
 	}
 	t.Render()
 }
