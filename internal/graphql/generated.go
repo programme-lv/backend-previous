@@ -44,7 +44,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		Register func(childComplexity int, username string, password string) int
+		Register func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
 	}
 
 	PublicUser struct {
@@ -58,7 +58,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Register(ctx context.Context, username string, password string) (*PublicUser, error)
+	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*PublicUser, error)
 }
 type QueryResolver interface {
 	Login(ctx context.Context, username string, password string) (*PublicUser, error)
@@ -89,7 +89,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Register(childComplexity, args["username"].(string), args["password"].(string)), true
+		return e.complexity.Mutation.Register(childComplexity, args["username"].(string), args["password"].(string), args["email"].(string), args["firstName"].(string), args["lastName"].(string)), true
 
 	case "PublicUser.id":
 		if e.complexity.PublicUser.ID == nil {
@@ -222,17 +222,24 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../../api/schema.graphql", Input: `type Query {
-    login(username: String!, password: String!): PublicUser!
+  login(username: String!, password: String!): PublicUser!
 }
 
 type Mutation {
-    register(username: String!, password: String!): PublicUser!
+  register(
+    username: String!
+    password: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+  ): PublicUser!
 }
 
 type PublicUser {
-    id: ID!
-    username: String!
-}`, BuiltIn: false},
+  id: ID!
+  username: String!
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -261,6 +268,33 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 		}
 	}
 	args["password"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["firstName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["firstName"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["lastName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastName"))
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lastName"] = arg4
 	return args, nil
 }
 
@@ -355,7 +389,7 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Register(rctx, fc.Args["username"].(string), fc.Args["password"].(string))
+		return ec.resolvers.Mutation().Register(rctx, fc.Args["username"].(string), fc.Args["password"].(string), fc.Args["email"].(string), fc.Args["firstName"].(string), fc.Args["lastName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

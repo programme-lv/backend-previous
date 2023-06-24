@@ -12,7 +12,7 @@ import (
 )
 
 // Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, username string, password string) (*PublicUser, error) {
+func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*PublicUser, error) {
 	// validate registration data
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("username and password are required")
