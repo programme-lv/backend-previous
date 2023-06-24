@@ -2,7 +2,7 @@
 
 package graphql
 
-type User struct {
+type PublicUser struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 }
