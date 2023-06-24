@@ -2,6 +2,7 @@ package environment
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 
@@ -15,15 +16,23 @@ type EnvConfig struct {
 
 func ReadEnvConfig() *EnvConfig {
 	config := getDefaultConfig()
-	viper.SetConfigFile(".env")
-	err := viper.ReadInConfig()
-	if err != nil {
-		panic(err)
+
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env") // Ideally, this should be determined based on the config file extension
+	viper.AddConfigPath(".")   // Look for config in the working directory
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			log.Println("No config file found")
+		} else {
+			log.Fatalf("Fatal error config file: %s \n", err)
+		}
 	}
 
+	viper.AutomaticEnv()
 	viper.BindEnv("SQLX_CONN_STRING")
 
-	err = viper.Unmarshal(&config)
+	err := viper.Unmarshal(&config)
 	if err != nil {
 		panic(err)
 	}
