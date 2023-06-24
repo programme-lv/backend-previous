@@ -7,6 +7,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"net/mail"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,6 +42,12 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, fmt.Errorf("user with that username already exists")
 	}
 
+	// validate email
+	_, err = mail.ParseAddress(email)
+	if err != nil {
+		return nil, err
+	}
+
 	// hash password
 	var hashedPassword []byte
 	hashedPassword, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -50,7 +57,7 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 	password = string(hashedPassword)
 
 	// create user
-	_, err = r.DB.Exec("INSERT INTO users (username, hashed_password) VALUES ($1, $2)", username, password)
+	_, err = r.DB.Exec("INSERT INTO users (username, hashed_password, email, first_name, last_name, created_at) VALUES ($1, $2, $3, $4, $5, now())", username, password, email, firstName, lastName)
 	if err != nil {
 		return nil, err
 	}
