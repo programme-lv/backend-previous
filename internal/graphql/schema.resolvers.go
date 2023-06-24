@@ -7,11 +7,59 @@ package graphql
 import (
 	"context"
 	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string) (*User, error) {
-	panic(fmt.Errorf("not implemented: Register - register"))
+	// validate registration data
+	if username == "" || password == "" {
+		return nil, fmt.Errorf("username and password are required")
+	}
+	if len(password) < 8 {
+		return nil, fmt.Errorf("password must be at least 8 characters")
+	}
+	if len(password) > 32 {
+		return nil, fmt.Errorf("password must be at most 32 characters")
+	}
+	if len(username) < 3 {
+		return nil, fmt.Errorf("username must be at least 3 characters")
+	}
+	if len(username) > 15 {
+		return nil, fmt.Errorf("username must be at most 15 characters")
+	}
+
+	// check if user with the same username already exists
+	var userWithUsernameCount int
+	err := r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&userWithUsernameCount)
+	if err != nil {
+		return nil, err
+	}
+
+	if userWithUsernameCount > 0 {
+		return nil, fmt.Errorf("user with that username already exists")
+	}
+
+	// hash password
+	var hashedPassword []byte
+	hashedPassword, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	password = string(hashedPassword)
+
+	// create user
+	_, err = r.DB.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	// temporary
+	return &User{
+		ID:       "1",
+		Username: username,
+	}, nil
 }
 
 // Login is the resolver for the login field.
