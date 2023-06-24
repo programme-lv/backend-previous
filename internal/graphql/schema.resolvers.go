@@ -32,7 +32,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	}
 
 	// Set the user ID in the session
-	r.SessionManager.Put(ctx, "userID", user.ID)
+	r.SessionManager.Put(ctx, "user_id", user.ID)
 
 	return &PublicUser{
 		ID:       fmt.Sprintf("%d", user.ID),
@@ -105,7 +105,23 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
-	panic(fmt.Errorf("not implemented: Whoami - whoami"))
+	// Get the user ID from the session
+	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
+	if !ok {
+		return nil, fmt.Errorf("not logged in")
+	}
+
+	// Get the user from the database
+	var user models.User
+	err := r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return &PublicUser{
+		ID:       fmt.Sprintf("%d", user.ID),
+		Username: user.Username,
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.
@@ -116,13 +132,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) Login(ctx context.Context, username string, password string) (*PublicUser, error) {
-	return nil, nil
-}
