@@ -36,7 +36,7 @@ func main() {
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/query", sessions.LoadAndSave(srv))
 
 	log.Printf("http://localhost:%s/ = GraphQL playground", defaultPort)
 	log.Printf("http://localhost:%s/query = GraphQL query endpoint", defaultPort)
