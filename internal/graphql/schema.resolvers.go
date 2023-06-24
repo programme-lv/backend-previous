@@ -32,7 +32,7 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 	// check if user with the same username already exists
 	var userWithUsernameCount int
-	err := r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&userWithUsernameCount)
+	err := r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&userWithUsernameCount)
 	if err != nil {
 		return nil, err
 	}
@@ -50,14 +50,20 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 	password = string(hashedPassword)
 
 	// create user
-	_, err = r.DB.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, password)
+	_, err = r.DB.Exec("INSERT INTO users (username, hashed_password) VALUES ($1, $2)", username, password)
 	if err != nil {
 		return nil, err
 	}
 
-	// temporary
+	// scan user id
+	var userID int
+	err = r.DB.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&userID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &User{
-		ID:       "1",
+		ID:       fmt.Sprintf("%d", userID),
 		Username: username,
 	}, nil
 }
