@@ -3,11 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jmoiron/sqlx"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 )
@@ -22,8 +24,13 @@ func main() {
 	defer sqlxDb.Close()
 	log.Println("Connected to database")
 
+	// Initialize session manager
+	sessions := scs.New()
+	sessions.Lifetime = 24 * time.Hour
+
 	resolver := &graphql.Resolver{
-		DB: sqlxDb,
+		DB:             sqlxDb,
+		SessionManager: sessions,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
