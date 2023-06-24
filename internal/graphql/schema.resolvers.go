@@ -103,6 +103,16 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 	}, nil
 }
 
+// Logout is the resolver for the logout field.
+func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: Logout - logout"))
+}
+
+// EnqueueSubmission is the resolver for the enqueueSubmission field.
+func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error) {
+	panic(fmt.Errorf("not implemented: EnqueueSubmission - enqueueSubmission"))
+}
+
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
 	// Get the user ID from the session
@@ -122,6 +132,11 @@ func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
 		ID:       fmt.Sprintf("%d", user.ID),
 		Username: user.Username,
 	}, nil
+}
+
+// ListSubmissions is the resolver for the listSubmissions field.
+func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
+	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))
 }
 
 // Mutation returns MutationResolver implementation.

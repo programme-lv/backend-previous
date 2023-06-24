@@ -1,5 +1,7 @@
 type Query {
   whoami: PublicUser
+
+  listSubmissions: [Submission!]!
 }
 
 type Mutation {
@@ -11,9 +13,33 @@ type Mutation {
     firstName: String!
     lastName: String!
   ): PublicUser!
+  logout: Boolean!
+
+  enqueueSubmission(
+    taskID: ID!
+    languageID: ID!
+    code: String!
+  ): Submission!
 }
 
 type PublicUser {
   id: ID!
   username: String!
+}
+
+type Submission {
+  id: ID!
+  task: Task!
+  language: Language!
+  code: String!
+}
+
+type Language {
+  id: ID!
+  fullName: String!
+}
+
+type Task {
+  id: ID!
+  name: String!
 }

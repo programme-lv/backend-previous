@@ -2,7 +2,24 @@
 
 package graphql
 
+type Language struct {
+	ID       string `json:"id"`
+	FullName string `json:"fullName"`
+}
+
 type PublicUser struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
+}
+
+type Submission struct {
+	ID       string    `json:"id"`
+	Task     *Task     `json:"task"`
+	Language *Language `json:"language"`
+	Code     string    `json:"code"`
+}
+
+type Task struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
