@@ -6,15 +6,38 @@ package graphql
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/mail"
 
+	"github.com/programme-lv/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*PublicUser, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+	// Get the user from the database
+	var user models.User
+	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("username or password is incorrect")
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Verify the password
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+	if err != nil {
+		return nil, fmt.Errorf("username or password is incorrect")
+	}
+
+	// Set the user ID in the session
+	r.SessionManager.Put(ctx, "userID", user.ID)
+
+	return &PublicUser{
+		ID:       fmt.Sprintf("%d", user.ID),
+		Username: user.Username,
+	}, nil
 }
 
 // Register is the resolver for the register field.
