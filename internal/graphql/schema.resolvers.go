@@ -105,7 +105,10 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	panic(fmt.Errorf("not implemented: Logout - logout"))
+	// Delete the user ID from the sessiong
+	_, ok := r.SessionManager.Pop(ctx, "user_id").(int64)
+
+	return ok, nil
 }
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
