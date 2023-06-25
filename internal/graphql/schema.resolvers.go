@@ -75,6 +75,17 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, fmt.Errorf("user with that username already exists")
 	}
 
+	// check if user with the same email already exists
+	var userWithEmailCount int
+	err = r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&userWithEmailCount)
+	if err != nil {
+		return nil, err
+	}
+
+	if userWithEmailCount > 0 {
+		return nil, fmt.Errorf("user with that email already exists")
+	}
+
 	// validate email
 	_, err = mail.ParseAddress(email)
 	if err != nil {
