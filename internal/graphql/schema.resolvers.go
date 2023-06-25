@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"net/mail"
 
 	"github.com/programme-lv/backend/internal/models"
@@ -16,6 +17,8 @@ import (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*PublicUser, error) {
+	log.Println("Logging in user", username)
+
 	// Get the user from the database
 	var user models.User
 	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
@@ -42,6 +45,8 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*PublicUser, error) {
+	log.Println("Registering user", username)
+
 	// validate registration data
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("username and password are required")
@@ -106,9 +111,15 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	// Delete the user ID from the sessiong
-	_, ok := r.SessionManager.Pop(ctx, "user_id").(int64)
+	userId, ok := r.SessionManager.Pop(ctx, "user_id").(int64)
 
-	return ok, nil
+	if ok {
+		log.Println("User", userId, "logged out")
+		return true, nil
+	} else {
+		log.Println("User attempted to log out without being logged in")
+		return false, fmt.Errorf("not logged in")
+	}
 }
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
