@@ -138,6 +138,11 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 	panic(fmt.Errorf("not implemented: EnqueueSubmission - enqueueSubmission"))
 }
 
+// ExecuteCode is the resolver for the executeCode field.
+func (r *mutationResolver) ExecuteCode(ctx context.Context, languageID string, code string) (*ExecutionResult, error) {
+	panic(fmt.Errorf("not implemented: ExecuteCode - executeCode"))
+}
+
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
 	// Get the user ID from the session

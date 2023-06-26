@@ -20,6 +20,17 @@ type Mutation {
     languageID: ID!
     code: String!
   ): Submission!
+
+  executeCode(
+    languageID: ID!
+    code: String!
+  ): ExecutionResult!
+}
+
+type ExecutionResult {
+  stdout: String!
+  stderr: String!
+  exitCode: Int!
 }
 
 type PublicUser {

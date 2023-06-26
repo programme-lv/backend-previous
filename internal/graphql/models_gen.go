@@ -2,6 +2,12 @@
 
 package graphql
 
+type ExecutionResult struct {
+	Stdout   string `json:"stdout"`
+	Stderr   string `json:"stderr"`
+	ExitCode int    `json:"exitCode"`
+}
+
 type Language struct {
 	ID       string `json:"id"`
 	FullName string `json:"fullName"`
