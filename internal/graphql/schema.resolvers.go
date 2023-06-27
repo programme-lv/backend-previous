@@ -141,6 +141,7 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 
 // ExecuteCode is the resolver for the executeCode field.
 func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error) {
+	log.Println("Executing code in language", languageID, ":", code)
 	factory := execution.ExecuterFactory{DB: r.DB}
 	executable, err := factory.NewExecuter(languageID, code)
 	if err != nil {
@@ -184,6 +185,26 @@ func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
 // ListSubmissions is the resolver for the listSubmissions field.
 func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
 	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))
+}
+
+// ListLanguages is the resolver for the listLanguages field.
+func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) {
+	var langs []models.ProgrammingLanguage
+	err := r.DB.Select(&langs, "SELECT * FROM programming_languages")
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to graphql type
+	var gqlLangs []*Language
+	for _, lang := range langs {
+		gqlLangs = append(gqlLangs, &Language{
+			ID:       lang.ID,
+			FullName: lang.FullName,
+		})
+	}
+
+	return gqlLangs, nil
 }
 
 // Mutation returns MutationResolver implementation.
