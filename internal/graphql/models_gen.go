@@ -10,6 +10,7 @@ type ExecutionResult struct {
 type Language struct {
 	ID       string `json:"id"`
 	FullName string `json:"fullName"`
+	MonacoID string `json:"monacoID"`
 }
 
 type PublicUser struct {

@@ -49,6 +49,7 @@ type Submission {
 type Language {
   id: ID!
   fullName: String!
+  monacoID: ID!
 }
 
 type Task {

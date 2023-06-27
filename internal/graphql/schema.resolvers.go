@@ -201,6 +201,7 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 		gqlLangs = append(gqlLangs, &Language{
 			ID:       lang.ID,
 			FullName: lang.FullName,
+			MonacoID: lang.MonacoId,
 		})
 	}
 

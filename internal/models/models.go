@@ -21,4 +21,5 @@ type ProgrammingLanguage struct {
 	ExecuteCmd     string  `db:"execute_cmd"`
 	EnvVersionCmd  string  `db:"env_version_cmd"`
 	HelloWorldCode string  `db:"hello_world_code"`
+	MonacoId       string  `db:"monaco_id"`
 }
