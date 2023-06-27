@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/mail"
 
+	"github.com/programme-lv/backend/internal/execution"
 	"github.com/programme-lv/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -140,7 +141,23 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 
 // ExecuteCode is the resolver for the executeCode field.
 func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error) {
-	panic(fmt.Errorf("not implemented: ExecuteCode - executeCode"))
+	factory := execution.ExecuterFactory{DB: r.DB}
+	executable, err := factory.NewExecuter(languageID, code)
+	if err != nil {
+		return nil, err
+	}
+	defer executable.Cleanup()
+
+	// execute code
+	result, err := executable.Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ExecutionResult{
+		Stdout: result.Stdout,
+		Stderr: result.Stderr,
+	}, nil
 }
 
 // Whoami is the resolver for the whoami field.

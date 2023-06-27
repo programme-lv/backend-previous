@@ -7,6 +7,6 @@ type ExecutionResult struct {
 }
 
 type Executer interface {
-	Execute() (ExecutionResult, error)
+	Execute() (*ExecutionResult, error)
 	Cleanup()
 }

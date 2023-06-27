@@ -1,7 +1,7 @@
 package execution
 
 import (
-	"log"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,16 +12,33 @@ type Executable struct {
 	executeCmd string
 }
 
-func (s *Executable) Execute() (ExecutionResult, error) {
+func (s *Executable) Execute() (*ExecutionResult, error) {
 	cmd := exec.Command(strings.Split(s.executeCmd, " ")[0], strings.Split(s.executeCmd, " ")[1:]...)
 	cmd.Dir = s.directory
-	stdoutStderr, err := cmd.CombinedOutput()
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return ExecutionResult{
-		Stdout:   string(stdoutStderr),
-		Stderr:   string(stdoutStderr),
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	slurpOut, _ := io.ReadAll(stdout)
+	slurpErr, _ := io.ReadAll(stderr)
+
+	_ = cmd.Wait()
+
+	return &ExecutionResult{
+		Stdout:   string(slurpOut),
+		Stderr:   string(slurpErr),
 		ExitCode: cmd.ProcessState.ExitCode(),
 	}, nil
 }
