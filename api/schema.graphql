@@ -22,15 +22,14 @@ type Mutation {
   ): Submission!
 
   executeCode(
-    languageID: ID!
     code: String!
+    languageID: ID!
   ): ExecutionResult!
 }
 
 type ExecutionResult {
   stdout: String!
   stderr: String!
-  exitCode: Int!
 }
 
 type PublicUser {
