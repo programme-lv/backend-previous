@@ -44,9 +44,8 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	ExecutionResult struct {
-		ExitCode func(childComplexity int) int
-		Stderr   func(childComplexity int) int
-		Stdout   func(childComplexity int) int
+		Stderr func(childComplexity int) int
+		Stdout func(childComplexity int) int
 	}
 
 	Language struct {
@@ -56,7 +55,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		EnqueueSubmission func(childComplexity int, taskID string, languageID string, code string) int
-		ExecuteCode       func(childComplexity int, languageID string, code string) int
+		ExecuteCode       func(childComplexity int, code string, languageID string) int
 		Login             func(childComplexity int, username string, password string) int
 		Logout            func(childComplexity int) int
 		Register          func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
@@ -90,7 +89,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*PublicUser, error)
 	Logout(ctx context.Context) (bool, error)
 	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error)
-	ExecuteCode(ctx context.Context, languageID string, code string) (*ExecutionResult, error)
+	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
 type QueryResolver interface {
 	Whoami(ctx context.Context) (*PublicUser, error)
@@ -111,13 +110,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "ExecutionResult.exitCode":
-		if e.complexity.ExecutionResult.ExitCode == nil {
-			break
-		}
-
-		return e.complexity.ExecutionResult.ExitCode(childComplexity), true
 
 	case "ExecutionResult.stderr":
 		if e.complexity.ExecutionResult.Stderr == nil {
@@ -169,7 +161,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ExecuteCode(childComplexity, args["languageID"].(string), args["code"].(string)), true
+		return e.complexity.Mutation.ExecuteCode(childComplexity, args["code"].(string), args["languageID"].(string)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -400,15 +392,14 @@ type Mutation {
   ): Submission!
 
   executeCode(
-    languageID: ID!
     code: String!
+    languageID: ID!
   ): ExecutionResult!
 }
 
 type ExecutionResult {
   stdout: String!
   stderr: String!
-  exitCode: Int!
 }
 
 type PublicUser {
@@ -477,23 +468,23 @@ func (ec *executionContext) field_Mutation_executeCode_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["languageID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languageID"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["languageID"] = arg0
-	var arg1 string
 	if tmp, ok := rawArgs["code"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["code"] = arg1
+	args["code"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["languageID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languageID"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["languageID"] = arg1
 	return args, nil
 }
 
@@ -708,50 +699,6 @@ func (ec *executionContext) fieldContext_ExecutionResult_stderr(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ExecutionResult_exitCode(ctx context.Context, field graphql.CollectedField, obj *ExecutionResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ExecutionResult_exitCode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExitCode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ExecutionResult_exitCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ExecutionResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1090,7 +1037,7 @@ func (ec *executionContext) _Mutation_executeCode(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ExecuteCode(rctx, fc.Args["languageID"].(string), fc.Args["code"].(string))
+		return ec.resolvers.Mutation().ExecuteCode(rctx, fc.Args["code"].(string), fc.Args["languageID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1119,8 +1066,6 @@ func (ec *executionContext) fieldContext_Mutation_executeCode(ctx context.Contex
 				return ec.fieldContext_ExecutionResult_stdout(ctx, field)
 			case "stderr":
 				return ec.fieldContext_ExecutionResult_stderr(ctx, field)
-			case "exitCode":
-				return ec.fieldContext_ExecutionResult_exitCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ExecutionResult", field.Name)
 		},
@@ -3535,11 +3480,6 @@ func (ec *executionContext) _ExecutionResult(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "exitCode":
-			out.Values[i] = ec._ExecutionResult_exitCode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4279,21 +4219,6 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

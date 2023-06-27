@@ -139,7 +139,7 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 }
 
 // ExecuteCode is the resolver for the executeCode field.
-func (r *mutationResolver) ExecuteCode(ctx context.Context, languageID string, code string) (*ExecutionResult, error) {
+func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error) {
 	panic(fmt.Errorf("not implemented: ExecuteCode - executeCode"))
 }
 

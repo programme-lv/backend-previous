@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/environment"
