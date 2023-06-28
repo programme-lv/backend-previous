@@ -17,7 +17,7 @@ import (
 )
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*PublicUser, error) {
+func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
 	log.Println("Logging in user", username)
 
 	// Get the user from the database
@@ -38,14 +38,14 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	// Set the user ID in the session
 	r.SessionManager.Put(ctx, "user_id", user.ID)
 
-	return &PublicUser{
+	return &User{
 		ID:       fmt.Sprintf("%d", user.ID),
 		Username: user.Username,
 	}, nil
 }
 
 // Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*PublicUser, error) {
+func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
 	log.Println("Registering user", username)
 
 	// validate registration data
@@ -114,7 +114,7 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, err
 	}
 
-	return &PublicUser{
+	return &User{
 		ID:       fmt.Sprintf("%d", userID),
 		Username: username,
 	}, nil
@@ -161,8 +161,28 @@ func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languag
 	}, nil
 }
 
+// CreateTask is the resolver for the createTask field.
+func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName string) (*Task, error) {
+	panic(fmt.Errorf("not implemented: CreateTask - createTask"))
+}
+
+// UpdateTask is the resolver for the updateTask field.
+func (r *mutationResolver) UpdateTask(ctx context.Context, id string, fullName string, origin *string, authors []string) (*Task, error) {
+	panic(fmt.Errorf("not implemented: UpdateTask - updateTask"))
+}
+
+// CreateTaskVersion is the resolver for the createTaskVersion field.
+func (r *mutationResolver) CreateTaskVersion(ctx context.Context) (*TaskVersion, error) {
+	panic(fmt.Errorf("not implemented: CreateTaskVersion - createTaskVersion"))
+}
+
+// UpdateTaskVersion is the resolver for the updateTaskVersion field.
+func (r *mutationResolver) UpdateTaskVersion(ctx context.Context, id string, versionName *string, timeLimitMs *int, memoryLimitMb *int, evalTypeID *string) (*TaskVersion, error) {
+	panic(fmt.Errorf("not implemented: UpdateTaskVersion - updateTaskVersion"))
+}
+
 // Whoami is the resolver for the whoami field.
-func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
+func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 	// Get the user ID from the session
 	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
 	if !ok {
@@ -176,7 +196,7 @@ func (r *queryResolver) Whoami(ctx context.Context) (*PublicUser, error) {
 		return nil, fmt.Errorf("user not found")
 	}
 
-	return &PublicUser{
+	return &User{
 		ID:       fmt.Sprintf("%d", user.ID),
 		Username: user.Username,
 	}, nil
@@ -206,6 +226,11 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 	}
 
 	return gqlLangs, nil
+}
+
+// ListTasks is the resolver for the listTasks field.
+func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
+	panic(fmt.Errorf("not implemented: ListTasks - listTasks"))
 }
 
 // Mutation returns MutationResolver implementation.

@@ -1,42 +1,37 @@
 type Query {
-  whoami: PublicUser
-
+  whoami: User
   listSubmissions: [Submission!]!
-
   listLanguages: [Language!]!
+  listTasks: [Task!]!
 }
 
 type Mutation {
-  login(username: String!, password: String!): PublicUser!
-  register(
-    username: String!
-    password: String!
-    email: String!
-    firstName: String!
-    lastName: String!
-  ): PublicUser!
+  login(username: String!, password: String!): User!
+  register(username: String!, password: String!, email: String!, firstName: String!, lastName: String!): User!
   logout: Boolean!
 
-  enqueueSubmission(
-    taskID: ID!
-    languageID: ID!
-    code: String!
-  ): Submission!
+  enqueueSubmission(taskID: ID!, languageID: ID!,code: String!): Submission!
+  executeCode(code: String!, languageID: ID!): ExecutionResult!
 
-  executeCode(
-    code: String!
-    languageID: ID!
-  ): ExecutionResult!
+  createTask(id: String!,fullName: String!): Task!
+  updateTask(id: ID!, fullName: String!, origin: String, authors: [String!]!): Task!
+
+  createTaskVersion: TaskVersion!
+  updateTaskVersion(id: ID!, versionName: String, timeLimitMs: Int, memoryLimitMb: Int, evalTypeID: ID): TaskVersion!
 }
 
-type ExecutionResult {
-  stdout: String!
-  stderr: String!
+type Language {
+  id: ID!
+  fullName: String!
+  monacoID: ID!
 }
 
-type PublicUser {
+type User {
   id: ID!
   username: String!
+  email: String!
+  firstName: String!
+  lastName: String!
 }
 
 type Submission {
@@ -46,13 +41,30 @@ type Submission {
   code: String!
 }
 
-type Language {
-  id: ID!
-  fullName: String!
-  monacoID: ID!
+type ExecutionResult {
+  stdout: String!
+  stderr: String!
 }
 
 type Task {
   id: ID!
-  name: String!
+  fullName: String!
+  origin: String
+  authors: [String!]!
+  versions: [TaskVersion!]!
+}
+
+type TaskVersion {
+  id: ID!
+  versionName: String!
+  timeLimitMs: Int!
+  memoryLimitMb: Int!
+  evalType: EvalType!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type EvalType {
+  id: ID!
+  descriptionEn: String!
 }

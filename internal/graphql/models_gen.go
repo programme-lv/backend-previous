@@ -2,6 +2,11 @@
 
 package graphql
 
+type EvalType struct {
+	ID            string `json:"id"`
+	DescriptionEn string `json:"descriptionEn"`
+}
+
 type ExecutionResult struct {
 	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
@@ -13,11 +18,6 @@ type Language struct {
 	MonacoID string `json:"monacoID"`
 }
 
-type PublicUser struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-}
-
 type Submission struct {
 	ID       string    `json:"id"`
 	Task     *Task     `json:"task"`
@@ -26,6 +26,27 @@ type Submission struct {
 }
 
 type Task struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string         `json:"id"`
+	FullName string         `json:"fullName"`
+	Origin   *string        `json:"origin,omitempty"`
+	Authors  []string       `json:"authors"`
+	Versions []*TaskVersion `json:"versions"`
+}
+
+type TaskVersion struct {
+	ID            string    `json:"id"`
+	VersionName   string    `json:"versionName"`
+	TimeLimitMs   int       `json:"timeLimitMs"`
+	MemoryLimitMb int       `json:"memoryLimitMb"`
+	EvalType      *EvalType `json:"evalType"`
+	CreatedAt     string    `json:"createdAt"`
+	UpdatedAt     string    `json:"updatedAt"`
+}
+
+type User struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
