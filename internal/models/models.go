@@ -41,3 +41,13 @@ type TaskVersion struct {
 	UpdatedAt   *time.Time `db:"updated_at"`
 	EvalTypeID  string     `db:"eval_type_id"`
 }
+
+type TaskAuthor struct {
+	TaskID string `db:"task_id"`
+	Author string `db:"author"`
+}
+
+type EvalType struct {
+	ID            string `db:"id"`
+	DescriptionEn string `db:"description_en"`
+}

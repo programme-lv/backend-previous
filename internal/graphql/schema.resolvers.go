@@ -263,6 +263,17 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 					return nil, err
 				}
 
+				// prefetch eval types
+				evalTypeIDs := make(map[string]models.EvalType)
+				var evalTypes []models.EvalType
+				err = r.DB.Select(&evalTypes, "SELECT * FROM eval_types")
+				if err != nil {
+					return nil, err
+				}
+				for _, evalType := range evalTypes {
+					evalTypeIDs[evalType.ID] = evalType
+				}
+
 				for _, version := range versions {
 					var updatedAt *string = nil
 					if version.UpdatedAt != nil {
@@ -276,11 +287,25 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 						TimeLimitMs:   version.TimeLimMs,
 						MemoryLimitMb: version.MemLimKb,
 						EvalType: &EvalType{
-							ID: version.EvalTypeID,
+							ID:            version.EvalTypeID,
+							DescriptionEn: evalTypeIDs[version.EvalTypeID].DescriptionEn,
 						},
 						CreatedAt: version.CreatedAt.String(),
 						UpdatedAt: updatedAt,
 					})
+				}
+			}
+		case "authors":
+			log.Println("task authors requested")
+			for _, task := range gqlTasks {
+				var authors []models.TaskAuthor
+				err := r.DB.Select(&authors, "SELECT * FROM task_authors WHERE task_id = $1", task.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				for _, author := range authors {
+					task.Authors = append(task.Authors, author.Author)
 				}
 			}
 		}
