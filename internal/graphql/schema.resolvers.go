@@ -233,7 +233,7 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 
 // ListTasks is the resolver for the listTasks field.
 func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
-	log.Println("Received request for tasks")
+	log.Println("Received request to list tasks")
 
 	var tasks []models.Task
 	err := r.DB.Select(&tasks, "SELECT * FROM tasks")
@@ -255,33 +255,40 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 	for _, field := range fields {
 		switch field.Name {
 		case "versions":
-			log.Println("task versions requested")
-			for _, task := range gqlTasks {
-				var versions []models.TaskVersion
-				err := r.DB.Select(&versions, "SELECT * FROM task_versions WHERE task_id = $1", task.ID)
-				if err != nil {
-					return nil, err
-				}
+			// prefetch versions
+			var versions []models.TaskVersion
+			err := r.DB.Select(&versions, "SELECT * FROM task_versions")
+			if err != nil {
+				return nil, err
+			}
 
-				// prefetch eval types
-				evalTypeIDs := make(map[string]models.EvalType)
-				var evalTypes []models.EvalType
-				err = r.DB.Select(&evalTypes, "SELECT * FROM eval_types")
-				if err != nil {
-					return nil, err
-				}
-				for _, evalType := range evalTypes {
-					evalTypeIDs[evalType.ID] = evalType
-				}
+			// group versions by task id
+			taskIdVersions := make(map[string][]models.TaskVersion)
+			for _, version := range versions {
+				taskIdVersions[version.TaskID] = append(taskIdVersions[version.TaskID], version)
+			}
 
-				for _, version := range versions {
+			// prefetch eval types
+			evalTypeIDs := make(map[string]models.EvalType)
+			var evalTypes []models.EvalType
+			err = r.DB.Select(&evalTypes, "SELECT * FROM eval_types")
+			if err != nil {
+				return nil, err
+			}
+			for _, evalType := range evalTypes {
+				evalTypeIDs[evalType.ID] = evalType
+			}
+
+			// add versions to tasks
+			for _, gqlTask := range gqlTasks {
+				for _, version := range taskIdVersions[gqlTask.ID] {
 					var updatedAt *string = nil
 					if version.UpdatedAt != nil {
 						updatedAtValue := version.UpdatedAt.String()
 						updatedAt = &updatedAtValue
 					}
 
-					task.Versions = append(task.Versions, &TaskVersion{
+					gqlTask.Versions = append(gqlTask.Versions, &TaskVersion{
 						ID:            fmt.Sprintf("%d", version.ID),
 						VersionName:   version.VersionName,
 						TimeLimitMs:   version.TimeLimMs,
@@ -296,22 +303,111 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 				}
 			}
 		case "authors":
-			log.Println("task authors requested")
-			for _, task := range gqlTasks {
-				var authors []models.TaskAuthor
-				err := r.DB.Select(&authors, "SELECT * FROM task_authors WHERE task_id = $1", task.ID)
-				if err != nil {
-					return nil, err
-				}
+			// prefetch authors
+			var authors []models.TaskAuthor
+			err := r.DB.Select(&authors, "SELECT * FROM task_authors")
+			if err != nil {
+				return nil, err
+			}
 
-				for _, author := range authors {
-					task.Authors = append(task.Authors, author.Author)
+			// group authors by task id
+			taskIdAuthors := make(map[string][]models.TaskAuthor)
+			for _, author := range authors {
+				taskIdAuthors[author.TaskID] = append(taskIdAuthors[author.TaskID], author)
+			}
+
+			// add authors to tasks
+			for _, gqlTask := range gqlTasks {
+				for _, author := range taskIdAuthors[gqlTask.ID] {
+					gqlTask.Authors = append(gqlTask.Authors, author.Author)
 				}
 			}
 		}
 	}
 
 	return gqlTasks, nil
+}
+
+// GetTask is the resolver for the getTask field.
+func (r *queryResolver) GetTask(ctx context.Context, id string) (*Task, error) {
+	log.Println("Received request to get task", id)
+
+	var task models.Task
+	err := r.DB.Get(&task, "SELECT * FROM tasks WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlTask := &Task{
+		ID:       task.ID,
+		FullName: task.FullName,
+		Origin:   task.Origin,
+	}
+
+	fields := graphql.CollectFieldsCtx(ctx, nil)
+	for _, field := range fields {
+		switch field.Name {
+		case "versions":
+			log.Println("task versions requested")
+
+			// prefetch versions
+			var versions []models.TaskVersion
+			err := r.DB.Select(&versions, "SELECT * FROM task_versions WHERE task_id = $1", gqlTask.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			// prefetch eval types
+			var evalTypes []models.EvalType
+			err = r.DB.Select(&evalTypes, "SELECT * FROM eval_types")
+			if err != nil {
+				return nil, err
+			}
+
+			// group eval types by id
+			evalTypeIDs := make(map[string]models.EvalType)
+			for _, evalType := range evalTypes {
+				evalTypeIDs[evalType.ID] = evalType
+			}
+
+			// add versions to tasks
+			for _, version := range versions {
+				var updatedAt *string = nil
+				if version.UpdatedAt != nil {
+					updatedAtValue := version.UpdatedAt.String()
+					updatedAt = &updatedAtValue
+				}
+
+				gqlTask.Versions = append(gqlTask.Versions, &TaskVersion{
+					ID:            fmt.Sprintf("%d", version.ID),
+					VersionName:   version.VersionName,
+					TimeLimitMs:   version.TimeLimMs,
+					MemoryLimitMb: version.MemLimKb,
+					EvalType: &EvalType{
+						ID:            version.EvalTypeID,
+						DescriptionEn: evalTypeIDs[version.EvalTypeID].DescriptionEn,
+					},
+					CreatedAt: version.CreatedAt.String(),
+					UpdatedAt: updatedAt,
+				})
+			}
+		case "authors":
+			log.Println("task authors requested")
+
+			// prefetch authors
+			var authors []models.TaskAuthor
+			err := r.DB.Select(&authors, "SELECT * FROM task_authors WHERE task_id = $1", task.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, author := range authors {
+				gqlTask.Authors = append(gqlTask.Authors, author.Author)
+			}
+		}
+	}
+
+	return gqlTask, nil
 }
 
 // Mutation returns MutationResolver implementation.

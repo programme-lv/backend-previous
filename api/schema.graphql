@@ -3,6 +3,7 @@ type Query {
   listSubmissions: [Submission!]!
   listLanguages: [Language!]!
   listTasks: [Task!]!
+  getTask(id: ID!): Task!
 }
 
 type Mutation {
