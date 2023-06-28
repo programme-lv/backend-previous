@@ -23,3 +23,21 @@ type ProgrammingLanguage struct {
 	HelloWorldCode string  `db:"hello_world_code"`
 	MonacoId       string  `db:"monaco_id"`
 }
+
+type Task struct {
+	ID        string    `db:"id"`
+	FullName  string    `db:"full_name"`
+	Origin    *string   `db:"origin"`
+	CreatedAt time.Time `db:"created_at"`
+}
+
+type TaskVersion struct {
+	ID          int64      `db:"id"`
+	VersionName string     `db:"version_name"`
+	TaskID      string     `db:"task_id"`
+	TimeLimMs   int        `db:"time_lim_ms"`
+	MemLimKb    int        `db:"mem_lim_kb"`
+	CreatedAt   time.Time  `db:"created_at"`
+	UpdatedAt   *time.Time `db:"updated_at"`
+	EvalTypeID  string     `db:"eval_type_id"`
+}

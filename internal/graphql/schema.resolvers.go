@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/mail"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/programme-lv/backend/internal/execution"
 	"github.com/programme-lv/backend/internal/models"
 	"golang.org/x/crypto/bcrypt"
@@ -209,6 +210,8 @@ func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, err
 
 // ListLanguages is the resolver for the listLanguages field.
 func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) {
+	log.Println("Received request for languages")
+
 	var langs []models.ProgrammingLanguage
 	err := r.DB.Select(&langs, "SELECT * FROM programming_languages")
 	if err != nil {
@@ -230,7 +233,60 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 
 // ListTasks is the resolver for the listTasks field.
 func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListTasks - listTasks"))
+	log.Println("Received request for tasks")
+
+	var tasks []models.Task
+	err := r.DB.Select(&tasks, "SELECT * FROM tasks")
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to graphql type
+	var gqlTasks []*Task
+	for _, task := range tasks {
+		gqlTasks = append(gqlTasks, &Task{
+			ID:       task.ID,
+			FullName: task.FullName,
+			Origin:   task.Origin,
+		})
+	}
+
+	fields := graphql.CollectFieldsCtx(ctx, nil)
+	for _, field := range fields {
+		switch field.Name {
+		case "versions":
+			log.Println("task versions requested")
+			for _, task := range gqlTasks {
+				var versions []models.TaskVersion
+				err := r.DB.Select(&versions, "SELECT * FROM task_versions WHERE task_id = $1", task.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				for _, version := range versions {
+					var updatedAt *string = nil
+					if version.UpdatedAt != nil {
+						updatedAtValue := version.UpdatedAt.String()
+						updatedAt = &updatedAtValue
+					}
+
+					task.Versions = append(task.Versions, &TaskVersion{
+						ID:            fmt.Sprintf("%d", version.ID),
+						VersionName:   version.VersionName,
+						TimeLimitMs:   version.TimeLimMs,
+						MemoryLimitMb: version.MemLimKb,
+						EvalType: &EvalType{
+							ID: version.EvalTypeID,
+						},
+						CreatedAt: version.CreatedAt.String(),
+						UpdatedAt: updatedAt,
+					})
+				}
+			}
+		}
+	}
+
+	return gqlTasks, nil
 }
 
 // Mutation returns MutationResolver implementation.

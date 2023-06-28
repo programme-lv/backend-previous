@@ -61,7 +61,7 @@ type TaskVersion {
   memoryLimitMb: Int!
   evalType: EvalType!
   createdAt: String!
-  updatedAt: String!
+  updatedAt: String
 }
 
 type EvalType {
