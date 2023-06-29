@@ -30,7 +30,7 @@ type Task struct {
 	FullName    string    `db:"full_name"`
 	Origin      *string   `db:"origin"`
 	CreatedAt   time.Time `db:"created_at"`
-	OwnerUserId *int64    `db:"owner_user_id"`
+	OwnerUserID *int64    `db:"owner_user_id"`
 }
 
 type TaskVersion struct {

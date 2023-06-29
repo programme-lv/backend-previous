@@ -164,7 +164,6 @@ func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languag
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName string) (*Task, error) {
-
 	// Get the user ID from the session
 	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
 	if !ok {
@@ -247,6 +246,70 @@ func (r *mutationResolver) CreateTaskVersion(ctx context.Context) (*TaskVersion,
 // UpdateTaskVersion is the resolver for the updateTaskVersion field.
 func (r *mutationResolver) UpdateTaskVersion(ctx context.Context, id string, versionName *string, timeLimitMs *int, memoryLimitMb *int, evalTypeID *string) (*TaskVersion, error) {
 	panic(fmt.Errorf("not implemented: UpdateTaskVersion - updateTaskVersion"))
+}
+
+// DeleteTask is the resolver for the deleteTask field.
+func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (bool, error) {
+	// check if the user owns the task
+	var task models.Task
+	err := r.DB.Get(&task, "SELECT * FROM tasks WHERE id = $1", id)
+	if err == sql.ErrNoRows {
+		return false, fmt.Errorf("task not found")
+	} else if err != nil {
+		return false, err
+	}
+
+	// Get the user ID from the session
+	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
+	if !ok {
+		return false, fmt.Errorf("not logged in")
+	}
+
+	// Find the user in the database
+	var user models.User
+	err = r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
+	if err == sql.ErrNoRows {
+		return false, fmt.Errorf("user not found")
+	} else if err != nil {
+		return false, err
+	}
+
+	if task.OwnerUserID == nil {
+		return false, fmt.Errorf("task has no owner")
+	}
+
+	if *task.OwnerUserID != userID && !user.IsAdmin {
+		return false, fmt.Errorf("you don't own this task")
+	}
+
+	// start an sql transaction
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	// Delete task authors
+	_, err = tx.Exec("DELETE FROM task_authors WHERE task_id = $1", id)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
+	// I should also delete the task submissions and therefore the evaluations
+
+	// Delete task
+	_, err = tx.Exec("DELETE FROM tasks WHERE id = $1", id)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Whoami is the resolver for the whoami field.
