@@ -37,7 +37,7 @@ type TaskVersion struct {
 	ID            string    `json:"id"`
 	VersionName   string    `json:"versionName"`
 	TimeLimitMs   int       `json:"timeLimitMs"`
-	MemoryLimitMb int       `json:"memoryLimitMb"`
+	MemoryLimitKb int       `json:"memoryLimitKb"`
 	EvalType      *EvalType `json:"evalType"`
 	CreatedAt     string    `json:"createdAt"`
 	UpdatedAt     *string   `json:"updatedAt,omitempty"`

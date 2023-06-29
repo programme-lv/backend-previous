@@ -292,7 +292,7 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 						ID:            fmt.Sprintf("%d", version.ID),
 						VersionName:   version.VersionName,
 						TimeLimitMs:   version.TimeLimMs,
-						MemoryLimitMb: version.MemLimKb,
+						MemoryLimitKb: version.MemLimKb,
 						EvalType: &EvalType{
 							ID:            version.EvalTypeID,
 							DescriptionEn: evalTypeIDs[version.EvalTypeID].DescriptionEn,
@@ -382,7 +382,7 @@ func (r *queryResolver) GetTask(ctx context.Context, id string) (*Task, error) {
 					ID:            fmt.Sprintf("%d", version.ID),
 					VersionName:   version.VersionName,
 					TimeLimitMs:   version.TimeLimMs,
-					MemoryLimitMb: version.MemLimKb,
+					MemoryLimitKb: version.MemLimKb,
 					EvalType: &EvalType{
 						ID:            version.EvalTypeID,
 						DescriptionEn: evalTypeIDs[version.EvalTypeID].DescriptionEn,

@@ -59,7 +59,7 @@ type TaskVersion {
   id: ID!
   versionName: String!
   timeLimitMs: Int!
-  memoryLimitMb: Int!
+  memoryLimitKb: Int!
   evalType: EvalType!
   createdAt: String!
   updatedAt: String

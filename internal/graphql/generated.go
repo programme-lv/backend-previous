@@ -98,7 +98,7 @@ type ComplexityRoot struct {
 		CreatedAt     func(childComplexity int) int
 		EvalType      func(childComplexity int) int
 		ID            func(childComplexity int) int
-		MemoryLimitMb func(childComplexity int) int
+		MemoryLimitKb func(childComplexity int) int
 		TimeLimitMs   func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
 		VersionName   func(childComplexity int) int
@@ -418,12 +418,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TaskVersion.ID(childComplexity), true
 
-	case "TaskVersion.memoryLimitMb":
-		if e.complexity.TaskVersion.MemoryLimitMb == nil {
+	case "TaskVersion.memoryLimitKb":
+		if e.complexity.TaskVersion.MemoryLimitKb == nil {
 			break
 		}
 
-		return e.complexity.TaskVersion.MemoryLimitMb(childComplexity), true
+		return e.complexity.TaskVersion.MemoryLimitKb(childComplexity), true
 
 	case "TaskVersion.timeLimitMs":
 		if e.complexity.TaskVersion.TimeLimitMs == nil {
@@ -646,7 +646,7 @@ type TaskVersion {
   id: ID!
   versionName: String!
   timeLimitMs: Int!
-  memoryLimitMb: Int!
+  memoryLimitKb: Int!
   evalType: EvalType!
   createdAt: String!
   updatedAt: String
@@ -1772,8 +1772,8 @@ func (ec *executionContext) fieldContext_Mutation_createTaskVersion(ctx context.
 				return ec.fieldContext_TaskVersion_versionName(ctx, field)
 			case "timeLimitMs":
 				return ec.fieldContext_TaskVersion_timeLimitMs(ctx, field)
-			case "memoryLimitMb":
-				return ec.fieldContext_TaskVersion_memoryLimitMb(ctx, field)
+			case "memoryLimitKb":
+				return ec.fieldContext_TaskVersion_memoryLimitKb(ctx, field)
 			case "evalType":
 				return ec.fieldContext_TaskVersion_evalType(ctx, field)
 			case "createdAt":
@@ -1832,8 +1832,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskVersion(ctx context.
 				return ec.fieldContext_TaskVersion_versionName(ctx, field)
 			case "timeLimitMs":
 				return ec.fieldContext_TaskVersion_timeLimitMs(ctx, field)
-			case "memoryLimitMb":
-				return ec.fieldContext_TaskVersion_memoryLimitMb(ctx, field)
+			case "memoryLimitKb":
+				return ec.fieldContext_TaskVersion_memoryLimitKb(ctx, field)
 			case "evalType":
 				return ec.fieldContext_TaskVersion_evalType(ctx, field)
 			case "createdAt":
@@ -2683,8 +2683,8 @@ func (ec *executionContext) fieldContext_Task_versions(ctx context.Context, fiel
 				return ec.fieldContext_TaskVersion_versionName(ctx, field)
 			case "timeLimitMs":
 				return ec.fieldContext_TaskVersion_timeLimitMs(ctx, field)
-			case "memoryLimitMb":
-				return ec.fieldContext_TaskVersion_memoryLimitMb(ctx, field)
+			case "memoryLimitKb":
+				return ec.fieldContext_TaskVersion_memoryLimitKb(ctx, field)
 			case "evalType":
 				return ec.fieldContext_TaskVersion_evalType(ctx, field)
 			case "createdAt":
@@ -2830,8 +2830,8 @@ func (ec *executionContext) fieldContext_TaskVersion_timeLimitMs(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _TaskVersion_memoryLimitMb(ctx context.Context, field graphql.CollectedField, obj *TaskVersion) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TaskVersion_memoryLimitMb(ctx, field)
+func (ec *executionContext) _TaskVersion_memoryLimitKb(ctx context.Context, field graphql.CollectedField, obj *TaskVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TaskVersion_memoryLimitKb(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2844,7 +2844,7 @@ func (ec *executionContext) _TaskVersion_memoryLimitMb(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryLimitMb, nil
+		return obj.MemoryLimitKb, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2861,7 +2861,7 @@ func (ec *executionContext) _TaskVersion_memoryLimitMb(ctx context.Context, fiel
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TaskVersion_memoryLimitMb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TaskVersion_memoryLimitKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TaskVersion",
 		Field:      field,
@@ -5545,8 +5545,8 @@ func (ec *executionContext) _TaskVersion(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "memoryLimitMb":
-			out.Values[i] = ec._TaskVersion_memoryLimitMb(ctx, field, obj)
+		case "memoryLimitKb":
+			out.Values[i] = ec._TaskVersion_memoryLimitKb(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
