@@ -234,8 +234,64 @@ func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName s
 }
 
 // UpdateTask is the resolver for the updateTask field.
-func (r *mutationResolver) UpdateTask(ctx context.Context, id string, fullName string, origin *string, authors []string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: UpdateTask - updateTask"))
+func (r *mutationResolver) UpdateTask(ctx context.Context, id string, fullName *string, origin *string, authors []string) (*Task, error) {
+	// find the current task
+	var task models.Task
+	err := r.DB.Get(&task, "SELECT * FROM tasks WHERE id = $1", id)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("task not found")
+	}
+
+	if fullName != nil {
+		task.FullName = *fullName
+	}
+
+	if origin != nil {
+		task.Origin = origin
+	}
+
+	tx, err := r.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	if authors != nil {
+		// delete old authors
+		_, err = tx.Exec("DELETE FROM task_authors WHERE task_id = $1", id)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		// insert new authors
+		for _, author := range authors {
+			_, err = tx.Exec("INSERT INTO task_authors (task_id, author) VALUES ($1, $2)", id, author)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+		}
+	}
+
+	// update task
+	_, err = tx.Exec("UPDATE tasks SET full_name = $1, origin = $2 WHERE id = $3", task.FullName, task.Origin, id)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Task{
+		ID:       task.ID,
+		FullName: task.FullName,
+		Origin:   task.Origin,
+		Authors:  authors,
+		Versions: nil,
+	}, nil
 }
 
 // CreateTaskVersion is the resolver for the createTaskVersion field.
@@ -274,8 +330,8 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (bool, err
 		return false, err
 	}
 
-	if task.OwnerUserID == nil {
-		return false, fmt.Errorf("task has no owner")
+	if task.OwnerUserID == nil && !user.IsAdmin {
+		return false, fmt.Errorf("you don't own this task")
 	}
 
 	if *task.OwnerUserID != userID && !user.IsAdmin {

@@ -68,7 +68,7 @@ type ComplexityRoot struct {
 		Login             func(childComplexity int, username string, password string) int
 		Logout            func(childComplexity int) int
 		Register          func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
-		UpdateTask        func(childComplexity int, id string, fullName string, origin *string, authors []string) int
+		UpdateTask        func(childComplexity int, id string, fullName *string, origin *string, authors []string) int
 		UpdateTaskVersion func(childComplexity int, id string, versionName *string, timeLimitMs *int, memoryLimitMb *int, evalTypeID *string) int
 	}
 
@@ -127,7 +127,7 @@ type MutationResolver interface {
 	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 	CreateTask(ctx context.Context, id string, fullName string) (*Task, error)
-	UpdateTask(ctx context.Context, id string, fullName string, origin *string, authors []string) (*Task, error)
+	UpdateTask(ctx context.Context, id string, fullName *string, origin *string, authors []string) (*Task, error)
 	CreateTaskVersion(ctx context.Context) (*TaskVersion, error)
 	UpdateTaskVersion(ctx context.Context, id string, versionName *string, timeLimitMs *int, memoryLimitMb *int, evalTypeID *string) (*TaskVersion, error)
 	DeleteTask(ctx context.Context, id string) (bool, error)
@@ -301,7 +301,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTask(childComplexity, args["id"].(string), args["fullName"].(string), args["origin"].(*string), args["authors"].([]string)), true
+		return e.complexity.Mutation.UpdateTask(childComplexity, args["id"].(string), args["fullName"].(*string), args["origin"].(*string), args["authors"].([]string)), true
 
 	case "Mutation.updateTaskVersion":
 		if e.complexity.Mutation.UpdateTaskVersion == nil {
@@ -645,7 +645,7 @@ type Mutation {
   executeCode(code: String!, languageID: ID!): ExecutionResult!
 
   createTask(id: String!,fullName: String!): Task!
-  updateTask(id: ID!, fullName: String!, origin: String, authors: [String!]!): Task!
+  updateTask(id: ID!, fullName: String, origin: String, authors: [String!]): Task!
 
   createTaskVersion: TaskVersion!
   updateTaskVersion(id: ID!, versionName: String, timeLimitMs: Int, memoryLimitMb: Int, evalTypeID: ID): TaskVersion!
@@ -947,10 +947,10 @@ func (ec *executionContext) field_Mutation_updateTask_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
-	var arg1 string
+	var arg1 *string
 	if tmp, ok := rawArgs["fullName"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fullName"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -968,7 +968,7 @@ func (ec *executionContext) field_Mutation_updateTask_args(ctx context.Context, 
 	var arg3 []string
 	if tmp, ok := rawArgs["authors"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authors"))
-		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1738,7 +1738,7 @@ func (ec *executionContext) _Mutation_updateTask(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTask(rctx, fc.Args["id"].(string), fc.Args["fullName"].(string), fc.Args["origin"].(*string), fc.Args["authors"].([]string))
+		return ec.resolvers.Mutation().UpdateTask(rctx, fc.Args["id"].(string), fc.Args["fullName"].(*string), fc.Args["origin"].(*string), fc.Args["authors"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7021,6 +7021,44 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

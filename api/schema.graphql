@@ -16,7 +16,7 @@ type Mutation {
   executeCode(code: String!, languageID: ID!): ExecutionResult!
 
   createTask(id: String!,fullName: String!): Task!
-  updateTask(id: ID!, fullName: String!, origin: String, authors: [String!]!): Task!
+  updateTask(id: ID!, fullName: String, origin: String, authors: [String!]): Task!
 
   createTaskVersion: TaskVersion!
   updateTaskVersion(id: ID!, versionName: String, timeLimitMs: Int, memoryLimitMb: Int, evalTypeID: ID): TaskVersion!
