@@ -164,7 +164,60 @@ func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languag
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: CreateTask - createTask"))
+	if id == "" || fullName == "" {
+		return nil, fmt.Errorf("id and fullName are required")
+	}
+
+	if len(id) < 3 || len(id) > 20 {
+		return nil, fmt.Errorf("id must be between 3 and 20 characters")
+	}
+
+	if len(fullName) < 3 || len(fullName) > 100 {
+		return nil, fmt.Errorf("fullName must be between 3 and 100 characters")
+	}
+
+	// id can contain only ascii letters, numbers and underscores
+	for _, c := range id {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || c >= '0' && c <= '9') {
+			return nil, fmt.Errorf("id can contain only ascii letters, numbers and underscores")
+		}
+	}
+
+	// check if task with the same id already exists
+	var taskWithIDCount int
+	err := r.DB.QueryRow("SELECT COUNT(*) FROM tasks WHERE id = $1", id).Scan(&taskWithIDCount)
+	if err != nil {
+		return nil, err
+	}
+
+	if taskWithIDCount > 0 {
+		return nil, fmt.Errorf("task with that id already exists")
+	}
+
+	// check if task with the same fullName already exists
+	var taskWithFullNameCount int
+	err = r.DB.QueryRow("SELECT COUNT(*) FROM tasks WHERE full_name = $1", fullName).Scan(&taskWithFullNameCount)
+	if err != nil {
+		return nil, err
+	}
+
+	if taskWithFullNameCount > 0 {
+		return nil, fmt.Errorf("task with that fullName already exists")
+	}
+
+	// create task
+	_, err = r.DB.Exec("INSERT INTO tasks (id, full_name) VALUES ($1, $2)", id, fullName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Task{
+		ID:       id,
+		FullName: fullName,
+		Origin:   nil,
+		Authors:  nil,
+		Versions: nil,
+	}, nil
 }
 
 // UpdateTask is the resolver for the updateTask field.
