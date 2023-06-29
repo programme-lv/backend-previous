@@ -198,8 +198,11 @@ func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 	}
 
 	return &User{
-		ID:       fmt.Sprintf("%d", user.ID),
-		Username: user.Username,
+		ID:        fmt.Sprintf("%d", user.ID),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
 	}, nil
 }
 
