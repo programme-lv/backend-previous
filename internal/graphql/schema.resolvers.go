@@ -424,9 +424,8 @@ func (r *queryResolver) ListTaskSources(ctx context.Context) ([]*TaskSource, err
 	var gqlTaskSources []*TaskSource
 	for _, taskSource := range taskSources {
 		gqlTaskSources = append(gqlTaskSources, &TaskSource{
-			Abbreviation:     taskSource.Abbreviation,
-			FullName:         taskSource.FullName,
-			EventDescription: taskSource.EventDescription,
+			Abbreviation: taskSource.Abbreviation,
+			FullName:     taskSource.FullName,
 		})
 	}
 

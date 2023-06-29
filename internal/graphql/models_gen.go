@@ -34,9 +34,8 @@ type Task struct {
 }
 
 type TaskSource struct {
-	Abbreviation     string `json:"abbreviation"`
-	FullName         string `json:"fullName"`
-	EventDescription string `json:"eventDescription"`
+	Abbreviation string `json:"abbreviation"`
+	FullName     string `json:"fullName"`
 }
 
 type TaskVersion struct {

@@ -55,5 +55,4 @@ type EvalType struct {
 type TaskSource struct {
 	Abbreviation     string `db:"abbreviation"`
 	FullName         string `db:"full_name"`
-	EventDescription string `db:"event_description"`
 }

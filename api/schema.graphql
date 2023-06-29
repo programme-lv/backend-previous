@@ -74,5 +74,4 @@ type EvalType {
 type TaskSource {
   abbreviation: String!
   fullName: String!
-  eventDescription: String!
 }
