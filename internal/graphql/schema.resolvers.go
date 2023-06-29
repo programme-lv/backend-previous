@@ -273,8 +273,26 @@ func (r *mutationResolver) UpdateTask(ctx context.Context, id string, fullName *
 		}
 	}
 
+	if origin != nil && *origin == "" {
+		origin = nil
+	}
+
+	if origin == nil {
+		_, err = tx.Exec("UPDATE tasks SET origin = NULL WHERE id = $1", id)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	} else {
+		_, err = tx.Exec("UPDATE tasks SET origin = $1 WHERE id = $2", origin, id)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
 	// update task
-	_, err = tx.Exec("UPDATE tasks SET full_name = $1, origin = $2 WHERE id = $3", task.FullName, task.Origin, id)
+	_, err = tx.Exec("UPDATE tasks SET full_name = $1 WHERE id = $2", task.FullName, id)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
