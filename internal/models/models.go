@@ -11,6 +11,7 @@ type User struct {
 	LastName       string     `db:"last_name"`
 	CreatedAt      time.Time  `db:"created_at"`
 	UpdatedAt      *time.Time `db:"updated_at"`
+	IsAdmin        bool       `db:"is_admin"`
 }
 
 type ProgrammingLanguage struct {
@@ -25,10 +26,11 @@ type ProgrammingLanguage struct {
 }
 
 type Task struct {
-	ID        string    `db:"id"`
-	FullName  string    `db:"full_name"`
-	Origin    *string   `db:"origin"`
-	CreatedAt time.Time `db:"created_at"`
+	ID          string    `db:"id"`
+	FullName    string    `db:"full_name"`
+	Origin      *string   `db:"origin"`
+	CreatedAt   time.Time `db:"created_at"`
+	OwnerUserId *int64    `db:"owner_user_id"`
 }
 
 type TaskVersion struct {
@@ -53,6 +55,6 @@ type EvalType struct {
 }
 
 type TaskSource struct {
-	Abbreviation     string `db:"abbreviation"`
-	FullName         string `db:"full_name"`
+	Abbreviation string `db:"abbreviation"`
+	FullName     string `db:"full_name"`
 }

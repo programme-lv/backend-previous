@@ -20,6 +20,8 @@ type Mutation {
 
   createTaskVersion: TaskVersion!
   updateTaskVersion(id: ID!, versionName: String, timeLimitMs: Int, memoryLimitMb: Int, evalTypeID: ID): TaskVersion!
+
+  deleteTask(id: ID!): Boolean!
 }
 
 type Language {

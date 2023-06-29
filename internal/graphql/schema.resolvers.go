@@ -164,6 +164,13 @@ func (r *mutationResolver) ExecuteCode(ctx context.Context, code string, languag
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName string) (*Task, error) {
+
+	// Get the user ID from the session
+	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
+	if !ok {
+		return nil, fmt.Errorf("not logged in")
+	}
+
 	if id == "" || fullName == "" {
 		return nil, fmt.Errorf("id and fullName are required")
 	}
@@ -205,8 +212,15 @@ func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName s
 		return nil, fmt.Errorf("task with that fullName already exists")
 	}
 
+	// Get the user from the database
+	var user models.User
+	err = r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("user not found")
+	}
+
 	// create task
-	_, err = r.DB.Exec("INSERT INTO tasks (id, full_name) VALUES ($1, $2)", id, fullName)
+	_, err = r.DB.Exec("INSERT INTO tasks (id, full_name, owner_user_id) VALUES ($1, $2, $3)", id, fullName, userID)
 	if err != nil {
 		return nil, err
 	}
