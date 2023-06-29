@@ -413,6 +413,26 @@ func (r *queryResolver) GetTask(ctx context.Context, id string) (*Task, error) {
 	return gqlTask, nil
 }
 
+// ListTaskSources is the resolver for the listTaskSources field.
+func (r *queryResolver) ListTaskSources(ctx context.Context) ([]*TaskSource, error) {
+	var taskSources []models.TaskSource
+	err := r.DB.Select(&taskSources, "SELECT * FROM task_sources")
+	if err != nil {
+		return nil, err
+	}
+
+	var gqlTaskSources []*TaskSource
+	for _, taskSource := range taskSources {
+		gqlTaskSources = append(gqlTaskSources, &TaskSource{
+			Abbreviation:     taskSource.Abbreviation,
+			FullName:         taskSource.FullName,
+			EventDescription: taskSource.EventDescription,
+		})
+	}
+
+	return gqlTaskSources, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

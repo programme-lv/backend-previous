@@ -33,6 +33,12 @@ type Task struct {
 	Versions []*TaskVersion `json:"versions"`
 }
 
+type TaskSource struct {
+	Abbreviation     string `json:"abbreviation"`
+	FullName         string `json:"fullName"`
+	EventDescription string `json:"eventDescription"`
+}
+
 type TaskVersion struct {
 	ID            string    `json:"id"`
 	VersionName   string    `json:"versionName"`

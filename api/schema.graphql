@@ -4,6 +4,7 @@ type Query {
   listLanguages: [Language!]!
   listTasks: [Task!]!
   getTask(id: ID!): Task!
+  listTaskSources: [TaskSource!]!
 }
 
 type Mutation {
@@ -68,4 +69,10 @@ type TaskVersion {
 type EvalType {
   id: ID!
   descriptionEn: String!
+}
+
+type TaskSource {
+  abbreviation: String!
+  fullName: String!
+  eventDescription: String!
 }
