@@ -1,12 +1,13 @@
-FROM golang:1.19 as builder
-WORKDIR /app
+FROM golang:1.20-alpine AS builder
+WORKDIR /work
 COPY go.mod go.sum ./
-RUN go mod tidy
+RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -v -o main ./cmd/server
+RUN go mod tidy
+RUN ls
+RUN go build -o /work/backend ./cmd/server
 
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/main .
+FROM alpine:3.14
+COPY --from=builder /work/backend /work/backend
 EXPOSE 3001
-CMD ["./main"] 
+ENTRYPOINT [ "/work/backend" ]
