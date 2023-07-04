@@ -224,6 +224,14 @@ func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName s
 		return nil, err
 	}
 
+    userFullName := user.FirstName + " " + user.LastName
+
+    // add author to the task
+    _, err = r.DB.Exec("INSERT INTO task_authors (task_id, author) VALUES ($1, $2)", id, userFullName)
+    if err != nil {
+        return nil, err
+    }
+
 	return &Task{
 		ID:       id,
 		FullName: fullName,
