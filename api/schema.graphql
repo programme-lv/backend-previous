@@ -1,5 +1,9 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
 type Query {
-  whoami: User
   listSubmissions: [Submission!]!
   listLanguages: [Language!]!
   listTasks: [Task!]!
@@ -8,10 +12,6 @@ type Query {
 }
 
 type Mutation {
-  login(username: String!, password: String!): User!
-  register(username: String!, password: String!, email: String!, firstName: String!, lastName: String!): User!
-  logout: Boolean!
-
   enqueueSubmission(taskID: ID!, languageID: ID!,code: String!): Submission!
   executeCode(code: String!, languageID: ID!): ExecutionResult!
 
@@ -28,14 +28,6 @@ type Language {
   id: ID!
   fullName: String!
   monacoID: ID!
-}
-
-type User {
-  id: ID!
-  username: String!
-  email: String!
-  firstName: String!
-  lastName: String!
 }
 
 type Submission {

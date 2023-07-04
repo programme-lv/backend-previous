@@ -9,131 +9,11 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net/mail"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/programme-lv/backend/internal/execution"
 	"github.com/programme-lv/backend/internal/models"
-	"golang.org/x/crypto/bcrypt"
 )
-
-// Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	log.Println("Logging in user", username)
-
-	// Get the user from the database
-	var user models.User
-	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("username or password is incorrect")
-	} else if err != nil {
-		return nil, err
-	}
-
-	// Verify the password
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
-	if err != nil {
-		return nil, fmt.Errorf("username or password is incorrect")
-	}
-
-	// Set the user ID in the session
-	r.SessionManager.Put(ctx, "user_id", user.ID)
-
-	return &User{
-		ID:       fmt.Sprintf("%d", user.ID),
-		Username: user.Username,
-	}, nil
-}
-
-// Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
-	log.Println("Registering user", username)
-
-	// validate registration data
-	if username == "" || password == "" {
-		return nil, fmt.Errorf("username and password are required")
-	}
-	if len(password) < 8 {
-		return nil, fmt.Errorf("password must be at least 8 characters")
-	}
-	if len(password) > 32 {
-		return nil, fmt.Errorf("password must be at most 32 characters")
-	}
-	if len(username) < 3 {
-		return nil, fmt.Errorf("username must be at least 3 characters")
-	}
-	if len(username) > 15 {
-		return nil, fmt.Errorf("username must be at most 15 characters")
-	}
-
-	// check if user with the same username already exists
-	var userWithUsernameCount int
-	err := r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&userWithUsernameCount)
-	if err != nil {
-		return nil, err
-	}
-
-	if userWithUsernameCount > 0 {
-		return nil, fmt.Errorf("user with that username already exists")
-	}
-
-	// check if user with the same email already exists
-	var userWithEmailCount int
-	err = r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&userWithEmailCount)
-	if err != nil {
-		return nil, err
-	}
-
-	if userWithEmailCount > 0 {
-		return nil, fmt.Errorf("user with that email already exists")
-	}
-
-	// validate email
-	_, err = mail.ParseAddress(email)
-	if err != nil {
-		return nil, err
-	}
-
-	// hash password
-	var hashedPassword []byte
-	hashedPassword, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	password = string(hashedPassword)
-
-	// create user
-	_, err = r.DB.Exec("INSERT INTO users (username, hashed_password, email, first_name, last_name, created_at) VALUES ($1, $2, $3, $4, $5, now())", username, password, email, firstName, lastName)
-	if err != nil {
-		return nil, err
-	}
-
-	// scan user id
-	var userID int
-	err = r.DB.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &User{
-		ID:       fmt.Sprintf("%d", userID),
-		Username: username,
-	}, nil
-}
-
-// Logout is the resolver for the logout field.
-func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	// Delete the user ID from the sessiong
-	userId, ok := r.SessionManager.Pop(ctx, "user_id").(int64)
-
-	if ok {
-		log.Println("User", userId, "logged out")
-		return true, nil
-	} else {
-		log.Println("User attempted to log out without being logged in")
-		return false, fmt.Errorf("not logged in")
-	}
-}
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
 func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error) {
@@ -224,13 +104,13 @@ func (r *mutationResolver) CreateTask(ctx context.Context, id string, fullName s
 		return nil, err
 	}
 
-    userFullName := user.FirstName + " " + user.LastName
+	userFullName := user.FirstName + " " + user.LastName
 
-    // add author to the task
-    _, err = r.DB.Exec("INSERT INTO task_authors (task_id, author) VALUES ($1, $2)", id, userFullName)
-    if err != nil {
-        return nil, err
-    }
+	// add author to the task
+	_, err = r.DB.Exec("INSERT INTO task_authors (task_id, author) VALUES ($1, $2)", id, userFullName)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Task{
 		ID:       id,
@@ -392,30 +272,6 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (bool, err
 	}
 
 	return true, nil
-}
-
-// Whoami is the resolver for the whoami field.
-func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
-	// Get the user ID from the session
-	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
-	if !ok {
-		return nil, fmt.Errorf("not logged in")
-	}
-
-	// Get the user from the database
-	var user models.User
-	err := r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
-	}
-
-	return &User{
-		ID:        fmt.Sprintf("%d", user.ID),
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-	}, nil
 }
 
 // ListSubmissions is the resolver for the listSubmissions field.

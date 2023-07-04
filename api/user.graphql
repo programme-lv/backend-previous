@@ -1,0 +1,17 @@
+extend type Query {
+  whoami: User
+}
+
+extend type Mutation {
+  login(username: String!, password: String!): User!
+  register(username: String!, password: String!, email: String!, firstName: String!, lastName: String!): User!
+  logout: Boolean!
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String!
+  firstName: String!
+  lastName: String!
+}
