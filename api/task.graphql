@@ -1,0 +1,53 @@
+extend type Query {
+    listTasks: [Task!]!
+    getTask(id: ID!): Task!
+    listTaskOrigins: [String!]!
+}
+
+extend type Mutation {
+    createTask(name: String!): Task!
+
+    updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
+    updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
+    updateTaskExamples(id: ID!, inputs: [String!], outputs: [String!]): Task!
+    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKb: Int): Task!
+
+    deleteTask(id: ID!): Task!
+}
+
+type Task {
+    Description: Description!
+    Constraints: Constraints!
+    Metadata: Metadata!
+
+    createdAt: String!
+    updatedAt: String
+}
+
+type Description {
+    id: ID!
+    code: String!
+    name: String!
+    story: String!
+    input: String!
+    output: String!
+    examples: [Example!]!
+    notes: String!
+}
+
+type Constraints {
+    timeLimitMs: Int!
+    memoryLimitKb: Int!
+}
+
+type Example {
+    id: ID!
+    input: String!
+    output: String!
+}
+
+type Metadata {
+    id: ID!
+    authors: [String!]!
+    origin: String!
+}

@@ -3,69 +3,13 @@ schema {
     mutation: Mutation
 }
 
-type Query {
-  listSubmissions: [Submission!]!
-  listLanguages: [Language!]!
-  listTasks: [Task!]!
-  getTask(id: ID!): Task!
-  listTaskSources: [TaskSource!]!
-}
+type Query
 
 type Mutation {
-  enqueueSubmission(taskID: ID!, languageID: ID!,code: String!): Submission!
   executeCode(code: String!, languageID: ID!): ExecutionResult!
-
-  createTask(id: String!,fullName: String!): Task!
-  updateTask(id: ID!, fullName: String, origin: String, authors: [String!]): Task!
-
-  createTaskVersion: TaskVersion!
-  updateTaskVersion(id: ID!, versionName: String, timeLimitMs: Int, memoryLimitMb: Int, evalTypeID: ID): TaskVersion!
-
-  deleteTask(id: ID!): Boolean!
-}
-
-type Language {
-  id: ID!
-  fullName: String!
-  monacoID: ID!
-}
-
-type Submission {
-  id: ID!
-  task: Task!
-  language: Language!
-  code: String!
 }
 
 type ExecutionResult {
   stdout: String!
   stderr: String!
-}
-
-type Task {
-  id: ID!
-  fullName: String!
-  origin: String
-  authors: [String!]!
-  versions: [TaskVersion!]!
-}
-
-type TaskVersion {
-  id: ID!
-  versionName: String!
-  timeLimitMs: Int!
-  memoryLimitKb: Int!
-  evalType: EvalType!
-  createdAt: String!
-  updatedAt: String
-}
-
-type EvalType {
-  id: ID!
-  descriptionEn: String!
-}
-
-type TaskSource {
-  abbreviation: String!
-  fullName: String!
 }

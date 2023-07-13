@@ -2,6 +2,9 @@
 schema:
   - ./schema.graphql
   - ./user.graphql
+  - ./task.graphql
+  - ./language.graphql
+  - ./submission.graphql
 
 # Where should the generated server code go
 exec:

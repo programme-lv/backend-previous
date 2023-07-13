@@ -1,0 +1,14 @@
+extend type Query {
+  listSubmissions: [Submission!]!
+}
+
+extend type Mutation {
+  enqueueSubmission(taskID: ID!, languageID: ID!,code: String!): Submission!
+}
+
+type Submission {
+  id: ID!
+  task: Task!
+  language: Language!
+  code: String!
+}

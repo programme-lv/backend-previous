@@ -2,9 +2,26 @@
 
 package graphql
 
-type EvalType struct {
-	ID            string `json:"id"`
-	DescriptionEn string `json:"descriptionEn"`
+type Constraints struct {
+	TimeLimitMs   int `json:"timeLimitMs"`
+	MemoryLimitKb int `json:"memoryLimitKb"`
+}
+
+type Description struct {
+	ID       string     `json:"id"`
+	Code     string     `json:"code"`
+	Name     string     `json:"name"`
+	Story    string     `json:"story"`
+	Input    string     `json:"input"`
+	Output   string     `json:"output"`
+	Examples []*Example `json:"examples"`
+	Notes    string     `json:"notes"`
+}
+
+type Example struct {
+	ID     string `json:"id"`
+	Input  string `json:"input"`
+	Output string `json:"output"`
 }
 
 type ExecutionResult struct {
@@ -18,6 +35,12 @@ type Language struct {
 	MonacoID string `json:"monacoID"`
 }
 
+type Metadata struct {
+	ID      string   `json:"id"`
+	Authors []string `json:"authors"`
+	Origin  string   `json:"origin"`
+}
+
 type Submission struct {
 	ID       string    `json:"id"`
 	Task     *Task     `json:"task"`
@@ -26,26 +49,11 @@ type Submission struct {
 }
 
 type Task struct {
-	ID       string         `json:"id"`
-	FullName string         `json:"fullName"`
-	Origin   *string        `json:"origin,omitempty"`
-	Authors  []string       `json:"authors"`
-	Versions []*TaskVersion `json:"versions"`
-}
-
-type TaskSource struct {
-	Abbreviation string `json:"abbreviation"`
-	FullName     string `json:"fullName"`
-}
-
-type TaskVersion struct {
-	ID            string    `json:"id"`
-	VersionName   string    `json:"versionName"`
-	TimeLimitMs   int       `json:"timeLimitMs"`
-	MemoryLimitKb int       `json:"memoryLimitKb"`
-	EvalType      *EvalType `json:"evalType"`
-	CreatedAt     string    `json:"createdAt"`
-	UpdatedAt     *string   `json:"updatedAt,omitempty"`
+	Description *Description `json:"Description"`
+	Constraints *Constraints `json:"Constraints"`
+	Metadata    *Metadata    `json:"Metadata"`
+	CreatedAt   string       `json:"createdAt"`
+	UpdatedAt   *string      `json:"updatedAt,omitempty"`
 }
 
 type User struct {
