@@ -1,0 +1,8 @@
+extend type Mutation {
+  executeCode(code: String!, languageID: ID!): ExecutionResult!
+}
+
+type ExecutionResult {
+  stdout: String!
+  stderr: String!
+}

@@ -5,11 +5,5 @@ schema {
 
 type Query
 
-type Mutation {
-  executeCode(code: String!, languageID: ID!): ExecutionResult!
-}
+type Mutation
 
-type ExecutionResult {
-  stdout: String!
-  stderr: String!
-}
