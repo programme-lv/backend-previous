@@ -130,7 +130,6 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 	Login(ctx context.Context, username string, password string) (*User, error)
 	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error)
 	Logout(ctx context.Context) (bool, error)
@@ -141,6 +140,7 @@ type MutationResolver interface {
 	UpdateTaskConstraints(ctx context.Context, id string, timeLimitMs *int, memoryLimitKb *int) (*Task, error)
 	DeleteTask(ctx context.Context, id string) (*Task, error)
 	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error)
+	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
 type QueryResolver interface {
 	Whoami(ctx context.Context) (*User, error)
@@ -696,14 +696,8 @@ var sources = []*ast.Source{
 
 type Query
 
-type Mutation {
-  executeCode(code: String!, languageID: ID!): ExecutionResult!
-}
+type Mutation
 
-type ExecutionResult {
-  stdout: String!
-  stderr: String!
-}
 `, BuiltIn: false},
 	{Name: "../../api/user.graphql", Input: `extend type Query {
   whoami: User
@@ -800,6 +794,15 @@ type Submission {
   task: Task!
   language: Language!
   code: String!
+}
+`, BuiltIn: false},
+	{Name: "../../api/execution.graphql", Input: `extend type Mutation {
+  executeCode(code: String!, languageID: ID!): ExecutionResult!
+}
+
+type ExecutionResult {
+  stdout: String!
+  stderr: String!
 }
 `, BuiltIn: false},
 }
@@ -2139,67 +2142,6 @@ func (ec *executionContext) fieldContext_Metadata_origin(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_executeCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_executeCode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ExecuteCode(rctx, fc.Args["code"].(string), fc.Args["languageID"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ExecutionResult)
-	fc.Result = res
-	return ec.marshalNExecutionResult2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExecutionResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_executeCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "stdout":
-				return ec.fieldContext_ExecutionResult_stdout(ctx, field)
-			case "stderr":
-				return ec.fieldContext_ExecutionResult_stderr(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ExecutionResult", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_executeCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_login(ctx, field)
 	if err != nil {
@@ -2839,6 +2781,67 @@ func (ec *executionContext) fieldContext_Mutation_enqueueSubmission(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_enqueueSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_executeCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_executeCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ExecuteCode(rctx, fc.Args["code"].(string), fc.Args["languageID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ExecutionResult)
+	fc.Result = res
+	return ec.marshalNExecutionResult2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExecutionResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_executeCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "stdout":
+				return ec.fieldContext_ExecutionResult_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_ExecutionResult_stderr(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ExecutionResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_executeCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6074,13 +6077,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "executeCode":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_executeCode(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "login":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_login(ctx, field)
@@ -6147,6 +6143,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "enqueueSubmission":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_enqueueSubmission(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "executeCode":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_executeCode(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
