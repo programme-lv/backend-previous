@@ -81,7 +81,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateTask            func(childComplexity int, name string) int
+		CreateTask            func(childComplexity int, name string, code string) int
 		DeleteTask            func(childComplexity int, id string) int
 		EnqueueSubmission     func(childComplexity int, taskID string, languageID string, code string) int
 		ExecuteCode           func(childComplexity int, code string, languageID string) int
@@ -134,7 +134,7 @@ type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*User, error)
 	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error)
 	Logout(ctx context.Context) (bool, error)
-	CreateTask(ctx context.Context, name string) (*Task, error)
+	CreateTask(ctx context.Context, name string, code string) (*Task, error)
 	UpdateTaskMetadata(ctx context.Context, id string, authors []string, origin *string) (*Task, error)
 	UpdateTaskDescription(ctx context.Context, id string, code *string, name *string, story *string, input *string, output *string, notes *string) (*Task, error)
 	UpdateTaskExamples(ctx context.Context, id string, inputs []string, outputs []string) (*Task, error)
@@ -310,7 +310,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateTask(childComplexity, args["name"].(string)), true
+		return e.complexity.Mutation.CreateTask(childComplexity, args["name"].(string), args["code"].(string)), true
 
 	case "Mutation.deleteTask":
 		if e.complexity.Mutation.DeleteTask == nil {
@@ -732,7 +732,7 @@ type User {
 }
 
 extend type Mutation {
-    createTask(name: String!): Task!
+    createTask(name: String!, code: String!): Task!
 
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
     updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
@@ -835,6 +835,15 @@ func (ec *executionContext) field_Mutation_createTask_args(ctx context.Context, 
 		}
 	}
 	args["name"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["code"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["code"] = arg1
 	return args, nil
 }
 
@@ -2257,7 +2266,7 @@ func (ec *executionContext) _Mutation_createTask(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateTask(rctx, fc.Args["name"].(string))
+		return ec.resolvers.Mutation().CreateTask(rctx, fc.Args["name"].(string), fc.Args["code"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

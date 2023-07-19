@@ -10,7 +10,7 @@ import (
 )
 
 // CreateTask is the resolver for the createTask field.
-func (r *mutationResolver) CreateTask(ctx context.Context, name string) (*Task, error) {
+func (r *mutationResolver) CreateTask(ctx context.Context, name string, code string) (*Task, error) {
 	panic(fmt.Errorf("not implemented: CreateTask - createTask"))
 }
 

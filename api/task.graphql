@@ -5,7 +5,7 @@ extend type Query {
 }
 
 extend type Mutation {
-    createTask(name: String!): Task!
+    createTask(name: String!, code: String!): Task!
 
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
     updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
