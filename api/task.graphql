@@ -16,6 +16,10 @@ extend type Mutation {
 }
 
 type Task {
+    id: ID!
+    code: String!
+    name: String!
+    
     Description: Description!
     Constraints: Constraints!
     Metadata: Metadata!
@@ -26,8 +30,7 @@ type Task {
 
 type Description {
     id: ID!
-    code: String!
-    name: String!
+
     story: String!
     input: String!
     output: String!
@@ -40,14 +43,14 @@ type Constraints {
     memoryLimitKb: Int!
 }
 
-type Example {
-    id: ID!
-    input: String!
-    output: String!
-}
-
 type Metadata {
     id: ID!
     authors: [String!]!
     origin: String!
+}
+
+type Example {
+    id: ID!
+    input: String!
+    output: String!
 }

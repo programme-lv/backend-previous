@@ -3,13 +3,13 @@ module github.com/programme-lv/backend
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.34
+	github.com/99designs/gqlgen v0.17.35
 	github.com/alexedwards/scs/v2 v2.5.1
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.15.0
-	github.com/vektah/gqlparser/v2 v2.5.4
+	github.com/vektah/gqlparser/v2 v2.5.7
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 )
 

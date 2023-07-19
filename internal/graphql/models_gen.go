@@ -9,8 +9,6 @@ type Constraints struct {
 
 type Description struct {
 	ID       string     `json:"id"`
-	Code     string     `json:"code"`
-	Name     string     `json:"name"`
 	Story    string     `json:"story"`
 	Input    string     `json:"input"`
 	Output   string     `json:"output"`
@@ -49,6 +47,9 @@ type Submission struct {
 }
 
 type Task struct {
+	ID          string       `json:"id"`
+	Code        string       `json:"code"`
+	Name        string       `json:"name"`
 	Description *Description `json:"Description"`
 	Constraints *Constraints `json:"Constraints"`
 	Metadata    *Metadata    `json:"Metadata"`

@@ -49,11 +49,9 @@ type ComplexityRoot struct {
 	}
 
 	Description struct {
-		Code     func(childComplexity int) int
 		Examples func(childComplexity int) int
 		ID       func(childComplexity int) int
 		Input    func(childComplexity int) int
-		Name     func(childComplexity int) int
 		Notes    func(childComplexity int) int
 		Output   func(childComplexity int) int
 		Story    func(childComplexity int) int
@@ -113,10 +111,13 @@ type ComplexityRoot struct {
 	}
 
 	Task struct {
+		Code        func(childComplexity int) int
 		Constraints func(childComplexity int) int
 		CreatedAt   func(childComplexity int) int
 		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
 		Metadata    func(childComplexity int) int
+		Name        func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 	}
 
@@ -180,13 +181,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Constraints.TimeLimitMs(childComplexity), true
 
-	case "Description.code":
-		if e.complexity.Description.Code == nil {
-			break
-		}
-
-		return e.complexity.Description.Code(childComplexity), true
-
 	case "Description.examples":
 		if e.complexity.Description.Examples == nil {
 			break
@@ -207,13 +201,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Description.Input(childComplexity), true
-
-	case "Description.name":
-		if e.complexity.Description.Name == nil {
-			break
-		}
-
-		return e.complexity.Description.Name(childComplexity), true
 
 	case "Description.notes":
 		if e.complexity.Description.Notes == nil {
@@ -515,6 +502,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Submission.Task(childComplexity), true
 
+	case "Task.code":
+		if e.complexity.Task.Code == nil {
+			break
+		}
+
+		return e.complexity.Task.Code(childComplexity), true
+
 	case "Task.Constraints":
 		if e.complexity.Task.Constraints == nil {
 			break
@@ -536,12 +530,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Description(childComplexity), true
 
+	case "Task.id":
+		if e.complexity.Task.ID == nil {
+			break
+		}
+
+		return e.complexity.Task.ID(childComplexity), true
+
 	case "Task.Metadata":
 		if e.complexity.Task.Metadata == nil {
 			break
 		}
 
 		return e.complexity.Task.Metadata(childComplexity), true
+
+	case "Task.name":
+		if e.complexity.Task.Name == nil {
+			break
+		}
+
+		return e.complexity.Task.Name(childComplexity), true
 
 	case "Task.updatedAt":
 		if e.complexity.Task.UpdatedAt == nil {
@@ -735,6 +743,10 @@ extend type Mutation {
 }
 
 type Task {
+    id: ID!
+    code: String!
+    name: String!
+    
     Description: Description!
     Constraints: Constraints!
     Metadata: Metadata!
@@ -745,8 +757,7 @@ type Task {
 
 type Description {
     id: ID!
-    code: String!
-    name: String!
+
     story: String!
     input: String!
     output: String!
@@ -759,16 +770,16 @@ type Constraints {
     memoryLimitKb: Int!
 }
 
-type Example {
-    id: ID!
-    input: String!
-    output: String!
-}
-
 type Metadata {
     id: ID!
     authors: [String!]!
     origin: String!
+}
+
+type Example {
+    id: ID!
+    input: String!
+    output: String!
 }
 `, BuiltIn: false},
 	{Name: "../../api/language.graphql", Input: `extend type Query {
@@ -1337,94 +1348,6 @@ func (ec *executionContext) fieldContext_Description_id(ctx context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Description_code(ctx context.Context, field graphql.CollectedField, obj *Description) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Description_code(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Code, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Description_code(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Description",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Description_name(ctx context.Context, field graphql.CollectedField, obj *Description) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Description_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Description_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Description",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2359,6 +2282,12 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2426,6 +2355,12 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskMetadata(ctx context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2493,6 +2428,12 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskDescription(ctx cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2560,6 +2501,12 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskExamples(ctx context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2627,6 +2574,12 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskConstraints(ctx cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2694,6 +2647,12 @@ func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2940,6 +2899,12 @@ func (ec *executionContext) fieldContext_Query_listTasks(ctx context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -2996,6 +2961,12 @@ func (ec *executionContext) fieldContext_Query_getTask(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -3386,6 +3357,12 @@ func (ec *executionContext) fieldContext_Submission_task(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
 			case "Description":
 				return ec.fieldContext_Task_Description(ctx, field)
 			case "Constraints":
@@ -3499,6 +3476,138 @@ func (ec *executionContext) fieldContext_Submission_code(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Task_id(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Task_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Task_code(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_code(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Task_code(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Task_name(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Task_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Task_Description(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Task_Description(ctx, field)
 	if err != nil {
@@ -3540,10 +3649,6 @@ func (ec *executionContext) fieldContext_Task_Description(ctx context.Context, f
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Description_id(ctx, field)
-			case "code":
-				return ec.fieldContext_Description_code(ctx, field)
-			case "name":
-				return ec.fieldContext_Description_name(ctx, field)
 			case "story":
 				return ec.fieldContext_Description_story(ctx, field)
 			case "input":
@@ -5809,16 +5914,6 @@ func (ec *executionContext) _Description(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "code":
-			out.Values[i] = ec._Description_code(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "name":
-			out.Values[i] = ec._Description_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "story":
 			out.Values[i] = ec._Description_story(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6421,6 +6516,21 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Task")
+		case "id":
+			out.Values[i] = ec._Task_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "code":
+			out.Values[i] = ec._Task_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Task_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "Description":
 			out.Values[i] = ec._Task_Description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
