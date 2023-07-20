@@ -1,4 +1,4 @@
-package models
+package database
 
 import "time"
 
@@ -26,22 +26,23 @@ type ProgrammingLanguage struct {
 }
 
 type Task struct {
-	ID          string    `db:"id"`
-	FullName    string    `db:"full_name"`
-	Origin      *string   `db:"origin"`
-	CreatedAt   time.Time `db:"created_at"`
-	OwnerUserID *int64    `db:"owner_user_id"`
+	ID              int64     `db:"id"`
+	CreatedAt       time.Time `db:"created_at"`
+	CreatedBy       int64     `db:"created_by"`
+	RelevantVersion *int64    `db:"relevant_version"`
 }
 
 type TaskVersion struct {
-	ID          int64      `db:"id"`
-	VersionName string     `db:"version_name"`
-	TaskID      string     `db:"task_id"`
-	TimeLimMs   int        `db:"time_lim_ms"`
-	MemLimKb    int        `db:"mem_lim_kb"`
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   *time.Time `db:"updated_at"`
-	EvalTypeID  string     `db:"eval_type_id"`
+	ID            int64      `db:"id"`
+	TaskID        string     `db:"task_id"`
+	ShortCode     string     `db:"short_code"`
+	FullName      string     `db:"full_name"`
+	TimeLimMs     int        `db:"time_lim_ms"`
+	MemLimKb      int        `db:"mem_lim_kb"`
+	TestingTypeID string     `db:"testing_type_id"`
+	Origin        *string    `db:"origin"`
+	CreatedAt     time.Time  `db:"created_at"`
+	UpdatedAt     *time.Time `db:"updated_at"`
 }
 
 type TaskAuthor struct {

@@ -7,11 +7,128 @@ package graphql
 import (
 	"context"
 	"fmt"
+
+	"github.com/programme-lv/backend/internal/database"
+	"golang.org/x/exp/slog"
 )
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, name string, code string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: CreateTask - createTask"))
+    // TODO: validate task name and code
+
+	requestLogger := r.Logger.With(slog.String("request_type", "create_task"),
+		slog.String("name", name), slog.String("code", code))
+
+	requestLogger.Info("received create task request")
+
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		requestLogger.Error("failed to get user from context", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
+	requestLogger.Info("got user from context")
+
+    // TODO: check if task with the same name or code already exists
+
+	t, err := r.DB.Beginx()
+	if err != nil {
+		requestLogger.Error("failed to begin transaction", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	stmt := "INSERT INTO tasks (created_by, relevant_version) VALUES ($1, $2) RETURNING id"
+	var taskId int64
+	err = t.QueryRow(stmt, user.ID, nil).Scan(&taskId)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to insert task", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger = requestLogger.With(slog.Int64("task_id", taskId))
+
+	var task database.Task
+	err = t.Get(&task, "SELECT * FROM tasks WHERE id = $1", taskId)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to get task", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger.Info("created task successfully")
+
+	DefaultTimeLimitMs := 1000
+	DefaultMemoryLimitKb := 256000
+
+	stmt = "INSERT INTO task_versions (task_id, short_code, full_name, time_lim_ms, mem_lim_kb, testing_type_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+	var versionId int64
+	err = t.QueryRow(stmt, task.ID, code, name, DefaultTimeLimitMs, DefaultMemoryLimitKb, "simple").Scan(&versionId)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to insert task version", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger = requestLogger.With(slog.Int64("version_id", versionId))
+
+	var version database.TaskVersion
+	err = t.Get(&version, "SELECT * FROM task_versions WHERE id = $1", versionId)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to get task version", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger.Info("inserted task version successfully")
+
+    // TODO: update task relevant version
+
+	err = t.Commit()
+	if err != nil {
+		requestLogger.Error("failed to commit transaction", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	requestLogger.Info("committed transaction successfully")
+
+    // TODO: create description, constraints and metadata
+
+    description := Description{
+        ID: "0",
+        Story: "",
+        Input: "",
+        Output: "",
+        Examples: nil,
+        Notes: "",
+    }
+
+    constraints := Constraints{
+        TimeLimitMs: version.TimeLimMs,
+        MemoryLimitKb: version.MemLimKb,
+    }
+
+    metadata := Metadata{
+        Authors: []string{},
+        Origin: nil,
+    }
+
+    updatedAt := version.UpdatedAt
+    if updatedAt == nil {
+        updatedAt = &task.CreatedAt
+    }
+
+    return &Task{
+		ID:        fmt.Sprintf("%d", task.ID),
+		Code:      version.ShortCode,
+		Name:      version.FullName,
+        Description: &description,
+        Constraints: &constraints,
+        Metadata: &metadata,
+		CreatedAt: task.CreatedAt.UTC().String(),
+		UpdatedAt: updatedAt.UTC().String(),
+	}, nil
 }
 
 // UpdateTaskMetadata is the resolver for the updateTaskMetadata field.

@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/programme-lv/backend/internal/environment"
-	"github.com/programme-lv/backend/internal/models"
+	"github.com/programme-lv/backend/internal/database"
 )
 
 func TestProgrammingLanguages(t *testing.T) {
@@ -17,7 +17,7 @@ func TestProgrammingLanguages(t *testing.T) {
 	defer sqlxDb.Close()
 
 	// fetch all languages
-	var langs []models.ProgrammingLanguage
+	var langs []database.ProgrammingLanguage
 	err := sqlxDb.Select(&langs, "SELECT * FROM programming_languages")
 	if err != nil {
 		t.Fatal(err)

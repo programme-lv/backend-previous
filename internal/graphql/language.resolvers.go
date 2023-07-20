@@ -8,14 +8,14 @@ import (
 	"context"
 	"log"
 
-	"github.com/programme-lv/backend/internal/models"
+	"github.com/programme-lv/backend/internal/database"
 )
 
 // ListLanguages is the resolver for the listLanguages field.
 func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) {
 	log.Println("Received request for languages")
 
-	var langs []models.ProgrammingLanguage
+	var langs []database.ProgrammingLanguage
 	err := r.DB.Select(&langs, "SELECT * FROM programming_languages")
 	if err != nil {
 		return nil, err

@@ -25,7 +25,7 @@ type Task {
     Metadata: Metadata!
 
     createdAt: String!
-    updatedAt: String
+    updatedAt: String!
 }
 
 type Description {
@@ -34,7 +34,7 @@ type Description {
     story: String!
     input: String!
     output: String!
-    examples: [Example!]!
+    examples: [Example!]
     notes: String!
 }
 
@@ -44,9 +44,8 @@ type Constraints {
 }
 
 type Metadata {
-    id: ID!
-    authors: [String!]!
-    origin: String!
+    authors: [String!]
+    origin: String
 }
 
 type Example {

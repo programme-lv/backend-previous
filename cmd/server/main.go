@@ -3,12 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"golang.org/x/exp/slog"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/environment"
@@ -29,9 +31,11 @@ func main() {
 	sessions := scs.New()
 	sessions.Lifetime = 24 * time.Hour
 
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	resolver := &graphql.Resolver{
 		DB:             sqlxDb,
 		SessionManager: sessions,
+        Logger:         logger,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))

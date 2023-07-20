@@ -11,7 +11,7 @@ import (
 	"log"
 	"net/mail"
 
-	"github.com/programme-lv/backend/internal/models"
+	"github.com/programme-lv/backend/internal/database"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,7 +20,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	log.Println("Logging in user", username)
 
 	// Get the user from the database
-	var user models.User
+	var user database.User
 	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("username or password is incorrect")
@@ -142,7 +142,7 @@ func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 	}
 
 	// Get the user from the database
-	var user models.User
+	var user database.User
 	err := r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/programme-lv/backend/internal/models"
+	"github.com/programme-lv/backend/internal/database"
 )
 
 type ExecuterFactory struct {
@@ -16,9 +16,8 @@ type ExecuterFactory struct {
 }
 
 func (f *ExecuterFactory) NewExecuter(langId string, code string) (Executer, error) {
-
 	// get programming language
-	var lang models.ProgrammingLanguage
+	var lang database.ProgrammingLanguage
 	err := f.DB.Get(&lang, "SELECT * FROM programming_languages WHERE id = $1", langId)
 	if err != nil {
 		return nil, err

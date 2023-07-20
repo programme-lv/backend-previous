@@ -12,7 +12,7 @@ type Description struct {
 	Story    string     `json:"story"`
 	Input    string     `json:"input"`
 	Output   string     `json:"output"`
-	Examples []*Example `json:"examples"`
+	Examples []*Example `json:"examples,omitempty"`
 	Notes    string     `json:"notes"`
 }
 
@@ -34,9 +34,8 @@ type Language struct {
 }
 
 type Metadata struct {
-	ID      string   `json:"id"`
-	Authors []string `json:"authors"`
-	Origin  string   `json:"origin"`
+	Authors []string `json:"authors,omitempty"`
+	Origin  *string  `json:"origin,omitempty"`
 }
 
 type Submission struct {
@@ -54,7 +53,7 @@ type Task struct {
 	Constraints *Constraints `json:"Constraints"`
 	Metadata    *Metadata    `json:"Metadata"`
 	CreatedAt   string       `json:"createdAt"`
-	UpdatedAt   *string      `json:"updatedAt,omitempty"`
+	UpdatedAt   string       `json:"updatedAt"`
 }
 
 type User struct {

@@ -76,7 +76,6 @@ type ComplexityRoot struct {
 
 	Metadata struct {
 		Authors func(childComplexity int) int
-		ID      func(childComplexity int) int
 		Origin  func(childComplexity int) int
 	}
 
@@ -285,13 +284,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Metadata.Authors(childComplexity), true
-
-	case "Metadata.id":
-		if e.complexity.Metadata.ID == nil {
-			break
-		}
-
-		return e.complexity.Metadata.ID(childComplexity), true
 
 	case "Metadata.origin":
 		if e.complexity.Metadata.Origin == nil {
@@ -752,7 +744,7 @@ type Task {
     Metadata: Metadata!
 
     createdAt: String!
-    updatedAt: String
+    updatedAt: String!
 }
 
 type Description {
@@ -761,7 +753,7 @@ type Description {
     story: String!
     input: String!
     output: String!
-    examples: [Example!]!
+    examples: [Example!]
     notes: String!
 }
 
@@ -771,9 +763,8 @@ type Constraints {
 }
 
 type Metadata {
-    id: ID!
-    authors: [String!]!
-    origin: String!
+    authors: [String!]
+    origin: String
 }
 
 type Example {
@@ -1515,14 +1506,11 @@ func (ec *executionContext) _Description_examples(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*Example)
 	fc.Result = res
-	return ec.marshalNExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleᚄ(ctx, field.Selections, res)
+	return ec.marshalOExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Description_examples(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1942,50 +1930,6 @@ func (ec *executionContext) fieldContext_Language_monacoID(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Metadata_id(ctx context.Context, field graphql.CollectedField, obj *Metadata) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Metadata_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Metadata_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Metadata",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Metadata_authors(ctx context.Context, field graphql.CollectedField, obj *Metadata) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Metadata_authors(ctx, field)
 	if err != nil {
@@ -2007,14 +1951,11 @@ func (ec *executionContext) _Metadata_authors(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Metadata_authors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2051,14 +1992,11 @@ func (ec *executionContext) _Metadata_origin(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Metadata_origin(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3764,8 +3702,6 @@ func (ec *executionContext) fieldContext_Task_Metadata(ctx context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Metadata_id(ctx, field)
 			case "authors":
 				return ec.fieldContext_Metadata_authors(ctx, field)
 			case "origin":
@@ -3842,11 +3778,14 @@ func (ec *executionContext) _Task_updatedAt(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Task_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5940,9 +5879,6 @@ func (ec *executionContext) _Description(ctx context.Context, sel ast.SelectionS
 			}
 		case "examples":
 			out.Values[i] = ec._Description_examples(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "notes":
 			out.Values[i] = ec._Description_notes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6124,21 +6060,10 @@ func (ec *executionContext) _Metadata(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Metadata")
-		case "id":
-			out.Values[i] = ec._Metadata_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "authors":
 			out.Values[i] = ec._Metadata_authors(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "origin":
 			out.Values[i] = ec._Metadata_origin(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6562,6 +6487,9 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Task_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7003,50 +6931,6 @@ func (ec *executionContext) marshalNDescription2ᚖgithubᚗcomᚋprogrammeᚑlv
 		return graphql.Null
 	}
 	return ec._Description(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*Example) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNExample2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExample(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalNExample2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExample(ctx context.Context, sel ast.SelectionSet, v *Example) graphql.Marshaler {
@@ -7621,6 +7505,53 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*Example) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNExample2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExample(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
