@@ -29,6 +29,13 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, fmt.Errorf("code must be at most %d characters long", codeMaxLength)
 	}
 
+    // code can contain only lowercase latin letters and digits
+    for _, c := range code {
+        if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            return nil, fmt.Errorf("task code can contain only lowercase latin letters and digits")
+        }
+    }
+
 	requestLogger := r.Logger.With(slog.String("request_type", "create_task"),
 		slog.String("name", name), slog.String("code", code))
 
