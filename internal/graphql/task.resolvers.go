@@ -14,7 +14,20 @@ import (
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, name string, code string) (*Task, error) {
-    // TODO: validate task name and code
+	if len(name) == 0 || len(code) == 0 {
+		return nil, fmt.Errorf("name and code must not be empty")
+	}
+
+	nameMaxLength := 50
+	codeMaxLength := 20
+
+	if len(name) > nameMaxLength {
+		return nil, fmt.Errorf("name must be at most %d characters long", nameMaxLength)
+	}
+
+	if len(code) > codeMaxLength {
+		return nil, fmt.Errorf("code must be at most %d characters long", codeMaxLength)
+	}
 
 	requestLogger := r.Logger.With(slog.String("request_type", "create_task"),
 		slog.String("name", name), slog.String("code", code))
@@ -30,7 +43,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 	requestLogger.Info("got user from context")
 
-    // TODO: check if task with the same name or code already exists
+	// TODO: check if task with the same name or code already exists
 
 	t, err := r.DB.Beginx()
 	if err != nil {
@@ -83,7 +96,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 	requestLogger.Info("inserted task version successfully")
 
-    // TODO: update task relevant version
+	// TODO: update task relevant version
 
 	err = t.Commit()
 	if err != nil {
@@ -93,41 +106,41 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 	requestLogger.Info("committed transaction successfully")
 
-    // TODO: create description, constraints and metadata
+	// TODO: create description, constraints and metadata
 
-    description := Description{
-        ID: "0",
-        Story: "",
-        Input: "",
-        Output: "",
-        Examples: nil,
-        Notes: "",
-    }
+	description := Description{
+		ID:       "0",
+		Story:    "",
+		Input:    "",
+		Output:   "",
+		Examples: nil,
+		Notes:    "",
+	}
 
-    constraints := Constraints{
-        TimeLimitMs: version.TimeLimMs,
-        MemoryLimitKb: version.MemLimKb,
-    }
+	constraints := Constraints{
+		TimeLimitMs:   version.TimeLimMs,
+		MemoryLimitKb: version.MemLimKb,
+	}
 
-    metadata := Metadata{
-        Authors: []string{},
-        Origin: nil,
-    }
+	metadata := Metadata{
+		Authors: []string{},
+		Origin:  nil,
+	}
 
-    updatedAt := version.UpdatedAt
-    if updatedAt == nil {
-        updatedAt = &task.CreatedAt
-    }
+	updatedAt := version.UpdatedAt
+	if updatedAt == nil {
+		updatedAt = &task.CreatedAt
+	}
 
-    return &Task{
-		ID:        fmt.Sprintf("%d", task.ID),
-		Code:      version.ShortCode,
-		Name:      version.FullName,
-        Description: &description,
-        Constraints: &constraints,
-        Metadata: &metadata,
-		CreatedAt: task.CreatedAt.UTC().String(),
-		UpdatedAt: updatedAt.UTC().String(),
+	return &Task{
+		ID:          fmt.Sprintf("%d", task.ID),
+		Code:        version.ShortCode,
+		Name:        version.FullName,
+		Description: &description,
+		Constraints: &constraints,
+		Metadata:    &metadata,
+		CreatedAt:   task.CreatedAt.UTC().String(),
+		UpdatedAt:   updatedAt.UTC().String(),
 	}, nil
 }
 
