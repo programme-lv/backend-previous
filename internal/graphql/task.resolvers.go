@@ -50,8 +50,19 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 	requestLogger.Info("got user from context")
 
-	// TODO: check if **published** task with the same name or code already exists
-    // TODO: remove unique short_code constraint from tasks table
+    publishedVersionIdsStmt := "SELECT DISTINCT published_version_id FROM tasks WHERE published_version_id IS NOT NULL"
+    stmt := "SELECT COUNT(*) from task_versions WHERE (short_code = $1 OR full_name = $2) AND task_versions.id IN (%s);"
+    stmt = fmt.Sprintf(stmt, publishedVersionIdsStmt)
+    var count int
+    err = r.DB.Get(&count, stmt, code, name)
+    if err != nil {
+        requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    if count > 0 {
+        return nil, fmt.Errorf("task with the same name or code is already published")
+    }
 
 	t, err := r.DB.Beginx()
 	if err != nil {
@@ -59,7 +70,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, err
 	}
 
-	stmt := "INSERT INTO tasks (created_by, relevant_version) VALUES ($1, $2) RETURNING id"
+	stmt = "INSERT INTO tasks (created_by_id, relevant_version_id) VALUES ($1, $2) RETURNING id"
 	var taskId int64
 	err = t.QueryRow(stmt, user.ID, nil).Scan(&taskId)
 	if err != nil {
@@ -104,7 +115,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 	requestLogger.Info("inserted task version successfully")
 
-    _, err = t.Exec("UPDATE tasks SET relevant_version = $1 WHERE id = $2", versionId, task.ID)
+    _, err = t.Exec("UPDATE tasks SET relevant_version_id = $1 WHERE id = $2", versionId, task.ID)
     if err != nil {
         t.Rollback()
         requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
