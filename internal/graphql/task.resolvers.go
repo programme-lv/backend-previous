@@ -50,7 +50,8 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 	requestLogger.Info("got user from context")
 
-	// TODO: check if task with the same name or code already exists
+	// TODO: check if **published** task with the same name or code already exists
+    // TODO: remove unique short_code constraint from tasks table
 
 	t, err := r.DB.Beginx()
 	if err != nil {
@@ -103,7 +104,14 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 	requestLogger.Info("inserted task version successfully")
 
-	// TODO: update task relevant version
+    _, err = t.Exec("UPDATE tasks SET relevant_version = $1 WHERE id = $2", versionId, task.ID)
+    if err != nil {
+        t.Rollback()
+        requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    requestLogger.Info("updated task relevant version successfully")
 
 	err = t.Commit()
 	if err != nil {
