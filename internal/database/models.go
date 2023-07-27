@@ -61,3 +61,13 @@ type TaskSource struct {
 	Abbreviation string `db:"abbreviation"`
 	FullName     string `db:"full_name"`
 }
+
+type MarkdownStatement struct {
+    ID        int64     `db:"id"`
+    Story string `db:"story"`
+    Input string `db:"input"`
+    Output string `db:"output"`
+    Notes string `db:"notes"`
+    Scoring string `db:"scoring"`
+    TaskVersionID int64 `db:"task_version_id"`
+}

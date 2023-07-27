@@ -175,6 +175,8 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		updatedAt = &task.CreatedAt
 	}
 
+    // TODO: add default author
+
 	return &Task{
 		ID:          fmt.Sprintf("%d", task.ID),
 		Code:        version.ShortCode,
@@ -231,10 +233,22 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 		return nil, err
 	}
 
-	versionIdsToVersions := make(map[int64]database.TaskVersion)
+	versionIdsToVersions := make(map[int64]*database.TaskVersion)
 	for _, version := range versions {
-		versionIdsToVersions[version.ID] = version
+		versionIdsToVersions[version.ID] = &version
 	}
+
+    var mdStatements []database.MarkdownStatement
+    err = r.DB.Select(&mdStatements, "SELECT * FROM markdown_statements")
+    if err != nil {
+        requestLogger.Error("failed to select markdown statements", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    taskIdsToMdStatements := make(map[int64]*database.MarkdownStatement)
+    for _, mdStatement := range mdStatements {
+        taskIdsToMdStatements[mdStatement.TaskVersionID] = &mdStatement
+    }
 
 	var result []*Task
 	for _, task := range tasks {
@@ -248,13 +262,32 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 			continue
 		}
 
+        statement, ok := taskIdsToMdStatements[version.ID]
+        if !ok {
+            requestLogger.Error("failed to find markdown statement for task", slog.Int64("task_id", task.ID))
+            continue
+        }
+
 		result = append(result, &Task{
 			ID:          fmt.Sprintf("%d", version.TaskID),
 			Code:        version.ShortCode,
 			Name:        version.FullName,
-			Description: nil,
-			Constraints: nil,
-			Metadata:    nil,
+			Description: &Description{
+                ID:       fmt.Sprintf("%d", statement.ID),
+                Story:    statement.Story,
+                Input:    statement.Input,
+                Output:   statement.Output,
+                Examples: nil, // TODO: fetch examples
+                Notes:    statement.Notes,
+            },
+			Constraints: &Constraints{
+                TimeLimitMs:   version.TimeLimMs,
+                MemoryLimitKb: version.MemLimKb,
+            },
+			Metadata:    &Metadata{
+                Authors: []string{}, // TODO: fetch authors
+                Origin:  version.Origin,
+            },
 			CreatedAt:   task.CreatedAt.UTC().String(),
 			UpdatedAt:   version.CreatedAt.UTC().String(),
 		})
