@@ -154,5 +154,6 @@ func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 		Email:     user.Email,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
+		IsAdmin:   user.IsAdmin,
 	}, nil
 }

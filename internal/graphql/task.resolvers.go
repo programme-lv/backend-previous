@@ -29,12 +29,12 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, fmt.Errorf("code must be at most %d characters long", codeMaxLength)
 	}
 
-    // code can contain only lowercase latin letters and digits
-    for _, c := range code {
-        if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
-            return nil, fmt.Errorf("task code can contain only lowercase latin letters and digits")
-        }
-    }
+	// code can contain only lowercase latin letters and digits
+	for _, c := range code {
+		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+			return nil, fmt.Errorf("task code can contain only lowercase latin letters and digits")
+		}
+	}
 
 	requestLogger := r.Logger.With(slog.String("request_type", "create_task"),
 		slog.String("name", name), slog.String("code", code))
@@ -47,22 +47,27 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, err
 	}
 
+	if !user.IsAdmin {
+		requestLogger.Error("only admins can create tasks")
+		return nil, fmt.Errorf("only admins can create tasks")
+	}
+
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 	requestLogger.Info("got user from context")
 
-    publishedVersionIdsStmt := "SELECT DISTINCT published_version_id FROM tasks WHERE published_version_id IS NOT NULL"
-    stmt := "SELECT COUNT(*) from task_versions WHERE (short_code = $1 OR full_name = $2) AND task_versions.id IN (%s);"
-    stmt = fmt.Sprintf(stmt, publishedVersionIdsStmt)
-    var count int
-    err = r.DB.Get(&count, stmt, code, name)
-    if err != nil {
-        requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
-        return nil, err
-    }
+	publishedVersionIdsStmt := "SELECT DISTINCT published_version_id FROM tasks WHERE published_version_id IS NOT NULL"
+	stmt := "SELECT COUNT(*) from task_versions WHERE (short_code = $1 OR full_name = $2) AND task_versions.id IN (%s);"
+	stmt = fmt.Sprintf(stmt, publishedVersionIdsStmt)
+	var count int
+	err = r.DB.Get(&count, stmt, code, name)
+	if err != nil {
+		requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
+		return nil, err
+	}
 
-    if count > 0 {
-        return nil, fmt.Errorf("task with the same name or code is already published")
-    }
+	if count > 0 {
+		return nil, fmt.Errorf("task with the same name or code is already published")
+	}
 
 	t, err := r.DB.Beginx()
 	if err != nil {
@@ -118,25 +123,25 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 	requestLogger.Info("inserted task version successfully")
 
-    _, err = t.Exec("UPDATE tasks SET relevant_version_id = $1 WHERE id = $2", versionId, task.ID)
-    if err != nil {
-        t.Rollback()
-        requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
-        return nil, err
-    }
+	_, err = t.Exec("UPDATE tasks SET relevant_version_id = $1 WHERE id = $2", versionId, task.ID)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
+		return nil, err
+	}
 
-    requestLogger.Info("updated task relevant version successfully")
+	requestLogger.Info("updated task relevant version successfully")
 
-    stmt = `INSERT INTO public.markdown_statements(
+	stmt = `INSERT INTO public.markdown_statements(
 	story, input, output, notes, scoring, task_version_id)
 	VALUES ($1, $2, $3, $4, $5, $6)`
 
-    _, err = t.Exec(stmt, "", "", "", "", "", versionId)
-    if err != nil {
-        t.Rollback()
-        requestLogger.Error("failed to insert markdown statement", slog.String("error", err.Error()))
-        return nil, err
-    }
+	_, err = t.Exec(stmt, "", "", "", "", "", versionId)
+	if err != nil {
+		t.Rollback()
+		requestLogger.Error("failed to insert markdown statement", slog.String("error", err.Error()))
+		return nil, err
+	}
 
 	err = t.Commit()
 	if err != nil {
@@ -145,7 +150,6 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	}
 
 	requestLogger.Info("committed transaction successfully")
-
 
 	description := Description{
 		ID:       "0",
@@ -210,54 +214,54 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListTasks is the resolver for the listTasks field.
 func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
-    requestLogger := r.Logger.With(slog.String("resolver", "listTasks"))
-    requestLogger.Info("received list tasks request")
+	requestLogger := r.Logger.With(slog.String("resolver", "listTasks"))
+	requestLogger.Info("received list tasks request")
 
-    var tasks []database.Task
-    err := r.DB.Select(&tasks, "SELECT * FROM tasks")
-    if err != nil {
-        requestLogger.Error("failed to select tasks", slog.String("error", err.Error()))
-        return nil, err
-    }
+	var tasks []database.Task
+	err := r.DB.Select(&tasks, "SELECT * FROM tasks")
+	if err != nil {
+		requestLogger.Error("failed to select tasks", slog.String("error", err.Error()))
+		return nil, err
+	}
 
-    var versions []database.TaskVersion
-    err = r.DB.Select(&versions, "SELECT * FROM task_versions")
-    if err != nil {
-        requestLogger.Error("failed to select task versions", slog.String("error", err.Error()))
-        return nil, err
-    }
+	var versions []database.TaskVersion
+	err = r.DB.Select(&versions, "SELECT * FROM task_versions")
+	if err != nil {
+		requestLogger.Error("failed to select task versions", slog.String("error", err.Error()))
+		return nil, err
+	}
 
-    versionIdsToVersions := make(map[int64]database.TaskVersion)
-    for _, version := range versions {
-        versionIdsToVersions[version.ID] = version
-    }
+	versionIdsToVersions := make(map[int64]database.TaskVersion)
+	for _, version := range versions {
+		versionIdsToVersions[version.ID] = version
+	}
 
-    var result []*Task
-    for _, task := range tasks {
-        if task.RelevantVersionID == nil {
-            requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
-            continue
-        }
-        version, ok := versionIdsToVersions[*task.RelevantVersionID]
-        if !ok {
-            requestLogger.Error("failed to find relevant version for task", slog.Int64("task_id", task.ID))
-            continue
-        }
+	var result []*Task
+	for _, task := range tasks {
+		if task.RelevantVersionID == nil {
+			requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
+			continue
+		}
+		version, ok := versionIdsToVersions[*task.RelevantVersionID]
+		if !ok {
+			requestLogger.Error("failed to find relevant version for task", slog.Int64("task_id", task.ID))
+			continue
+		}
 
-        result = append(result, &Task{
-            ID:          fmt.Sprintf("%d", version.TaskID),
-            Code:        version.ShortCode,
-            Name:        version.FullName,
-            Description: nil,
-            Constraints: nil,
-            Metadata:    nil,
-            CreatedAt:   task.CreatedAt.UTC().String(),
-            UpdatedAt:   version.CreatedAt.UTC().String(),
-        })
-    }
+		result = append(result, &Task{
+			ID:          fmt.Sprintf("%d", version.TaskID),
+			Code:        version.ShortCode,
+			Name:        version.FullName,
+			Description: nil,
+			Constraints: nil,
+			Metadata:    nil,
+			CreatedAt:   task.CreatedAt.UTC().String(),
+			UpdatedAt:   version.CreatedAt.UTC().String(),
+		})
+	}
 
-    requestLogger.Info("successfully retrieved tasks")
-    return result, nil
+	requestLogger.Info("successfully retrieved tasks")
+	return result, nil
 }
 
 // GetTask is the resolver for the getTask field.
