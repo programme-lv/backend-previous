@@ -210,7 +210,54 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListTasks is the resolver for the listTasks field.
 func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListTasks - listTasks"))
+    requestLogger := r.Logger.With(slog.String("resolver", "listTasks"))
+    requestLogger.Info("received list tasks request")
+
+    var tasks []database.Task
+    err := r.DB.Select(&tasks, "SELECT * FROM tasks")
+    if err != nil {
+        requestLogger.Error("failed to select tasks", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    var versions []database.TaskVersion
+    err = r.DB.Select(&versions, "SELECT * FROM task_versions")
+    if err != nil {
+        requestLogger.Error("failed to select task versions", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    versionIdsToVersions := make(map[int64]database.TaskVersion)
+    for _, version := range versions {
+        versionIdsToVersions[version.ID] = version
+    }
+
+    var result []*Task
+    for _, task := range tasks {
+        if task.RelevantVersionID == nil {
+            requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
+            continue
+        }
+        version, ok := versionIdsToVersions[*task.RelevantVersionID]
+        if !ok {
+            requestLogger.Error("failed to find relevant version for task", slog.Int64("task_id", task.ID))
+            continue
+        }
+
+        result = append(result, &Task{
+            ID:          fmt.Sprintf("%d", version.TaskID),
+            Code:        version.ShortCode,
+            Name:        version.FullName,
+            Description: nil,
+            Constraints: nil,
+            Metadata:    nil,
+            CreatedAt:   task.CreatedAt.UTC().String(),
+            UpdatedAt:   version.CreatedAt.UTC().String(),
+        })
+    }
+
+    requestLogger.Info("successfully retrieved tasks")
+    return result, nil
 }
 
 // GetTask is the resolver for the getTask field.
