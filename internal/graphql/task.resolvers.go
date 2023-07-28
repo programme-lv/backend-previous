@@ -7,6 +7,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/programme-lv/backend/internal/database"
 	"golang.org/x/exp/slog"
@@ -233,9 +234,9 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 		return nil, err
 	}
 
-	versionIdsToVersions := make(map[int64]*database.TaskVersion)
+	versionIdsToVersions := make(map[int64]database.TaskVersion)
 	for _, version := range versions {
-		versionIdsToVersions[version.ID] = &version
+		versionIdsToVersions[version.ID] = version
 	}
 
     var mdStatements []database.MarkdownStatement
@@ -261,6 +262,9 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 			requestLogger.Error("failed to find relevant version for task", slog.Int64("task_id", task.ID))
 			continue
 		}
+
+        log.Println("relevant version id:", *task.RelevantVersionID)
+        log.Println("version id:", version.ID)
 
         statement, ok := taskIdsToMdStatements[version.ID]
         if !ok {
