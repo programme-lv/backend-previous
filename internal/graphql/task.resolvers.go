@@ -303,7 +303,65 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 
 // GetTask is the resolver for the getTask field.
 func (r *queryResolver) GetTask(ctx context.Context, id string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetTask - getTask"))
+	requestLogger := r.Logger.With(slog.String("resolver", "GetTask"))
+	requestLogger.Info("received get task request")
+
+    // fetch task from database 
+    stmt := `SELECT * FROM tasks WHERE id = $1`
+    var task database.Task
+    err := r.DB.Get(&task, stmt, id)
+    if err != nil {
+        requestLogger.Error("failed to select task", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    // TODO: later on we will have to distinguish requests between public version
+    if task.RelevantVersionID == nil {
+        requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
+        return nil, err
+    }
+
+    // fetch task version from database
+    stmt = `SELECT * FROM task_versions WHERE id = $1`
+    var version database.TaskVersion
+    err = r.DB.Get(&version, stmt, *task.RelevantVersionID)
+    if err != nil {
+        requestLogger.Error("failed to select task version", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    // fetch markdown statement from database
+    stmt = `SELECT * FROM markdown_statements WHERE task_version_id = $1`
+    var mdStatement database.MarkdownStatement
+    err = r.DB.Get(&mdStatement, stmt, version.ID)
+    if err != nil {
+        requestLogger.Error("failed to select markdown statement", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+    return &Task{
+        ID:          fmt.Sprintf("%d", version.TaskID),
+        Code:        version.ShortCode,
+        Name:        version.FullName,
+        Description: &Description{
+            ID:       fmt.Sprintf("%d", mdStatement.ID),
+            Story:    mdStatement.Story,
+            Input:    mdStatement.Input,
+            Output:   mdStatement.Output,
+            Examples: nil, // TODO: fetch examples
+            Notes:    mdStatement.Notes,
+        },
+        Constraints: &Constraints{
+            TimeLimitMs:   version.TimeLimMs,
+            MemoryLimitKb: version.MemLimKb,
+        },
+        Metadata:    &Metadata{
+            Authors: []string{}, // TODO: fetch authors
+            Origin:  version.Origin,
+        },
+        CreatedAt:   task.CreatedAt.UTC().String(),
+        UpdatedAt:   version.CreatedAt.UTC().String(),
+    }, nil
 }
 
 // ListTaskOrigins is the resolver for the listTaskOrigins field.
