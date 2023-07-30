@@ -51,6 +51,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger.Info("got user from context")
 
 	// TODO: check if task with the same name or code already exists
+    // a task with the same name or code exists if there is a relevant **public** version of it
 
 	t, err := r.DB.Beginx()
 	if err != nil {
