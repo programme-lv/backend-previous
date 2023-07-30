@@ -26,15 +26,17 @@ type ProgrammingLanguage struct {
 }
 
 type Task struct {
-	ID              int64     `db:"id"`
-	CreatedAt       time.Time `db:"created_at"`
-	CreatedBy       int64     `db:"created_by"`
-	RelevantVersion *int64    `db:"relevant_version"`
+	ID          int64     `db:"id"`
+	CreatedAt   time.Time `db:"created_at"`
+	CreatedByID int64     `db:"created_by_id"`
+
+	RelevantVersionID  *int64 `db:"relevant_version_id"`
+	PublishedVersionID *int64 `db:"published_version_id"`
 }
 
 type TaskVersion struct {
 	ID            int64      `db:"id"`
-	TaskID        string     `db:"task_id"`
+	TaskID        int64      `db:"task_id"`
 	ShortCode     string     `db:"short_code"`
 	FullName      string     `db:"full_name"`
 	TimeLimMs     int        `db:"time_lim_ms"`
@@ -58,4 +60,14 @@ type EvalType struct {
 type TaskSource struct {
 	Abbreviation string `db:"abbreviation"`
 	FullName     string `db:"full_name"`
+}
+
+type MarkdownStatement struct {
+    ID        int64     `db:"id"`
+    Story string `db:"story"`
+    Input string `db:"input"`
+    Output string `db:"output"`
+    Notes string `db:"notes"`
+    Scoring string `db:"scoring"`
+    TaskVersionID int64 `db:"task_version_id"`
 }
