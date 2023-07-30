@@ -13,7 +13,7 @@ type Description struct {
 	Input    string     `json:"input"`
 	Output   string     `json:"output"`
 	Examples []*Example `json:"examples,omitempty"`
-	Notes    string     `json:"notes"`
+	Notes    *string    `json:"notes,omitempty"`
 }
 
 type Example struct {

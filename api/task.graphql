@@ -36,7 +36,7 @@ type Description {
     input: String!
     output: String!
     examples: [Example!]
-    notes: String!
+    notes: String
 }
 
 type Constraints {

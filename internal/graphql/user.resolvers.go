@@ -18,34 +18,34 @@ import (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-    requestLogger := r.Logger.With(slog.String("request_type", "login"),
-        slog.String("username", username))
-    requestLogger.Info("received login request")
+	requestLogger := r.Logger.With(slog.String("request_type", "login"),
+		slog.String("username", username))
+	requestLogger.Info("received login request")
 
 	// Get the user from the database
 	var user database.User
 	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
 	if err == sql.ErrNoRows {
-        requestLogger.Info("user not found")
+		requestLogger.Info("user not found")
 		return nil, fmt.Errorf("username or password is incorrect")
 	} else if err != nil {
-        requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
+		requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
 		return nil, err
 	}
 
-    requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
+	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 
 	// Verify the password
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
-        requestLogger.Info("password is incorrect")
+		requestLogger.Info("password is incorrect")
 		return nil, fmt.Errorf("username or password is incorrect")
 	}
 
 	// Set the user ID in the session
 	r.SessionManager.Put(ctx, "user_id", user.ID)
 
-    requestLogger.Info("login successful")
+	requestLogger.Info("login successful")
 
 	return &User{
 		ID:       fmt.Sprintf("%d", user.ID),

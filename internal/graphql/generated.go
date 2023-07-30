@@ -778,7 +778,7 @@ type Description {
     input: String!
     output: String!
     examples: [Example!]
-    notes: String!
+    notes: String
 }
 
 type Constraints {
@@ -1594,14 +1594,11 @@ func (ec *executionContext) _Description_notes(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Description_notes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6043,9 +6040,6 @@ func (ec *executionContext) _Description(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Description_examples(ctx, field, obj)
 		case "notes":
 			out.Values[i] = ec._Description_notes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -158,7 +158,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		Input:    "",
 		Output:   "",
 		Examples: nil,
-		Notes:    "",
+		Notes:    nil,
 	}
 
 	constraints := Constraints{
