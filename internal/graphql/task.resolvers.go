@@ -301,6 +301,11 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 	return result, nil
 }
 
+// ListPublishedTasks is the resolver for the listPublishedTasks field.
+func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
+	panic(fmt.Errorf("not implemented: ListPublishedTasks - listPublishedTasks"))
+}
+
 // GetRelevantTaskByID is the resolver for the getRelevantTaskById field.
 func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Task, error) {
 	requestLogger := r.Logger.With(slog.String("resolver", "GetRelevantTaskByID"))

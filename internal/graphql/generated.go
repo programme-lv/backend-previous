@@ -97,6 +97,7 @@ type ComplexityRoot struct {
 		GetPublishedTaskByCode func(childComplexity int, code string) int
 		GetRelevantTaskByID    func(childComplexity int, id string) int
 		ListLanguages          func(childComplexity int) int
+		ListPublishedTasks     func(childComplexity int) int
 		ListSubmissions        func(childComplexity int) int
 		ListTaskOrigins        func(childComplexity int) int
 		ListTasks              func(childComplexity int) int
@@ -147,6 +148,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Whoami(ctx context.Context) (*User, error)
 	ListTasks(ctx context.Context) ([]*Task, error)
+	ListPublishedTasks(ctx context.Context) ([]*Task, error)
 	GetRelevantTaskByID(ctx context.Context, id string) (*Task, error)
 	GetPublishedTaskByCode(ctx context.Context, code string) (*Task, error)
 	ListTaskOrigins(ctx context.Context) ([]string, error)
@@ -453,6 +455,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ListLanguages(childComplexity), true
 
+	case "Query.listPublishedTasks":
+		if e.complexity.Query.ListPublishedTasks == nil {
+			break
+		}
+
+		return e.complexity.Query.ListPublishedTasks(childComplexity), true
+
 	case "Query.listSubmissions":
 		if e.complexity.Query.ListSubmissions == nil {
 			break
@@ -742,6 +751,7 @@ type User {
 `, BuiltIn: false},
 	{Name: "../../api/task.graphql", Input: `extend type Query {
     listTasks: [Task!]!
+    listPublishedTasks: [Task!]!
     getRelevantTaskById(id: ID!): Task!
     getPublishedTaskByCode(code: String!): Task!
     listTaskOrigins: [String!]!
@@ -2881,6 +2891,68 @@ func (ec *executionContext) _Query_listTasks(ctx context.Context, field graphql.
 }
 
 func (ec *executionContext) fieldContext_Query_listTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
+			case "Description":
+				return ec.fieldContext_Task_Description(ctx, field)
+			case "Constraints":
+				return ec.fieldContext_Task_Constraints(ctx, field)
+			case "Metadata":
+				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Task_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_listPublishedTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_listPublishedTasks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ListPublishedTasks(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Task)
+	fc.Result = res
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_listPublishedTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6410,6 +6482,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_listTasks(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "listPublishedTasks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_listPublishedTasks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
