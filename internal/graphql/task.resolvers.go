@@ -364,9 +364,9 @@ func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Ta
 	}, nil
 }
 
-// GetPublicTaskByCode is the resolver for the getPublicTaskByCode field.
-func (r *queryResolver) GetPublicTaskByCode(ctx context.Context, code string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetPublicTaskByCode - getPublicTaskByCode"))
+// GetPublishedTaskByCode is the resolver for the getPublishedTaskByCode field.
+func (r *queryResolver) GetPublishedTaskByCode(ctx context.Context, code string) (*Task, error) {
+	panic(fmt.Errorf("not implemented: GetPublishedTaskByCode - getPublishedTaskByCode"))
 }
 
 // ListTaskOrigins is the resolver for the listTaskOrigins field.

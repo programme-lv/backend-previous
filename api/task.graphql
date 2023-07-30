@@ -1,7 +1,7 @@
 extend type Query {
     listTasks: [Task!]!
     getRelevantTaskById(id: ID!): Task!
-    getPublicTaskByCode(code: String!): Task!
+    getPublishedTaskByCode(code: String!): Task!
     listTaskOrigins: [String!]!
 }
 
