@@ -19,9 +19,7 @@ import (
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
 	log.Println("Logging in user", username)
 
-	// Get the user from the database
-	var user database.User
-	err := r.DB.Get(&user, "SELECT * FROM users WHERE username = $1", username)
+	user, err := database.SelectUserByUsername(r.DB, username)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("username or password is incorrect")
 	} else if err != nil {
