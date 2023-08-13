@@ -158,7 +158,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		Input:    "",
 		Output:   "",
 		Examples: nil,
-		Notes:    "",
+		Notes:    nil,
 	}
 
 	constraints := Constraints{
@@ -301,6 +301,11 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 	return result, nil
 }
 
+// ListPublishedTasks is the resolver for the listPublishedTasks field.
+func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
+	panic(fmt.Errorf("not implemented: ListPublishedTasks - listPublishedTasks"))
+}
+
 // GetRelevantTaskByID is the resolver for the getRelevantTaskById field.
 func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Task, error) {
 	requestLogger := r.Logger.With(slog.String("resolver", "GetRelevantTaskByID"))
@@ -315,7 +320,6 @@ func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Ta
 		return nil, err
 	}
 
-	// TODO: later on we will have to distinguish requests between public version
 	if task.RelevantVersionID == nil {
 		requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
 		return nil, err
@@ -364,9 +368,77 @@ func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Ta
 	}, nil
 }
 
-// GetPublicTaskByCode is the resolver for the getPublicTaskByCode field.
-func (r *queryResolver) GetPublicTaskByCode(ctx context.Context, code string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetPublicTaskByCode - getPublicTaskByCode"))
+// GetPublishedTaskByCode is the resolver for the getPublishedTaskByCode field.
+func (r *queryResolver) GetPublishedTaskByCode(ctx context.Context, code string) (*Task, error) {
+	requestLogger := r.Logger.With(slog.String("resolver", "GetPublishedTaskByCode"))
+    requestLogger.Info("received get published task by code request")
+
+	// fetch task from database
+	stmt := `
+    SELECT tasks.id FROM tasks INNER JOIN task_versions
+    ON tasks.published_version_id = task_versions.id
+    WHERE task_versions.short_code = $1`
+    var taskID int64
+    err := r.DB.Get(&taskID, stmt, code)
+    if err != nil {
+        requestLogger.Error("failed to select task", slog.String("error", err.Error()))
+        return nil, err
+    }
+
+	var task database.Task
+    stmt = `SELECT * FROM tasks WHERE id = $1`
+	err = r.DB.Get(&task, stmt, taskID)
+	if err != nil {
+		requestLogger.Error("failed to select task", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+    if task.PublishedVersionID == nil {
+        requestLogger.Error("task has no published version", slog.Int64("task_id", task.ID))
+        return nil, err
+    }
+
+	// fetch task version from database
+	stmt = `SELECT * FROM task_versions WHERE id = $1`
+	var version database.TaskVersion
+	err = r.DB.Get(&version, stmt, *task.PublishedVersionID)
+	if err != nil {
+		requestLogger.Error("failed to select task version", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	// fetch markdown statement from database
+	stmt = `SELECT * FROM markdown_statements WHERE task_version_id = $1`
+	var mdStatement database.MarkdownStatement
+	err = r.DB.Get(&mdStatement, stmt, version.ID)
+	if err != nil {
+		requestLogger.Error("failed to select markdown statement", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	return &Task{
+		ID:   fmt.Sprintf("%d", version.TaskID),
+		Code: version.ShortCode,
+		Name: version.FullName,
+		Description: &Description{
+			ID:       fmt.Sprintf("%d", mdStatement.ID),
+			Story:    mdStatement.Story,
+			Input:    mdStatement.Input,
+			Output:   mdStatement.Output,
+			Examples: nil, // TODO: fetch examples
+			Notes:    mdStatement.Notes,
+		},
+		Constraints: &Constraints{
+			TimeLimitMs:   version.TimeLimMs,
+			MemoryLimitKb: version.MemLimKb,
+		},
+		Metadata: &Metadata{
+			Authors: []string{}, // TODO: fetch authors
+			Origin:  version.Origin,
+		},
+		CreatedAt: task.CreatedAt.UTC().String(),
+		UpdatedAt: version.CreatedAt.UTC().String(),
+	}, nil
 }
 
 // ListTaskOrigins is the resolver for the listTaskOrigins field.
