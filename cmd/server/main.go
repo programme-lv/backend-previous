@@ -31,11 +31,11 @@ func main() {
 	sessions := scs.New()
 	sessions.Lifetime = 24 * time.Hour
 
-    logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	resolver := &graphql.Resolver{
 		DB:             sqlxDb,
 		SessionManager: sessions,
-        Logger:         logger,
+		Logger:         logger,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
