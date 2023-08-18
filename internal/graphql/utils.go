@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/programme-lv/backend/internal/database"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (r *Resolver) GetUserFromContext(ctx context.Context) (*database.User, error) {
@@ -20,4 +21,10 @@ func (r *Resolver) GetUserFromContext(ctx context.Context) (*database.User, erro
 	}
 
 	return &user, nil
+}
+
+func (r *Resolver) HashPassword(password string) (string, error) {
+	var hashedPassword []byte
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hashedPassword), err
 }

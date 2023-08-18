@@ -53,44 +53,40 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
-	log.Println("Registering user", username)
+	requestLogger := r.Logger.With(slog.String("request_type", "register"),
+		slog.String("username", username), slog.String("email", email), slog.String("first_name", firstName), slog.String("last_name", lastName))
+	requestLogger.Info("received register request")
 
 	// validate registration data
 	if username == "" || password == "" {
 		return nil, fmt.Errorf("username and password are required")
 	}
 	if len(password) < 8 {
-		return nil, fmt.Errorf("password must be at least 8 characters")
+		return nil, fmt.Errorf("password must be at least %d characters", 8)
 	}
 	if len(password) > 32 {
-		return nil, fmt.Errorf("password must be at most 32 characters")
+		return nil, fmt.Errorf("password must be at most %d characters", 32)
 	}
 	if len(username) < 3 {
-		return nil, fmt.Errorf("username must be at least 3 characters")
+		return nil, fmt.Errorf("username must be at least %d characters", 3)
 	}
 	if len(username) > 15 {
-		return nil, fmt.Errorf("username must be at most 15 characters")
+		return nil, fmt.Errorf("username must be at most %d characters", 15)
 	}
 
-	// check if user with the same username already exists
-	var userWithUsernameCount int
-	err := r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&userWithUsernameCount)
+	usernameExists, err := database.DoesUserExistByUsername(r.DB, username)
 	if err != nil {
 		return nil, err
 	}
-
-	if userWithUsernameCount > 0 {
+	if usernameExists {
 		return nil, fmt.Errorf("user with that username already exists")
 	}
 
-	// check if user with the same email already exists
-	var userWithEmailCount int
-	err = r.DB.QueryRow("SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&userWithEmailCount)
+	emailExists, err := database.DoesUserExistByEmail(r.DB, email)
 	if err != nil {
 		return nil, err
 	}
-
-	if userWithEmailCount > 0 {
+	if emailExists {
 		return nil, fmt.Errorf("user with that email already exists")
 	}
 
@@ -100,30 +96,28 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, err
 	}
 
-	// hash password
-	var hashedPassword []byte
-	hashedPassword, err = bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	password = string(hashedPassword)
-
-	// create user
-	_, err = r.DB.Exec("INSERT INTO users (username, hashed_password, email, first_name, last_name, created_at) VALUES ($1, $2, $3, $4, $5, now())", username, password, email, firstName, lastName)
+	hashedPassword, err := r.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
-	// scan user id
-	var userID int
-	err = r.DB.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&userID)
+	err = database.CreateUser(r.DB, username, hashedPassword, email, firstName, lastName)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := database.SelectUserByUsername(r.DB, username)
 	if err != nil {
 		return nil, err
 	}
 
 	return &User{
-		ID:       fmt.Sprintf("%d", userID),
-		Username: username,
+		ID:        fmt.Sprintf("%d", user.ID),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		IsAdmin:   user.IsAdmin,
 	}, nil
 }
 
