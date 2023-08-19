@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -35,22 +36,31 @@ func initPostgresContainerTestDB() (*postgresContainerTestDB, error) {
 	}
 	res.pgContainer = pgContainer
 
-	pgContainerHost, err := pgContainer.container.Host(context.Background())
+	pgContainerHost, err := pgContainer.dockerContainer.Host(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	pgContainerPort, err := pgContainer.container.MappedPort(context.Background(), "5432")
+	pgContainerPort, err := pgContainer.dockerContainer.MappedPort(context.Background(), "5432")
 	if err != nil {
 		return nil, err
+	}
+
+	// strip /tcp suffix from port
+	if pgContainerPort[len(pgContainerPort)-4:] == "/tcp" {
+		pgContainerPort = pgContainerPort[:len(pgContainerPort)-4]
 	}
 
 	connString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		pgContainerHost, pgContainerPort, pgContainer.user, pgContainer.password, pgContainer.database)
 
+	log.Printf("connString: %s", connString)
+
 	sqlxDb := sqlx.MustConnect("postgres", connString)
 
 	res.sqlxDb = sqlxDb
+
+	// TODO: apply the migrations here
 
 	return res, nil
 }
@@ -65,17 +75,17 @@ func (ptdb *postgresContainerTestDB) Close() {
 		log.Printf("Failed to close sqlx db: %v", err)
 	}
 
-	err = ptdb.pgContainer.container.Terminate(context.Background())
+	err = ptdb.pgContainer.dockerContainer.Terminate(context.Background())
 	if err != nil {
 		log.Printf("Failed to terminate container: %v", err)
 	}
 }
 
 type postgresContainer struct {
-	container testcontainers.Container
-	user      string
-	password  string
-	database  string
+	dockerContainer testcontainers.Container
+	user            string
+	password        string
+	database        string
 }
 
 func newPostgresContainer() (*postgresContainer, error) {
@@ -91,7 +101,10 @@ func newPostgresContainer() (*postgresContainer, error) {
 			"POSTGRES_PASSWORD": DB_PASS,
 			"POSTGRES_DB":       DB_NAME,
 		},
-		WaitingFor: wait.ForLog("database system is ready to accept connections"),
+		WaitingFor: wait.ForAll(
+			wait.ForLog("database system is ready to accept connections"),
+			wait.ForExposedPort(),
+		),
 	}
 
 	container, err := testcontainers.GenericContainer(context.Background(),
@@ -104,10 +117,10 @@ func newPostgresContainer() (*postgresContainer, error) {
 	}
 
 	res := &postgresContainer{
-		container: container,
-		user:      DB_USER,
-		password:  DB_PASS,
-		database:  DB_NAME,
+		dockerContainer: container,
+		user:            DB_USER,
+		password:        DB_PASS,
+		database:        DB_NAME,
 	}
 	return res, nil
 }
