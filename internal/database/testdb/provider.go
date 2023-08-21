@@ -1,4 +1,4 @@
-package database
+package testdb
 
 import (
 	"context"
@@ -10,8 +10,6 @@ import (
 	git "github.com/go-git/go-git/v5"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 // TestDBProvider provides a migrated database
@@ -21,7 +19,7 @@ type TestDBProvider interface {
 	Close()
 }
 
-func NewPostgresContainerTestDBProvider() (TestDBProvider, error) {
+func NewPostgresTestcontainerProvider() (TestDBProvider, error) {
 	return initPostgresContainerTestDB()
 }
 
@@ -33,18 +31,18 @@ type postgresContainerTestDB struct {
 func initPostgresContainerTestDB() (*postgresContainerTestDB, error) {
 	res := &postgresContainerTestDB{}
 
-	pgContainer, err := newPostgresContainer()
+	pgContainer, err := startPostgresContainer("proglv", "proglv", "proglv")
 	if err != nil {
 		return nil, err
 	}
 	res.pgContainer = pgContainer
 
-	pgContainerHost, err := pgContainer.dockerContainer.Host(context.Background())
+	pgContainerHost, err := pgContainer.container.Host(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	pgContainerPort, err := pgContainer.dockerContainer.MappedPort(context.Background(), "5432")
+	pgContainerPort, err := pgContainer.container.MappedPort(context.Background(), "5432")
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +61,16 @@ func initPostgresContainerTestDB() (*postgresContainerTestDB, error) {
 
 	res.sqlxDb = sqlxDb
 
-	// TODO: apply the migrations here
-	// start flyway container passing
-	// host as the network
-	// checkout git database to tmp dir
-	// or pull git submodule
+	migrations, err := cloneDBMigrations()
+	if err != nil {
+		log.Printf("Failed to clone migrations: %v", err)
+	}
+	defer migrations.erase()
+
+	err = execFlywayContainer(migrations.getFlywayMigrationsDir(), pgContainerHost, pgContainerPort.Port(), pgContainer.database, pgContainer.user, pgContainer.password)
+	if err != nil {
+		log.Printf("Failed to execute flyway container: %v", err)
+	}
 
 	return res, nil
 }
@@ -101,7 +104,7 @@ func (dbm *DBMigrations) getFlywayMigrationsDir() string {
 	return filepath.Join(dbm.rootDir, "flyway-migrations")
 }
 
-func (dbm *DBMigrations) Close() {
+func (dbm *DBMigrations) erase() {
 	err := os.RemoveAll(dbm.rootDir)
 	if err != nil {
 		log.Printf("Failed to remove tmp dir: %v", err)
@@ -118,52 +121,8 @@ func (ptdb *postgresContainerTestDB) Close() {
 		log.Printf("Failed to close sqlx db: %v", err)
 	}
 
-	err = ptdb.pgContainer.dockerContainer.Terminate(context.Background())
+	err = ptdb.pgContainer.container.Terminate(context.Background())
 	if err != nil {
 		log.Printf("Failed to terminate container: %v", err)
 	}
-}
-
-type postgresContainer struct {
-	dockerContainer testcontainers.Container
-	user            string
-	password        string
-	database        string
-}
-
-func newPostgresContainer() (*postgresContainer, error) {
-	DB_USER := "proglv"
-	DB_PASS := "proglv"
-	DB_NAME := "proglv"
-
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:latest",
-		ExposedPorts: []string{"5432/tcp"},
-		Env: map[string]string{
-			"POSTGRES_USER":     DB_USER,
-			"POSTGRES_PASSWORD": DB_PASS,
-			"POSTGRES_DB":       DB_NAME,
-		},
-		WaitingFor: wait.ForAll(
-			wait.ForLog("database system is ready to accept connections"),
-			wait.ForExposedPort(),
-		),
-	}
-
-	container, err := testcontainers.GenericContainer(context.Background(),
-		testcontainers.GenericContainerRequest{
-			ContainerRequest: req,
-			Started:          true,
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	res := &postgresContainer{
-		dockerContainer: container,
-		user:            DB_USER,
-		password:        DB_PASS,
-		database:        DB_NAME,
-	}
-	return res, nil
 }

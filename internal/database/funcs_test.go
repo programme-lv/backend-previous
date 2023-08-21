@@ -2,16 +2,18 @@ package database
 
 import (
 	"testing"
+
+	"github.com/programme-lv/backend/internal/database/testdb"
 )
 
 func TestCreateUser(t *testing.T) {
-	provider, err := NewPostgresContainerTestDBProvider()
+	dbProvider, err := testdb.NewPostgresTestcontainerProvider()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer provider.Close()
+	defer dbProvider.Close()
 
-	db := provider.GetTestDB()
+	db := dbProvider.GetTestDB()
 	// asert db is not null
 	if db == nil {
 		t.Fatal("db is nil")
