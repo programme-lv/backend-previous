@@ -10,6 +10,7 @@ func TestCreateUser(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer provider.Close()
+
 	db := provider.GetTestDB()
 	// asert db is not null
 	if db == nil {
