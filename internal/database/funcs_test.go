@@ -11,7 +11,7 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer dbProvider.Close()
+	t.Cleanup(func() { dbProvider.Close() })
 
 	db := dbProvider.GetTestDB()
 	// asert db is not null

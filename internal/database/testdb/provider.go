@@ -3,13 +3,10 @@ package testdb
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-
-	git "github.com/go-git/go-git/v5"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/testcontainers/testcontainers-go"
+	"log"
 )
 
 // TestDBProvider provides a migrated database
@@ -23,43 +20,39 @@ func NewPostgresTestcontainerProvider() (TestDBProvider, error) {
 	return initPostgresContainerTestDB()
 }
 
-type postgresContainerTestDB struct {
-	pgContainer *postgresContainer
-	sqlxDb      *sqlx.DB
+type postgresTestcontainer struct {
+	container *postgresContainer
+	network   *testcontainers.Network
+	sqlxDb    *sqlx.DB
 }
 
-func initPostgresContainerTestDB() (*postgresContainerTestDB, error) {
-	res := &postgresContainerTestDB{}
+func initPostgresContainerTestDB() (x *postgresTestcontainer, err error) {
+	x = &postgresTestcontainer{}
 
-	pgContainer, err := startPostgresContainer("proglv", "proglv", "proglv")
-	if err != nil {
-		return nil, err
-	}
-	res.pgContainer = pgContainer
-
-	pgContainerHost, err := pgContainer.container.Host(context.Background())
+	x.network, err = createNetwork("proglv-test-network")
 	if err != nil {
 		return nil, err
 	}
 
-	pgContainerPort, err := pgContainer.container.MappedPort(context.Background(), "5432")
+	pgUsername := "proglv"
+	pgPassword := "proglv"
+	pgDatabase := "proglv"
+
+	x.container, err = startPostgresContainer(pgUsername, pgPassword, pgDatabase)
 	if err != nil {
 		return nil, err
 	}
 
-	// strip /tcp suffix from port
-	if pgContainerPort[len(pgContainerPort)-4:] == "/tcp" {
-		pgContainerPort = pgContainerPort[:len(pgContainerPort)-4]
+	host, port, err := extractTestcontainerHostPort(x.container.container)
+	if err != nil {
+		return nil, err
 	}
 
-	connString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		pgContainerHost, pgContainerPort, pgContainer.user, pgContainer.password, pgContainer.database)
+	sqlxConnString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, x.container.user, x.container.password, x.container.database)
+	log.Printf("connString: %s", sqlxConnString)
 
-	log.Printf("connString: %s", connString)
-
-	sqlxDb := sqlx.MustConnect("postgres", connString)
-
-	res.sqlxDb = sqlxDb
+	x.sqlxDb = sqlx.MustConnect("postgres", sqlxConnString)
 
 	migrations, err := cloneDBMigrations()
 	if err != nil {
@@ -67,61 +60,26 @@ func initPostgresContainerTestDB() (*postgresContainerTestDB, error) {
 	}
 	defer migrations.erase()
 
-	err = execFlywayContainer(migrations.getFlywayMigrationsDir(), pgContainerHost, pgContainerPort.Port(), pgContainer.database, pgContainer.user, pgContainer.password)
+	err = execFlywayContainer(migrations.getFlywayMigrationsDir(),
+		host, port, x.container.database, x.container.user, x.container.password)
 	if err != nil {
 		log.Printf("Failed to execute flyway container: %v", err)
 	}
 
-	return res, nil
+	return x, nil
 }
 
-type DBMigrations struct {
-	rootDir string
-}
-
-func cloneDBMigrations() (*DBMigrations, error) {
-	tmpDir, err := os.MkdirTemp("", "proglv-db-migrations")
-	if err != nil {
-		return nil, err
-	}
-	repoUrl := "https://github.com/programme-lv/database"
-
-	_, err = git.PlainClone(tmpDir, false, &git.CloneOptions{
-		URL:      repoUrl,
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	res := &DBMigrations{
-		rootDir: tmpDir,
-	}
-	return res, nil
-}
-
-func (dbm *DBMigrations) getFlywayMigrationsDir() string {
-	return filepath.Join(dbm.rootDir, "flyway-migrations")
-}
-
-func (dbm *DBMigrations) erase() {
-	err := os.RemoveAll(dbm.rootDir)
-	if err != nil {
-		log.Printf("Failed to remove tmp dir: %v", err)
-	}
-}
-
-func (ptdb *postgresContainerTestDB) GetTestDB() *sqlx.DB {
+func (ptdb *postgresTestcontainer) GetTestDB() *sqlx.DB {
 	return ptdb.sqlxDb
 }
 
-func (ptdb *postgresContainerTestDB) Close() {
+func (ptdb *postgresTestcontainer) Close() {
 	err := ptdb.sqlxDb.Close()
 	if err != nil {
 		log.Printf("Failed to close sqlx db: %v", err)
 	}
 
-	err = ptdb.pgContainer.container.Terminate(context.Background())
+	err = ptdb.container.container.Terminate(context.Background())
 	if err != nil {
 		log.Printf("Failed to terminate container: %v", err)
 	}
