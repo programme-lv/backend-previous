@@ -27,7 +27,7 @@ func extractTestcontainerHostPort(container testcontainers.Container) (host stri
 	return
 }
 
-func createNetwork(networkName string) (*testcontainers.Network, error) {
+func createNetwork(networkName string) (testcontainers.Network, error) {
 	network, err := testcontainers.GenericNetwork(context.Background(),
 		testcontainers.GenericNetworkRequest{
 			NetworkRequest: testcontainers.NetworkRequest{
@@ -35,5 +35,5 @@ func createNetwork(networkName string) (*testcontainers.Network, error) {
 				CheckDuplicate: true,
 			},
 		})
-	return &network, err
+	return network, err
 }

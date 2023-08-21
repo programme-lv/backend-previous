@@ -20,14 +20,14 @@ func NewPostgresTestcontainerProvider() (TestDBProvider, error) {
 	return initPostgresContainerTestDB()
 }
 
-type postgresTestcontainer struct {
+type migratedPostgresTestcontainer struct {
 	container *postgresContainer
-	network   *testcontainers.Network
+	network   testcontainers.Network
 	sqlxDb    *sqlx.DB
 }
 
-func initPostgresContainerTestDB() (x *postgresTestcontainer, err error) {
-	x = &postgresTestcontainer{}
+func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error) {
+	x = &migratedPostgresTestcontainer{}
 
 	x.network, err = createNetwork("proglv-test-network")
 	if err != nil {
@@ -69,17 +69,22 @@ func initPostgresContainerTestDB() (x *postgresTestcontainer, err error) {
 	return x, nil
 }
 
-func (ptdb *postgresTestcontainer) GetTestDB() *sqlx.DB {
+func (ptdb *migratedPostgresTestcontainer) GetTestDB() *sqlx.DB {
 	return ptdb.sqlxDb
 }
 
-func (ptdb *postgresTestcontainer) Close() {
-	err := ptdb.sqlxDb.Close()
+func (x *migratedPostgresTestcontainer) Close() {
+	err := x.sqlxDb.Close()
 	if err != nil {
 		log.Printf("Failed to close sqlx db: %v", err)
 	}
 
-	err = ptdb.container.container.Terminate(context.Background())
+	err = x.network.Remove(context.Background())
+	if err != nil {
+		log.Printf("Failed to remove network: %v", err)
+	}
+
+	err = x.container.container.Terminate(context.Background())
 	if err != nil {
 		log.Printf("Failed to terminate container: %v", err)
 	}
