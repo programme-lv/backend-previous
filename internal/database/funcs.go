@@ -25,3 +25,8 @@ func CreateUser(db *sqlx.DB, username string, hashed_password string, email stri
 	_, err := db.Exec("INSERT INTO users (username, hashed_password, email, first_name, last_name, created_at) VALUES ($1, $2, $3, $4, $5, now())", username, hashed_password, email, firstName, lastName)
 	return err
 }
+
+func DeleteUserById(db *sqlx.DB, id int64) error {
+	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
+	return err
+}
