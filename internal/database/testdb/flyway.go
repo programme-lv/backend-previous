@@ -17,7 +17,7 @@ func (consumer *flywayLogConsumer) Accept(l testcontainers.Log) {
 }
 
 // exectues flyway:21 on host network with migrationsDir mounted to /flyway/flyway-migrations
-func execFlywayContainer(migrationDir string, dbHost string, dbPort string, dbName string, dbUser string, dbPassword string) error {
+func execFlywayContainer(networkName string, networkAlias string, migrationDir string, dbHost string, dbPort string, dbName string, dbUser string, dbPassword string) error {
 	args := []string{
 		fmt.Sprintf("-url=jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 		fmt.Sprintf("-user=%s", dbUser),
@@ -39,6 +39,10 @@ func execFlywayContainer(migrationDir string, dbHost string, dbPort string, dbNa
 		},
 		WaitingFor: wait.ForAll(wait.ForExit()),
 		Cmd:        args,
+		Networks:   []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {networkAlias},
+		},
 	}
 
 	c, err := testcontainers.GenericContainer(context.Background(),

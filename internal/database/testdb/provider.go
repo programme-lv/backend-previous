@@ -48,13 +48,13 @@ func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error)
 		return nil, fmt.Errorf("failed to start postgres container: %w", err)
 	}
 
-	host, port, err := extractTestcontainerHostAndPort(x.postgres.container)
+	pgHost, pgPort, err := extractTestcontainerHostAndPort(x.postgres.container)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract testcontainer host and port: %w", err)
 	}
 
 	sqlxConnString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, x.postgres.user, x.postgres.password, x.postgres.database)
+		pgHost, pgPort, x.postgres.user, x.postgres.password, x.postgres.database)
 	log.Println("sqlxConnString: ", sqlxConnString)
 
 	x.sqlxDb = sqlx.MustConnect("postgres", sqlxConnString)
@@ -65,8 +65,10 @@ func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error)
 	}
 	defer migrations.erase()
 
-	err = execFlywayContainer(migrations.getFlywayMigrationsDir(),
-		host, port, x.postgres.database, x.postgres.user, x.postgres.password)
+	flywayAlias := randomLowercaseLetterString(10)
+	err = execFlywayContainer(networkName, flywayAlias,
+		migrations.getFlywayMigrationsDir(),
+		postgresAlias, "5432", x.postgres.database, x.postgres.user, x.postgres.password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec flyway container: %w", err)
 	}
