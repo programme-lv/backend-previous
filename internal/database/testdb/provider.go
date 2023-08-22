@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -57,7 +58,14 @@ func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error)
 		pgHost, pgPort, x.postgres.user, x.postgres.password, x.postgres.database)
 	log.Println("sqlxConnString: ", sqlxConnString)
 
-	x.sqlxDb = sqlx.MustConnect("postgres", sqlxConnString)
+	for i := 0; i < 10; i++ {
+		db, err := sqlx.Connect("postgres", sqlxConnString)
+		if err == nil {
+			x.sqlxDb = db
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	migrations, err := cloneGitDBMigrations()
 	if err != nil {

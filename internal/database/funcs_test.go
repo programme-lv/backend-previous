@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/programme-lv/backend/internal/database/testdb"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -27,8 +28,26 @@ func TestMain(m *testing.M) {
 
 func TestCreateUser(t *testing.T) {
 	db := dbProvider.GetTestDB()
-	// asert db is not null
-	if db == nil {
-		t.Fatal("db is nil")
-	}
+	assert.NotNil(t, db)
+
+	username := "username"
+	password := "password"
+	email := "email@gmail.com"
+	firstName := "firstName"
+	lastName := "lastName"
+
+	assert.Nil(t, CreateUser(db, username, hashPassword(password), email, firstName, lastName))
+
+	user, err := SelectUserByUsername(db, username)
+	assert.Nil(t, err)
+
+	assert.Equal(t, user.Username, username)
+	assert.Equal(t, user.Email, email)
+	assert.Equal(t, user.FirstName, firstName)
+	assert.Equal(t, user.LastName, lastName)
+	assert.Equal(t, user.IsAdmin, false)
+
+	assert.True(t, passwordsMatch(user.HashedPassword, password))
+
+	assert.Nil(t, DeleteUserById(db, user.ID))
 }
