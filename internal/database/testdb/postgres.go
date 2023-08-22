@@ -14,7 +14,7 @@ type postgresContainer struct {
 	database  string
 }
 
-func startPostgresContainer(user string, pass string, dbName string) (*postgresContainer, error) {
+func startPostgresContainer(networkName string, networkAlias string, user string, pass string, dbName string) (*postgresContainer, error) {
 	req := testcontainers.ContainerRequest{
 		Image:        "postgres:latest",
 		ExposedPorts: []string{"5432/tcp"},
@@ -27,6 +27,10 @@ func startPostgresContainer(user string, pass string, dbName string) (*postgresC
 			wait.ForLog("database system is ready to accept connections"),
 			wait.ForExposedPort(),
 		),
+		Networks: []string{networkName},
+		NetworkAliases: map[string][]string{
+			networkName: {networkAlias},
+		},
 	}
 
 	container, err := testcontainers.GenericContainer(context.Background(),

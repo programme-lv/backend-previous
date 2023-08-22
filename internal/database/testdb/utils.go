@@ -2,11 +2,12 @@ package testdb
 
 import (
 	"context"
+	"math/rand"
 
 	"github.com/testcontainers/testcontainers-go"
 )
 
-func extractTestcontainerHostPort(container testcontainers.Container) (host string, port string, err error) {
+func extractTestcontainerHostAndPort(container testcontainers.Container) (host string, port string, err error) {
 	host, err = container.Host(context.Background())
 	if err != nil {
 		return
@@ -36,4 +37,13 @@ func createNetwork(networkName string) (testcontainers.Network, error) {
 			},
 		})
 	return network, err
+}
+
+func randomLowercaseLetterString(length int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	result := make([]byte, length)
+	for i := 0; i < length; i++ {
+		result[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(result)
 }

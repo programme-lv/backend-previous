@@ -3,10 +3,11 @@ package testdb
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/testcontainers/testcontainers-go"
-	"log"
 )
 
 // TestDBProvider provides a migrated database
@@ -16,54 +17,58 @@ type TestDBProvider interface {
 	Close()
 }
 
+const (
+	networkName   = "proglv-test-network"
+	defaultUser   = "proglv"
+	defaultPass   = "proglv"
+	defaultDBName = "proglv"
+)
+
 func NewPostgresTestcontainerProvider() (TestDBProvider, error) {
 	return initPostgresContainerTestDB()
 }
 
 type migratedPostgresTestcontainer struct {
-	container *postgresContainer
-	network   testcontainers.Network
-	sqlxDb    *sqlx.DB
+	postgres *postgresContainer
+	network  testcontainers.Network
+	sqlxDb   *sqlx.DB
 }
 
 func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error) {
 	x = &migratedPostgresTestcontainer{}
 
-	x.network, err = createNetwork("proglv-test-network")
+	x.network, err = createNetwork(networkName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
-	pgUsername := "proglv"
-	pgPassword := "proglv"
-	pgDatabase := "proglv"
-
-	x.container, err = startPostgresContainer(pgUsername, pgPassword, pgDatabase)
+	postgresAlias := randomLowercaseLetterString(10)
+	x.postgres, err = startPostgresContainer(networkName, postgresAlias, defaultUser, defaultPass, defaultDBName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to start postgres container: %w", err)
 	}
 
-	host, port, err := extractTestcontainerHostPort(x.container.container)
+	host, port, err := extractTestcontainerHostAndPort(x.postgres.container)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to extract testcontainer host and port: %w", err)
 	}
 
 	sqlxConnString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, x.container.user, x.container.password, x.container.database)
-	log.Printf("connString: %s", sqlxConnString)
+		host, port, x.postgres.user, x.postgres.password, x.postgres.database)
+	log.Println("sqlxConnString: ", sqlxConnString)
 
 	x.sqlxDb = sqlx.MustConnect("postgres", sqlxConnString)
 
-	migrations, err := cloneDBMigrations()
+	migrations, err := cloneGitDBMigrations()
 	if err != nil {
-		log.Printf("Failed to clone migrations: %v", err)
+		return nil, fmt.Errorf("failed to clone git db migrations: %w", err)
 	}
 	defer migrations.erase()
 
 	err = execFlywayContainer(migrations.getFlywayMigrationsDir(),
-		host, port, x.container.database, x.container.user, x.container.password)
+		host, port, x.postgres.database, x.postgres.user, x.postgres.password)
 	if err != nil {
-		log.Printf("Failed to execute flyway container: %v", err)
+		return nil, fmt.Errorf("failed to exec flyway container: %w", err)
 	}
 
 	return x, nil
@@ -76,16 +81,16 @@ func (ptdb *migratedPostgresTestcontainer) GetTestDB() *sqlx.DB {
 func (x *migratedPostgresTestcontainer) Close() {
 	err := x.sqlxDb.Close()
 	if err != nil {
-		log.Printf("Failed to close sqlx db: %v", err)
+		log.Printf("failed to close sqlx db: %v", err)
+	}
+
+	err = x.postgres.container.Terminate(context.Background())
+	if err != nil {
+		log.Printf("failed to terminate container: %v", err)
 	}
 
 	err = x.network.Remove(context.Background())
 	if err != nil {
-		log.Printf("Failed to remove network: %v", err)
-	}
-
-	err = x.container.container.Terminate(context.Background())
-	if err != nil {
-		log.Printf("Failed to terminate container: %v", err)
+		log.Printf("failed to remove network: %v", err)
 	}
 }

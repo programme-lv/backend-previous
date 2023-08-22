@@ -12,7 +12,7 @@ type DBMigrations struct {
 	rootDir string
 }
 
-func cloneDBMigrations() (*DBMigrations, error) {
+func cloneGitDBMigrations() (*DBMigrations, error) {
 	tmpDir, err := os.MkdirTemp("", "proglv-db-migrations")
 	if err != nil {
 		return nil, err

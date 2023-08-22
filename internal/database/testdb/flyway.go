@@ -22,7 +22,7 @@ func execFlywayContainer(migrationDir string, dbHost string, dbPort string, dbNa
 		fmt.Sprintf("-url=jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 		fmt.Sprintf("-user=%s", dbUser),
 		fmt.Sprintf("-password=%s", dbPassword),
-		"-connectRetries=1",
+		"-connectRetries=5",
 		"-locations=filesystem:/flyway/flyway-migrations",
 		"migrate",
 	}
