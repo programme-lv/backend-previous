@@ -9,6 +9,7 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
+	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
