@@ -39,7 +39,7 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context,
 		return nil, err
 	}
 
-	task, err := database.GetTaskById(r.PostgresDB, taskIDInt64)
+	task, err := database.SelectTaskById(r.PostgresDB, taskIDInt64)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,17 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context,
 		return nil, err
 	}
 
-	return nil, nil
+	return &Submission{
+		ID: strconv.FormatInt(submissionId, 10),
+		Task: &Task{
+			ID: taskID,
+			// TODO: add other fields
+		},
+		Language: &Language{
+			// TODO: add other fields
+		},
+		Code: code,
+	}, nil
 }
 
 // ListSubmissions is the resolver for the listSubmissions field.

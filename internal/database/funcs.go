@@ -32,13 +32,20 @@ func DeleteUserById(db *sqlx.DB, id int64) error {
 }
 
 // creates a task submission and returns its id
-func CreateTaskSubmission(db sqlx.Ext, userId int64, taskId int64, programmingLangId string, submission string) (int64, error) {
+func CreateTaskSubmission(db sqlx.Queryer,
+	userId int64, taskId int64, programmingLangId string,
+	submission string) (int64, error) {
+
 	var id int64
-	err := db.QueryRowx("INSERT INTO task_submissions (user_id, task_id, programming_lang_id, submission, created_at) VALUES ($1, $2, $3, $4, now()) RETURNING id", userId, taskId, programmingLangId, submission).Scan(&id)
+	err := db.QueryRowx(`INSERT INTO task_submissions
+	(user_id, task_id, programming_lang_id, submission, created_at)
+	VALUES ($1, $2, $3, $4, now()) RETURNING id`,
+		userId, taskId, programmingLangId, submission).Scan(&id)
+
 	return id, err
 }
 
-func GetTaskById(db *sqlx.DB, id int64) (*Task, error) {
+func SelectTaskById(db *sqlx.DB, id int64) (*Task, error) {
 	var task Task
 	err := db.Get(&task, "SELECT * FROM tasks WHERE id = $1", id)
 	return &task, err
@@ -52,6 +59,7 @@ func CreateSubmissionEvaluation(db sqlx.Queryer,
 	evalStatusId string, evalTotalScore int64, evalPossibleScore int64,
 	compilationStdout *string, compilationStderr *string,
 	compilationTimeMs *int64, compilationMemoryKb *int64) (int64, error) {
+
 	var id int64
 	err := db.QueryRowx(`INSERT INTO submission_evaluations
 	(task_submission_id, eval_task_version_id,
@@ -68,5 +76,12 @@ func CreateSubmissionEvaluation(db sqlx.Queryer,
 		evalTotalScore, evalPossibleScore,
 		compilationStdout, compilationStderr,
 		compilationTimeMs, compilationMemoryKb).Scan(&id)
+
 	return id, err
+}
+
+func SelectTaskVersionById(db *sqlx.DB, id int64) (*TaskVersion, error) {
+	var taskVersion TaskVersion
+	err := db.Get(&taskVersion, "SELECT * FROM task_versions WHERE id = $1", id)
+	return &taskVersion, err
 }

@@ -35,18 +35,18 @@ type Task struct {
 }
 
 type TaskVersion struct {
-	ID                int64      `db:"id"`
-	TaskID            int64      `db:"task_id"`
-	ShortCode         string     `db:"short_code"`
-	FullName          string     `db:"full_name"`
-	TimeLimMs         int        `db:"time_lim_ms"`
-	MemLimKb          int        `db:"mem_lim_kb"`
-	TestingTypeID     string     `db:"testing_type_id"`
-	Origin            *string    `db:"origin"`
-	CreatedAt         time.Time  `db:"created_at"`
-	UpdatedAt         *time.Time `db:"updated_at"`
-	CheckerTextID     *int64     `db:"checker_text_id"`
-	InteratctorTextID *int64     `db:"interactor_text_id"`
+	ID            int64      `db:"id"`
+	TaskID        int64      `db:"task_id"`
+	ShortCode     string     `db:"short_code"`
+	FullName      string     `db:"full_name"`
+	TimeLimMs     int        `db:"time_lim_ms"`
+	MemLimKb      int        `db:"mem_lim_kb"`
+	TestingTypeID string     `db:"testing_type_id"`
+	Origin        *string    `db:"origin"`
+	CreatedAt     time.Time  `db:"created_at"`
+	UpdatedAt     *time.Time `db:"updated_at"`
+	CheckerID     *int64     `db:"checker_id"`
+	InteractorID  *int64     `db:"interactor_id"`
 }
 
 type TaskAuthor struct {
