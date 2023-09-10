@@ -3,7 +3,7 @@ module github.com/programme-lv/backend
 go 1.19
 
 require (
-	github.com/99designs/gqlgen v0.17.36
+	github.com/99designs/gqlgen v0.17.37
 	github.com/alexedwards/scs/v2 v2.5.1
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
@@ -13,7 +13,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.4
 	github.com/testcontainers/testcontainers-go v0.23.0
-	github.com/vektah/gqlparser/v2 v2.5.8
+	github.com/vektah/gqlparser/v2 v2.5.9
 	golang.org/x/crypto v0.12.0
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
 )

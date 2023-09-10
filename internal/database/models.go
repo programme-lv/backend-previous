@@ -65,11 +65,30 @@ type TaskSource struct {
 }
 
 type MarkdownStatement struct {
-	ID            int64  `db:"id"`
-	Story         string `db:"story"`
-	Input         string `db:"input"`
-	Output        string `db:"output"`
+	ID            int64   `db:"id"`
+	Story         string  `db:"story"`
+	Input         string  `db:"input"`
+	Output        string  `db:"output"`
 	Notes         *string `db:"notes"`
 	Scoring       *string `db:"scoring"`
-	TaskVersionID int64  `db:"task_version_id"`
+	TaskVersionID int64   `db:"task_version_id"`
+}
+
+type SubmissionEvaluation struct {
+	ID                  int64     `db:"id"`
+	TaskSubmissionID    int64     `db:"task_submission_id"`
+	EvalTaskVersionID   int64     `db:"eval_task_version_id"`
+	TestMaximumTimeMs   *int64    `db:"test_maximum_time_ms"`
+	TestMaximumMemoryKb *int64    `db:"test_maximum_memory_kb"`
+	TestTotalTimeMs     int64     `db:"test_total_time_ms"`
+	TestTotalMemoryKb   int64     `db:"test_total_memory_kb"`
+	EvalStatusId        string    `db:"eval_status_id"`
+	EvalTotalScore      int64     `db:"eval_total_score"`
+	EvalPossibleScore   *int64    `db:"eval_possible_score"`
+	CompilationStdout   *string   `db:"compilation_stdout"`
+	CompilationStderr   *string   `db:"compilation_stderr"`
+	CompilationTimeMs   *int64    `db:"compilation_time_ms"`
+	CompilationMemoryKb *int64    `db:"compilation_memory_kb"`
+	CreatedAt           time.Time `db:"created_at"`
+	UpdateAt            time.Time `db:"updated_at"`
 }

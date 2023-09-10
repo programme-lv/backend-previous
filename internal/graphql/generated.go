@@ -82,7 +82,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateTask            func(childComplexity int, name string, code string) int
 		DeleteTask            func(childComplexity int, id string) int
-		EnqueueSubmission     func(childComplexity int, taskID string, languageID string, code string) int
+		EnqueueSubmission     func(childComplexity int, taskID string, languageID string, code string, versionID *string) int
 		ExecuteCode           func(childComplexity int, code string, languageID string) int
 		Login                 func(childComplexity int, username string, password string) int
 		Logout                func(childComplexity int) int
@@ -142,7 +142,7 @@ type MutationResolver interface {
 	UpdateTaskExamples(ctx context.Context, id string, inputs []string, outputs []string) (*Task, error)
 	UpdateTaskConstraints(ctx context.Context, id string, timeLimitMs *int, memoryLimitKb *int) (*Task, error)
 	DeleteTask(ctx context.Context, id string) (*Task, error)
-	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error)
+	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
 type QueryResolver interface {
@@ -331,7 +331,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnqueueSubmission(childComplexity, args["taskID"].(string), args["languageID"].(string), args["code"].(string)), true
+		return e.complexity.Mutation.EnqueueSubmission(childComplexity, args["taskID"].(string), args["languageID"].(string), args["code"].(string), args["versionID"].(*string)), true
 
 	case "Mutation.executeCode":
 		if e.complexity.Mutation.ExecuteCode == nil {
@@ -822,7 +822,7 @@ type Language {
 }
 
 extend type Mutation {
-  enqueueSubmission(taskID: ID!, languageID: ID!,code: String!): Submission!
+  enqueueSubmission(taskID: ID!, languageID: ID!, code: String!, versionID: ID): Submission!
 }
 
 type Submission {
@@ -917,6 +917,15 @@ func (ec *executionContext) field_Mutation_enqueueSubmission_args(ctx context.Co
 		}
 	}
 	args["code"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["versionID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("versionID"))
+		arg3, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["versionID"] = arg3
 	return args, nil
 }
 
@@ -2692,7 +2701,7 @@ func (ec *executionContext) _Mutation_enqueueSubmission(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().EnqueueSubmission(rctx, fc.Args["taskID"].(string), fc.Args["languageID"].(string), fc.Args["code"].(string))
+		return ec.resolvers.Mutation().EnqueueSubmission(rctx, fc.Args["taskID"].(string), fc.Args["languageID"].(string), fc.Args["code"].(string), fc.Args["versionID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7829,6 +7838,22 @@ func (ec *executionContext) marshalOExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlv�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalID(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
