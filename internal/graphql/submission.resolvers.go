@@ -6,6 +6,7 @@ package graphql
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -15,7 +16,8 @@ import (
 )
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
-func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error) {
+func (r *mutationResolver) EnqueueSubmission(ctx context.Context,
+	taskID string, languageID string, code string, versionID *string) (*Submission, error) {
 	ch, err := r.SubmissionRMQ.Channel()
 	if err != nil {
 		return nil, err
@@ -61,13 +63,15 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 		return nil, err
 	}
 
-	submissionId, err := database.CreateTaskSubmission(tx, user.ID, taskIDInt64, languageID, code)
+	submissionId, err := database.CreateTaskSubmission(tx,
+		user.ID, taskIDInt64, languageID, code)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	err = database.CreateSubmissionEvaluation(tx, submissionId, *versionIDInt64, nil, nil, 0, 0, "IQS", 0, 0, nil, nil, nil, nil)
+	evaluationId, err := database.CreateSubmissionEvaluation(tx,
+		submissionId, *versionIDInt64, nil, nil, 0, 0, "IQS", 0, 0, nil, nil, nil, nil)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -76,10 +80,21 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	body := "Hello World!"
+	body := struct {
+		EvaluationId int64 `json:"evaluation_id"`
+	}{
+		EvaluationId: evaluationId,
+	}
+
+	jsonData, err := json.Marshal(body)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
 	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
 		ContentType: "application/json",
-		Body:        []byte(body),
+		Body:        jsonData,
 	})
 	if err != nil {
 		tx.Rollback()
