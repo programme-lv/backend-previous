@@ -44,20 +44,21 @@ func GetTaskById(db *sqlx.DB, id int64) (*Task, error) {
 	return &task, err
 }
 
-func CreateTaskEvaluation(db sqlx.Execer, taskSubmissionId int64, evalTaskVersionId int64,
+func CreateSubmissionEvaluation(db sqlx.Execer,
+	taskSubmissionId int64, evalTaskVersionId int64,
 	testMaximumTimeMs *int64, testMaximumMemoryKb *int64,
 	testTotalTimeMs int64, testTotalMemoryKb int64,
 	evalStatusId string, evalTotalScore int64, evalPossibleScore int64,
 	compilationStdout *string, compilationStderr *string,
 	compilationTimeMs *int64, compilationMemoryKb *int64) error {
-	_, err := db.Exec(`INSERT INTO task_evaluations
+	_, err := db.Exec(`INSERT INTO submission_evaluations
 	(task_submission_id, eval_task_version_id,
 	test_maximum_time_ms, test_maximum_memory_kb,
 	test_total_time_ms, test_total_memory_kb,
 	eval_status_id, eval_total_score, eval_possible_score,
 	compilation_stdout, compilation_stderr,
 	compilation_time_ms, compilation_memory_kb,
-	created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())`,
+	created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())`,
 		taskSubmissionId, evalTaskVersionId,
 		testMaximumTimeMs, testMaximumMemoryKb,
 		testTotalTimeMs, testTotalMemoryKb, evalStatusId,

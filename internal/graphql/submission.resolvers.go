@@ -16,6 +16,17 @@ import (
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
 func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error) {
+	ch, err := r.SubmissionRMQ.Channel()
+	if err != nil {
+		return nil, err
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare("submissions", false, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	user, err := r.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -26,9 +37,21 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 		return nil, err
 	}
 
-	_, err = database.GetTaskById(r.PostgresDB, taskIDInt64)
+	task, err := database.GetTaskById(r.PostgresDB, taskIDInt64)
 	if err != nil {
 		return nil, err
+	}
+
+	versionIDInt64 := task.PublishedVersionID
+	if versionID != nil {
+		parsed, err := strconv.ParseInt(*versionID, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		versionIDInt64 = &parsed
+	}
+	if versionIDInt64 == nil {
+		return nil, fmt.Errorf("couldnt determine version ID")
 	}
 
 	tx, err := r.PostgresDB.Beginx()
@@ -36,21 +59,17 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 		return nil, err
 	}
 
-	_, err = database.CreateTaskSubmission(tx, user.ID, taskIDInt64, languageID, code)
+	submissionId, err := database.CreateTaskSubmission(tx, user.ID, taskIDInt64, languageID, code)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	// TODO: create task evaluation
-
-	ch, err := r.SubmissionRMQ.Channel()
+	err = database.CreateSubmissionEvaluation(tx, submissionId, *versionIDInt64, nil, nil, 0, 0, "IQS", 0, 0, nil, nil, nil, nil)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare("submissions", false, false, false, false, nil)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -61,6 +80,7 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 		Body:        []byte(body),
 	})
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
