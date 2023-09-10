@@ -4,6 +4,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/exp/slog"
 )
 
@@ -12,7 +13,8 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	DB             *sqlx.DB
+	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
+	SubmissionRMQ  *amqp.Connection
 }

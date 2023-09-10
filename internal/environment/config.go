@@ -12,6 +12,7 @@ import (
 
 type EnvConfig struct {
 	SqlxConnString string `mapstructure:"SQLX_CONN_STRING"`
+	AMQPConnString string `mapstructure:"AMQP_CONN_STRING"`
 }
 
 func ReadEnvConfig() *EnvConfig {
@@ -31,6 +32,7 @@ func ReadEnvConfig() *EnvConfig {
 
 	viper.AutomaticEnv()
 	viper.BindEnv("SQLX_CONN_STRING")
+	viper.BindEnv("AMQP_CONN_STRING")
 
 	err := viper.Unmarshal(&config)
 	if err != nil {

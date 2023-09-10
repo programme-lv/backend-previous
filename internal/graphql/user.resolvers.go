@@ -22,7 +22,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 		slog.String("username", username))
 	requestLogger.Info("received login request")
 
-	user, err := database.SelectUserByUsername(r.DB, username)
+	user, err := database.SelectUserByUsername(r.PostgresDB, username)
 	if err == sql.ErrNoRows {
 		requestLogger.Info("user not found")
 		return nil, fmt.Errorf("username or password is incorrect")
@@ -74,7 +74,7 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, fmt.Errorf("username must be at most %d characters", 15)
 	}
 
-	usernameExists, err := database.DoesUserExistByUsername(r.DB, username)
+	usernameExists, err := database.DoesUserExistByUsername(r.PostgresDB, username)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, fmt.Errorf("user with that username already exists")
 	}
 
-	emailExists, err := database.DoesUserExistByEmail(r.DB, email)
+	emailExists, err := database.DoesUserExistByEmail(r.PostgresDB, email)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +101,12 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, err
 	}
 
-	err = database.CreateUser(r.DB, username, hashedPassword, email, firstName, lastName)
+	err = database.CreateUser(r.PostgresDB, username, hashedPassword, email, firstName, lastName)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := database.SelectUserByUsername(r.DB, username)
+	user, err := database.SelectUserByUsername(r.PostgresDB, username)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 
 	// Get the user from the database
 	var user database.User
-	err := r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
+	err := r.PostgresDB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
 	}

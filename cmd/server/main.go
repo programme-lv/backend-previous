@@ -14,6 +14,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 const defaultPort = "3001"
@@ -22,19 +23,29 @@ func main() {
 	conf := environment.ReadEnvConfig()
 	conf.Print()
 
+	log.Println("Connecting to database...")
 	sqlxDb := sqlx.MustConnect("postgres", conf.SqlxConnString)
 	defer sqlxDb.Close()
 	log.Println("Connected to database")
 
-	// Initialize session manager
+	log.Println("Connecting to RabbitMQ...")
+	rmqConn, err := amqp.Dial(conf.AMQPConnString)
+	if err != nil {
+		panic(err)
+	}
+	defer rmqConn.Close()
+	log.Println("Connected to RabbitMQ")
+
 	sessions := scs.New()
 	sessions.Lifetime = 24 * time.Hour
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	resolver := &graphql.Resolver{
-		DB:             sqlxDb,
+		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
 		Logger:         logger,
+		SubmissionRMQ:  rmqConn,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
@@ -44,7 +55,6 @@ func main() {
 	})
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
-	log.Printf("http://localhost:%s/ = GraphQL playground", defaultPort)
-	log.Printf("http://localhost:%s/query = GraphQL query endpoint", defaultPort)
+	log.Println("Listening on port " + defaultPort)
 	log.Fatal(http.ListenAndServe(":"+defaultPort, nil))
 }

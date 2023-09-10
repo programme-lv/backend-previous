@@ -16,7 +16,7 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 	log.Println("Received request for languages")
 
 	var langs []database.ProgrammingLanguage
-	err := r.DB.Select(&langs, "SELECT * FROM programming_languages")
+	err := r.PostgresDB.Select(&langs, "SELECT * FROM programming_languages")
 	if err != nil {
 		return nil, err
 	}

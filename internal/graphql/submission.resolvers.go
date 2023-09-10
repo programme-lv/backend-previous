@@ -15,21 +15,14 @@ import (
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
 func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error) {
-	// send sumission to rabbitmq queue
-	// we need the url of the queue
-	// actually shouldn't we connect from the mutation resolver?
-	// fix that later if necessary
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-	ch, err := conn.Channel()
+	ch, err := r.SubmissionRMQ.Channel()
 	if err != nil {
 		return nil, err
 	}
 	defer ch.Close()
+
 	q, err := ch.QueueDeclare("submissions", false, false, false, false, nil)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -41,9 +34,10 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf(" [x] Sent %s", body)
 
-	panic(fmt.Errorf("not implemented: EnqueueSubmission - enqueueSubmission"))
+	return nil, nil
 }
 
 // ListSubmissions is the resolver for the listSubmissions field.

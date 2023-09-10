@@ -15,7 +15,7 @@ func (r *Resolver) GetUserFromContext(ctx context.Context) (*database.User, erro
 	}
 
 	var user database.User
-	err := r.DB.Get(&user, "SELECT * FROM users WHERE id = $1", userId)
+	err := r.PostgresDB.Get(&user, "SELECT * FROM users WHERE id = $1", userId)
 	if err != nil {
 		return nil, err
 	}
