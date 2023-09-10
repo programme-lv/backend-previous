@@ -42,6 +42,8 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 		return nil, err
 	}
 
+	// TODO: disallow users without access to non-published versions
+
 	versionIDInt64 := task.PublishedVersionID
 	if versionID != nil {
 		parsed, err := strconv.ParseInt(*versionID, 10, 64)
