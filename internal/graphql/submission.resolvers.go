@@ -7,14 +7,38 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"log"
+	"strconv"
 	"time"
 
+	"github.com/programme-lv/backend/internal/database"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // EnqueueSubmission is the resolver for the enqueueSubmission field.
 func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string) (*Submission, error) {
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.PostgresDB.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
+	err = database.CreateTaskSubmission(tx, user.ID, taskIDInt64, languageID, code)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// TODO: create task evaluation
+
 	ch, err := r.SubmissionRMQ.Channel()
 	if err != nil {
 		return nil, err
@@ -28,14 +52,17 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 
 	body := "Hello World!"
 	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType: "text/plain",
+		ContentType: "application/json",
 		Body:        []byte(body),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf(" [x] Sent %s", body)
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, nil
 }

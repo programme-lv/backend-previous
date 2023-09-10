@@ -30,3 +30,8 @@ func DeleteUserById(db *sqlx.DB, id int64) error {
 	_, err := db.Exec("DELETE FROM users WHERE id = $1", id)
 	return err
 }
+
+func CreateTaskSubmission(db sqlx.Ext, userId int64, taskId int64, programmingLangId string, submission string) error {
+	_, err := db.Exec("INSERT INTO task_submissions (user_id, task_id, programming_lang_id, submission, created_at) VALUES ($1, $2, $3, $4, now())", userId, taskId, programmingLangId, submission)
+	return err
+}
