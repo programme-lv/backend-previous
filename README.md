@@ -6,6 +6,8 @@
 [Go Report Card]: https://goreportcard.com/badge/gojp/goreportcard
 [License]: https://img.shields.io/badge/license-GPLv3-blue
 
+[good commit message]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+
 [programme.lv] is a programming learning platform for scholars, students and others.
 
 [![Test Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/test.yml)
@@ -32,7 +34,7 @@ After each push on `main`, unit and integration tests are run.
 Integration tests are run against the newest version of the [database].
 If a commit is tagged it is then deployed to production.
 
-For more information look at actions defined in `./.github/workflows/`.
+For more CI/CD information look at actions defined in `./.github/workflows/`.
 
 TODO: trigger the testing workflow also on database changes.
 
@@ -45,10 +47,10 @@ before making a change.
 Pull requests are the best way to propose changes to the codebase. We actively
 welcome your pull requests:
 
-1. Fork the repo and create your branch from `master`.
+1. Fork the repo and create your branch from `main`.
 2. If you've added code that should be tested, add tests.
 3. If you've added code that need documentation, update the documentation.
-4. Write a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+4. Write a [good commit message].
 5. Issue that pull request!
 
 Join our community on [Discord](https://discord.gg/7c8GwpGt)!
