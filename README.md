@@ -1,12 +1,17 @@
 [programme.lv]: https://programme.lv
 [database]: https://github.com/programme-lv/database 
-[deploy action status badge]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
-[test action status badge]: https://github.com/programme-lv/backend/actions/workflows/test.yml/badge.svg
+
+[Deploy Action Status Badge]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
+[Test Action Status Badge]: https://github.com/programme-lv/backend/actions/workflows/test.yml/badge.svg
+[Go Report Card]: https://goreportcard.com/badge/gojp/goreportcard
+[License]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 
 [programme.lv] is a programming learning platform for scholars, students and others.
 
-![deploy action status badge]
-![test action status badge]
+[![Deploy Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/deploy.yml)
+[![Test Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/test.yml)
+[![Go Report Card]](https://goreportcard.com/report/github.com/programme-lv/backend)
+[![License]](https://github.com/programme-lv/backend/blob/main/LICENSE)
 
 ## Overview
 
