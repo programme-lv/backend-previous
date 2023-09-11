@@ -1,15 +1,19 @@
-[website]: https://programme.lv
+[programme.lv]: https://programme.lv
 [database]: https://github.com/programme-lv/database 
-[deploy-action]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
+[deploy action status badge]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
+[test action status badge]: https://github.com/programme-lv/backend/actions/workflows/test.yml/badge.svg
+[RabbitMQ]: https://www.rabbitmq.com/
 
-Programme.lv is a programming learning platform for scholars, students and others.
+[programme.lv] is a programming learning platform for scholars, students and others.
+
+![deploy action status badge]
+![test action status badge]
 
 ## Overview
 
-This repository contains source code for the backend of the programme.lv system.
-The backend is a graphql server that interacts with the [database] and the rabbitmq submission queue.
+This repository contains source code for the **backend** of the [programme.lv] system.
+The **backend** is a `graphql` server that interacts with the `PostgreSQL` [database] and the [RabbitMQ] submission queue.
 
-![deploy-action]
 
 ## Git workflow & CI/CD
 
