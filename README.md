@@ -4,7 +4,7 @@
 [Deploy Action Status Badge]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
 [Test Action Status Badge]: https://github.com/programme-lv/backend/actions/workflows/test.yml/badge.svg
 [Go Report Card]: https://goreportcard.com/badge/gojp/goreportcard
-[License]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+[License]: https://img.shields.io/badge/license-GPLv3-blue
 
 [programme.lv] is a programming learning platform for scholars, students and others.
 
