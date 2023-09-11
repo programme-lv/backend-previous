@@ -42,13 +42,11 @@ jobs:
       run: mkdir -p kubernetes
 
     - name: Download manifest
-      run: wget https://raw.githubusercontent.com/programme-lv/devops/main/kubernetes/proglv_backend_deployment.yaml -P kubernetes/
+      run: wget https://raw.githubusercontent.com/programme-lv/devops/main/kubernetes/programme.lv/backend_deployment.yaml -P kubernetes/
 
     - name: Replace manifest tokens
       run: |
-        sed -e 's/__IMAGE_AUTHOR__/krisjanisp/g' \
-            -e 's/__IMAGE_NAME__/proglv-backend/g' \
-            -e 's/__IMAGE_TAG__/${{env.DOCKER_METADATA_OUTPUT_VERSION}}/g' \
+        sed -e 's/latest/${{env.DOCKER_METADATA_OUTPUT_VERSION}}/g' \
             < ./kubernetes/proglv_backend_deployment.yaml > ./kubernetes/gucci_deployment.yaml
 
     - name: Log manifest
@@ -61,7 +59,7 @@ jobs:
       run: kubectl apply -f ./kubernetes/gucci_deployment.yaml
 
     - name: Verify deployment
-      run: timeout 30s kubectl rollout status deployment/proglv-backend -n backend
+      run: timeout 30s kubectl rollout status deployment/backend -n proglv
 
     - name: Display running pods
       run: kubectl get pods -n backend

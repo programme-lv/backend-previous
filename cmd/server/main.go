@@ -51,7 +51,7 @@ func main() {
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello world"))
+		w.Write([]byte("Hello world :)"))
 	})
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
