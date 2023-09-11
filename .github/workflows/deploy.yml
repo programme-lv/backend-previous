@@ -47,7 +47,7 @@ jobs:
     - name: Replace manifest tokens
       run: |
         sed -e 's/latest/${{env.DOCKER_METADATA_OUTPUT_VERSION}}/g' \
-            < ./kubernetes/proglv_backend_deployment.yaml > ./kubernetes/gucci_deployment.yaml
+            < ./kubernetes/backend_deployment.yaml > ./kubernetes/gucci_deployment.yaml
 
     - name: Log manifest
       run: cat ./kubernetes/gucci_deployment.yaml
