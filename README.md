@@ -2,7 +2,6 @@
 [database]: https://github.com/programme-lv/database 
 [deploy action status badge]: https://github.com/programme-lv/backend/actions/workflows/deploy.yml/badge.svg
 [test action status badge]: https://github.com/programme-lv/backend/actions/workflows/test.yml/badge.svg
-[RabbitMQ]: https://www.rabbitmq.com/
 
 [programme.lv] is a programming learning platform for scholars, students and others.
 
@@ -12,8 +11,7 @@
 ## Overview
 
 This repository contains source code for the **backend** of the [programme.lv] system.
-The **backend** is a `graphql` server that interacts with the `PostgreSQL` [database] and the [RabbitMQ] submission queue.
-
+The **backend** is a GraphQL server that interacts with the PostgreSQL [database] and the RabbitMQ submission queue.
 
 ## Git workflow & CI/CD
 
@@ -35,4 +33,18 @@ TODO: trigger the testing workflow also on database changes.
 
 ## Contributing
 
-TODO: write how to contribute
+When contributing to this repository, please first discuss the change you wish
+to make via issue, email, or any other method with the owners of this repository
+before making a change.
+
+Pull requests are the best way to propose changes to the codebase. We actively
+welcome your pull requests:
+
+1. Fork the repo and create your branch from `master`.
+2. If you've added code that should be tested, add tests.
+3. If you've added code that need documentation, update the documentation.
+4. Write a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+5. Issue that pull request!
+
+Join our community on [Discord](https://discord.gg/7c8GwpGt)!
+
