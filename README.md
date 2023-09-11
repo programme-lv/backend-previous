@@ -8,8 +8,8 @@
 
 [programme.lv] is a programming learning platform for scholars, students and others.
 
-[![Deploy Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/deploy.yml)
 [![Test Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/test.yml)
+[![Deploy Action Status Badge]](https://github.com/programme-lv/backend/actions/workflows/deploy.yml)
 [![Go Report Card]](https://goreportcard.com/report/github.com/programme-lv/backend)
 [![License]](https://github.com/programme-lv/backend/blob/main/LICENSE)
 
