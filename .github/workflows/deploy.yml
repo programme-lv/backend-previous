@@ -2,10 +2,10 @@ name: Deploy
 
 on:
   push:
-    branches: [ "prod" ]
+    tags:
+      - '*'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -17,10 +17,6 @@ jobs:
       uses: docker/metadata-action@v4
       with:
         images: krisjanisp/proglv-backend
-        tags: |
-          type=schedule
-          type=schedule,pattern={{date 'YYYYMMDD-hhmmss'}}
-          type=sha
 
     - name: Login to DockerHub
       if: github.event_name != 'pull_request'
@@ -36,3 +32,36 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Create kubernetes directory
+      run: mkdir -p kubernetes
+
+    - name: Download manifest
+      run: wget https://raw.githubusercontent.com/programme-lv/devops/main/kubernetes/proglv_backend_deployment.yaml -P kubernetes/
+
+    - name: Replace manifest tokens
+      run: |
+        sed -e 's/__IMAGE_AUTHOR__/krisjanisp/g' \
+            -e 's/__IMAGE_NAME__/proglv-backend/g' \
+            -e 's/__IMAGE_TAG__/${{env.DOCKER_METADATA_OUTPUT_VERSION}}/g' \
+            < ./kubernetes/proglv_backend_deployment.yaml > ./kubernetes/gucci_deployment.yaml
+
+    - name: Log manifest
+      run: cat ./kubernetes/gucci_deployment.yaml
+
+    - name: Save DigitalOcean kubeconfig with short-lived credentials
+      run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ secrets.CLUSTER_NAME }}
+
+    - name: Deploy to DigitalOcean Kubernetes
+      run: kubectl apply -f ./kubernetes/gucci_deployment.yaml
+
+    - name: Verify deployment
+      run: timeout 30s kubectl rollout status deployment/proglv-backend -n backend
+
+    - name: Display running pods
+      run: kubectl get pods -n backend
