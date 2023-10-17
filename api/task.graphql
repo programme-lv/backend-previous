@@ -1,9 +1,9 @@
 extend type Query {
-    listTasks: [Task!]!
     listPublishedTasks: [Task!]!
-    getRelevantTaskById(id: ID!): Task!
-    getPublishedTaskByCode(code: String!): Task!
-    listTaskOrigins: [String!]!
+    getPublishedTaskVersionByCode(code: String!): Task!
+
+    listEditableTasks: [Task!]!
+    getCurrentTaskVersionById(id: ID!): Task!
 }
 
 extend type Mutation {
@@ -12,8 +12,9 @@ extend type Mutation {
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
     updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
     updateTaskExamples(id: ID!, inputs: [String!], outputs: [String!]): Task!
-    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKb: Int): Task!
+    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKB: Int): Task!
 
+    publishTask(id: ID!): Task!
     deleteTask(id: ID!): Task!
 }
 
@@ -22,9 +23,11 @@ type Task {
     code: String!
     name: String!
     
-    Description: Description!
-    Constraints: Constraints!
-    Metadata: Metadata!
+    description: Description!
+    constraints: Constraints!
+    metadata: Metadata!
+
+    tests: [Test!]!
 
     createdAt: String!
     updatedAt: String!
@@ -54,4 +57,11 @@ type Example {
     id: ID!
     input: String!
     output: String!
+}
+
+type Test {
+    id: ID!
+    name: String!
+    input: String!
+    answer: String!
 }

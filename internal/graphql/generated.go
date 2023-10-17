@@ -22,6 +22,7 @@ import (
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
+		schema:     cfg.Schema,
 		resolvers:  cfg.Resolvers,
 		directives: cfg.Directives,
 		complexity: cfg.Complexity,
@@ -29,6 +30,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 }
 
 type Config struct {
+	Schema     *ast.Schema
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
 	Complexity ComplexityRoot
@@ -86,6 +88,7 @@ type ComplexityRoot struct {
 		ExecuteCode           func(childComplexity int, code string, languageID string) int
 		Login                 func(childComplexity int, username string, password string) int
 		Logout                func(childComplexity int) int
+		PublishTask           func(childComplexity int, id string) int
 		Register              func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
 		UpdateTaskConstraints func(childComplexity int, id string, timeLimitMs *int, memoryLimitKb *int) int
 		UpdateTaskDescription func(childComplexity int, id string, code *string, name *string, story *string, input *string, output *string, notes *string) int
@@ -94,14 +97,13 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetPublishedTaskByCode func(childComplexity int, code string) int
-		GetRelevantTaskByID    func(childComplexity int, id string) int
-		ListLanguages          func(childComplexity int) int
-		ListPublishedTasks     func(childComplexity int) int
-		ListSubmissions        func(childComplexity int) int
-		ListTaskOrigins        func(childComplexity int) int
-		ListTasks              func(childComplexity int) int
-		Whoami                 func(childComplexity int) int
+		GetCurrentTaskVersionByID     func(childComplexity int, id string) int
+		GetPublishedTaskVersionByCode func(childComplexity int, code string) int
+		ListEditableTasks             func(childComplexity int) int
+		ListLanguages                 func(childComplexity int) int
+		ListPublishedTasks            func(childComplexity int) int
+		ListSubmissions               func(childComplexity int) int
+		Whoami                        func(childComplexity int) int
 	}
 
 	Submission struct {
@@ -119,7 +121,15 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Metadata    func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Tests       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
+	}
+
+	Test struct {
+		Answer func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Input  func(childComplexity int) int
+		Name   func(childComplexity int) int
 	}
 
 	User struct {
@@ -141,28 +151,32 @@ type MutationResolver interface {
 	UpdateTaskDescription(ctx context.Context, id string, code *string, name *string, story *string, input *string, output *string, notes *string) (*Task, error)
 	UpdateTaskExamples(ctx context.Context, id string, inputs []string, outputs []string) (*Task, error)
 	UpdateTaskConstraints(ctx context.Context, id string, timeLimitMs *int, memoryLimitKb *int) (*Task, error)
+	PublishTask(ctx context.Context, id string) (*Task, error)
 	DeleteTask(ctx context.Context, id string) (*Task, error)
 	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
 type QueryResolver interface {
 	Whoami(ctx context.Context) (*User, error)
-	ListTasks(ctx context.Context) ([]*Task, error)
 	ListPublishedTasks(ctx context.Context) ([]*Task, error)
-	GetRelevantTaskByID(ctx context.Context, id string) (*Task, error)
-	GetPublishedTaskByCode(ctx context.Context, code string) (*Task, error)
-	ListTaskOrigins(ctx context.Context) ([]string, error)
+	GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error)
+	ListEditableTasks(ctx context.Context) ([]*Task, error)
+	GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error)
 	ListLanguages(ctx context.Context) ([]*Language, error)
 	ListSubmissions(ctx context.Context) ([]*Submission, error)
 }
 
 type executableSchema struct {
+	schema     *ast.Schema
 	resolvers  ResolverRoot
 	directives DirectiveRoot
 	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
+	if e.schema != nil {
+		return e.schema
+	}
 	return parsedSchema
 }
 
@@ -364,6 +378,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Logout(childComplexity), true
 
+	case "Mutation.publishTask":
+		if e.complexity.Mutation.PublishTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_publishTask_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PublishTask(childComplexity, args["id"].(string)), true
+
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
 			break
@@ -386,7 +412,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTaskConstraints(childComplexity, args["id"].(string), args["timeLimitMs"].(*int), args["memoryLimitKb"].(*int)), true
+		return e.complexity.Mutation.UpdateTaskConstraints(childComplexity, args["id"].(string), args["timeLimitMs"].(*int), args["memoryLimitKB"].(*int)), true
 
 	case "Mutation.updateTaskDescription":
 		if e.complexity.Mutation.UpdateTaskDescription == nil {
@@ -424,29 +450,36 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateTaskMetadata(childComplexity, args["id"].(string), args["authors"].([]string), args["origin"].(*string)), true
 
-	case "Query.getPublishedTaskByCode":
-		if e.complexity.Query.GetPublishedTaskByCode == nil {
+	case "Query.getCurrentTaskVersionById":
+		if e.complexity.Query.GetCurrentTaskVersionByID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getPublishedTaskByCode_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_getCurrentTaskVersionById_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetPublishedTaskByCode(childComplexity, args["code"].(string)), true
+		return e.complexity.Query.GetCurrentTaskVersionByID(childComplexity, args["id"].(string)), true
 
-	case "Query.getRelevantTaskById":
-		if e.complexity.Query.GetRelevantTaskByID == nil {
+	case "Query.getPublishedTaskVersionByCode":
+		if e.complexity.Query.GetPublishedTaskVersionByCode == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getRelevantTaskById_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_getPublishedTaskVersionByCode_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.GetRelevantTaskByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.GetPublishedTaskVersionByCode(childComplexity, args["code"].(string)), true
+
+	case "Query.listEditableTasks":
+		if e.complexity.Query.ListEditableTasks == nil {
+			break
+		}
+
+		return e.complexity.Query.ListEditableTasks(childComplexity), true
 
 	case "Query.listLanguages":
 		if e.complexity.Query.ListLanguages == nil {
@@ -468,20 +501,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ListSubmissions(childComplexity), true
-
-	case "Query.listTaskOrigins":
-		if e.complexity.Query.ListTaskOrigins == nil {
-			break
-		}
-
-		return e.complexity.Query.ListTaskOrigins(childComplexity), true
-
-	case "Query.listTasks":
-		if e.complexity.Query.ListTasks == nil {
-			break
-		}
-
-		return e.complexity.Query.ListTasks(childComplexity), true
 
 	case "Query.whoami":
 		if e.complexity.Query.Whoami == nil {
@@ -525,7 +544,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Code(childComplexity), true
 
-	case "Task.Constraints":
+	case "Task.constraints":
 		if e.complexity.Task.Constraints == nil {
 			break
 		}
@@ -539,7 +558,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.CreatedAt(childComplexity), true
 
-	case "Task.Description":
+	case "Task.description":
 		if e.complexity.Task.Description == nil {
 			break
 		}
@@ -553,7 +572,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.ID(childComplexity), true
 
-	case "Task.Metadata":
+	case "Task.metadata":
 		if e.complexity.Task.Metadata == nil {
 			break
 		}
@@ -567,12 +586,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Name(childComplexity), true
 
+	case "Task.tests":
+		if e.complexity.Task.Tests == nil {
+			break
+		}
+
+		return e.complexity.Task.Tests(childComplexity), true
+
 	case "Task.updatedAt":
 		if e.complexity.Task.UpdatedAt == nil {
 			break
 		}
 
 		return e.complexity.Task.UpdatedAt(childComplexity), true
+
+	case "Test.answer":
+		if e.complexity.Test.Answer == nil {
+			break
+		}
+
+		return e.complexity.Test.Answer(childComplexity), true
+
+	case "Test.id":
+		if e.complexity.Test.ID == nil {
+			break
+		}
+
+		return e.complexity.Test.ID(childComplexity), true
+
+	case "Test.input":
+		if e.complexity.Test.Input == nil {
+			break
+		}
+
+		return e.complexity.Test.Input(childComplexity), true
+
+	case "Test.name":
+		if e.complexity.Test.Name == nil {
+			break
+		}
+
+		return e.complexity.Test.Name(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -709,14 +763,14 @@ func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapSchema(parsedSchema), nil
+	return introspection.WrapSchema(ec.Schema()), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
+	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
@@ -750,11 +804,11 @@ type User {
 }
 `, BuiltIn: false},
 	{Name: "../../api/task.graphql", Input: `extend type Query {
-    listTasks: [Task!]!
     listPublishedTasks: [Task!]!
-    getRelevantTaskById(id: ID!): Task!
-    getPublishedTaskByCode(code: String!): Task!
-    listTaskOrigins: [String!]!
+    getPublishedTaskVersionByCode(code: String!): Task!
+
+    listEditableTasks: [Task!]!
+    getCurrentTaskVersionById(id: ID!): Task!
 }
 
 extend type Mutation {
@@ -763,8 +817,9 @@ extend type Mutation {
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
     updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
     updateTaskExamples(id: ID!, inputs: [String!], outputs: [String!]): Task!
-    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKb: Int): Task!
+    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKB: Int): Task!
 
+    publishTask(id: ID!): Task!
     deleteTask(id: ID!): Task!
 }
 
@@ -773,9 +828,11 @@ type Task {
     code: String!
     name: String!
     
-    Description: Description!
-    Constraints: Constraints!
-    Metadata: Metadata!
+    description: Description!
+    constraints: Constraints!
+    metadata: Metadata!
+
+    tests: [Test!]!
 
     createdAt: String!
     updatedAt: String!
@@ -806,7 +863,13 @@ type Example {
     input: String!
     output: String!
 }
-`, BuiltIn: false},
+
+type Test {
+    id: ID!
+    name: String!
+    input: String!
+    answer: String!
+}`, BuiltIn: false},
 	{Name: "../../api/language.graphql", Input: `extend type Query {
     listLanguages: [Language!]!
 }
@@ -977,6 +1040,21 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_publishTask_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1050,14 +1128,14 @@ func (ec *executionContext) field_Mutation_updateTaskConstraints_args(ctx contex
 	}
 	args["timeLimitMs"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["memoryLimitKb"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimitKb"))
+	if tmp, ok := rawArgs["memoryLimitKB"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimitKB"))
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["memoryLimitKb"] = arg2
+	args["memoryLimitKB"] = arg2
 	return args, nil
 }
 
@@ -1211,22 +1289,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getPublishedTaskByCode_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["code"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["code"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getRelevantTaskById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_getCurrentTaskVersionById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1238,6 +1301,21 @@ func (ec *executionContext) field_Query_getRelevantTaskById_args(ctx context.Con
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPublishedTaskVersionByCode_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["code"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["code"] = arg0
 	return args, nil
 }
 
@@ -2294,12 +2372,14 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2367,12 +2447,14 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskMetadata(ctx context
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2440,12 +2522,14 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskDescription(ctx cont
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2513,12 +2597,14 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskExamples(ctx context
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2555,7 +2641,7 @@ func (ec *executionContext) _Mutation_updateTaskConstraints(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTaskConstraints(rctx, fc.Args["id"].(string), fc.Args["timeLimitMs"].(*int), fc.Args["memoryLimitKb"].(*int))
+		return ec.resolvers.Mutation().UpdateTaskConstraints(rctx, fc.Args["id"].(string), fc.Args["timeLimitMs"].(*int), fc.Args["memoryLimitKB"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2586,12 +2672,14 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskConstraints(ctx cont
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2608,6 +2696,81 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskConstraints(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateTaskConstraints_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_publishTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_publishTask(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PublishTask(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Task)
+	fc.Result = res
+	return ec.marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_publishTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Task_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_publishTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2659,12 +2822,14 @@ func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2868,68 +3033,6 @@ func (ec *executionContext) fieldContext_Query_whoami(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_listTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_listTasks(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListTasks(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*Task)
-	fc.Result = res
-	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_listTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Task_id(ctx, field)
-			case "code":
-				return ec.fieldContext_Task_code(ctx, field)
-			case "name":
-				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Task_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Task_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_listPublishedTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_listPublishedTasks(ctx, field)
 	if err != nil {
@@ -2975,12 +3078,14 @@ func (ec *executionContext) fieldContext_Query_listPublishedTasks(ctx context.Co
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -2992,8 +3097,8 @@ func (ec *executionContext) fieldContext_Query_listPublishedTasks(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getRelevantTaskById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getRelevantTaskById(ctx, field)
+func (ec *executionContext) _Query_getPublishedTaskVersionByCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getPublishedTaskVersionByCode(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3006,7 +3111,7 @@ func (ec *executionContext) _Query_getRelevantTaskById(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetRelevantTaskByID(rctx, fc.Args["id"].(string))
+		return ec.resolvers.Query().GetPublishedTaskVersionByCode(rctx, fc.Args["code"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3023,7 +3128,7 @@ func (ec *executionContext) _Query_getRelevantTaskById(ctx context.Context, fiel
 	return ec.marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTask(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getRelevantTaskById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getPublishedTaskVersionByCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -3037,12 +3142,14 @@ func (ec *executionContext) fieldContext_Query_getRelevantTaskById(ctx context.C
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -3058,15 +3165,15 @@ func (ec *executionContext) fieldContext_Query_getRelevantTaskById(ctx context.C
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getRelevantTaskById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getPublishedTaskVersionByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getPublishedTaskByCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getPublishedTaskByCode(ctx, field)
+func (ec *executionContext) _Query_listEditableTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_listEditableTasks(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3079,7 +3186,71 @@ func (ec *executionContext) _Query_getPublishedTaskByCode(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPublishedTaskByCode(rctx, fc.Args["code"].(string))
+		return ec.resolvers.Query().ListEditableTasks(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Task)
+	fc.Result = res
+	return ec.marshalNTask2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_listEditableTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Task_id(ctx, field)
+			case "code":
+				return ec.fieldContext_Task_code(ctx, field)
+			case "name":
+				return ec.fieldContext_Task_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Task_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getCurrentTaskVersionById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getCurrentTaskVersionById(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetCurrentTaskVersionByID(rctx, fc.Args["id"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3096,7 +3267,7 @@ func (ec *executionContext) _Query_getPublishedTaskByCode(ctx context.Context, f
 	return ec.marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTask(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getPublishedTaskByCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getCurrentTaskVersionById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -3110,12 +3281,14 @@ func (ec *executionContext) fieldContext_Query_getPublishedTaskByCode(ctx contex
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -3131,53 +3304,9 @@ func (ec *executionContext) fieldContext_Query_getPublishedTaskByCode(ctx contex
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getPublishedTaskByCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_getCurrentTaskVersionById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_listTaskOrigins(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_listTaskOrigins(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListTaskOrigins(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_listTaskOrigins(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
 	}
 	return fc, nil
 }
@@ -3506,12 +3635,14 @@ func (ec *executionContext) fieldContext_Submission_task(ctx context.Context, fi
 				return ec.fieldContext_Task_code(ctx, field)
 			case "name":
 				return ec.fieldContext_Task_name(ctx, field)
-			case "Description":
-				return ec.fieldContext_Task_Description(ctx, field)
-			case "Constraints":
-				return ec.fieldContext_Task_Constraints(ctx, field)
-			case "Metadata":
-				return ec.fieldContext_Task_Metadata(ctx, field)
+			case "description":
+				return ec.fieldContext_Task_description(ctx, field)
+			case "constraints":
+				return ec.fieldContext_Task_constraints(ctx, field)
+			case "metadata":
+				return ec.fieldContext_Task_metadata(ctx, field)
+			case "tests":
+				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Task_createdAt(ctx, field)
 			case "updatedAt":
@@ -3751,8 +3882,8 @@ func (ec *executionContext) fieldContext_Task_name(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_Description(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_Description(ctx, field)
+func (ec *executionContext) _Task_description(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_description(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3782,7 +3913,7 @@ func (ec *executionContext) _Task_Description(ctx context.Context, field graphql
 	return ec.marshalNDescription2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescription(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Task_Description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Task_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Task",
 		Field:      field,
@@ -3809,8 +3940,8 @@ func (ec *executionContext) fieldContext_Task_Description(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_Constraints(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_Constraints(ctx, field)
+func (ec *executionContext) _Task_constraints(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_constraints(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3840,7 +3971,7 @@ func (ec *executionContext) _Task_Constraints(ctx context.Context, field graphql
 	return ec.marshalNConstraints2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐConstraints(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Task_Constraints(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Task_constraints(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Task",
 		Field:      field,
@@ -3859,8 +3990,8 @@ func (ec *executionContext) fieldContext_Task_Constraints(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Task_Metadata(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Task_Metadata(ctx, field)
+func (ec *executionContext) _Task_metadata(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_metadata(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3890,7 +4021,7 @@ func (ec *executionContext) _Task_Metadata(ctx context.Context, field graphql.Co
 	return ec.marshalNMetadata2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Task_Metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Task_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Task",
 		Field:      field,
@@ -3904,6 +4035,60 @@ func (ec *executionContext) fieldContext_Task_Metadata(ctx context.Context, fiel
 				return ec.fieldContext_Metadata_origin(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Metadata", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Task_tests(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_tests(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tests, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Test)
+	fc.Result = res
+	return ec.marshalNTest2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Task_tests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Test_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Test_name(ctx, field)
+			case "input":
+				return ec.fieldContext_Test_input(ctx, field)
+			case "answer":
+				return ec.fieldContext_Test_answer(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Test", field.Name)
 		},
 	}
 	return fc, nil
@@ -3987,6 +4172,182 @@ func (ec *executionContext) _Task_updatedAt(ctx context.Context, field graphql.C
 func (ec *executionContext) fieldContext_Task_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Test_id(ctx context.Context, field graphql.CollectedField, obj *Test) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Test_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Test_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Test",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Test_name(ctx context.Context, field graphql.CollectedField, obj *Test) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Test_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Test_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Test",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Test_input(ctx context.Context, field graphql.CollectedField, obj *Test) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Test_input(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Input, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Test_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Test",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Test_answer(ctx context.Context, field graphql.CollectedField, obj *Test) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Test_answer(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Answer, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Test_answer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Test",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -6399,6 +6760,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "publishTask":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_publishTask(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deleteTask":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteTask(ctx, field)
@@ -6481,28 +6849,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "listTasks":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_listTasks(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "listPublishedTasks":
 			field := field
 
@@ -6525,7 +6871,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getRelevantTaskById":
+		case "getPublishedTaskVersionByCode":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6534,7 +6880,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getRelevantTaskById(ctx, field)
+				res = ec._Query_getPublishedTaskVersionByCode(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6547,7 +6893,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getPublishedTaskByCode":
+		case "listEditableTasks":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6556,7 +6902,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getPublishedTaskByCode(ctx, field)
+				res = ec._Query_listEditableTasks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6569,7 +6915,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "listTaskOrigins":
+		case "getCurrentTaskVersionById":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6578,7 +6924,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_listTaskOrigins(ctx, field)
+				res = ec._Query_getCurrentTaskVersionById(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -6746,18 +7092,23 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Description":
-			out.Values[i] = ec._Task_Description(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._Task_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Constraints":
-			out.Values[i] = ec._Task_Constraints(ctx, field, obj)
+		case "constraints":
+			out.Values[i] = ec._Task_constraints(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "Metadata":
-			out.Values[i] = ec._Task_Metadata(ctx, field, obj)
+		case "metadata":
+			out.Values[i] = ec._Task_metadata(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tests":
+			out.Values[i] = ec._Task_tests(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -6768,6 +7119,60 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Task_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var testImplementors = []string{"Test"}
+
+func (ec *executionContext) _Test(ctx context.Context, sel ast.SelectionSet, obj *Test) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, testImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Test")
+		case "id":
+			out.Values[i] = ec._Test_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Test_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "input":
+			out.Values[i] = ec._Test_input(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "answer":
+			out.Values[i] = ec._Test_answer(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7352,38 +7757,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]string, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNSubmission2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐSubmission(ctx context.Context, sel ast.SelectionSet, v Submission) graphql.Marshaler {
 	return ec._Submission(ctx, sel, &v)
 }
@@ -7498,6 +7871,60 @@ func (ec *executionContext) marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋback
 		return graphql.Null
 	}
 	return ec._Task(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTest2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestᚄ(ctx context.Context, sel ast.SelectionSet, v []*Test) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTest2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTest(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTest2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTest(ctx context.Context, sel ast.SelectionSet, v *Test) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Test(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {

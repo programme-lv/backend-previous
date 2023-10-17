@@ -49,11 +49,19 @@ type Task struct {
 	ID          string       `json:"id"`
 	Code        string       `json:"code"`
 	Name        string       `json:"name"`
-	Description *Description `json:"Description"`
-	Constraints *Constraints `json:"Constraints"`
-	Metadata    *Metadata    `json:"Metadata"`
+	Description *Description `json:"description"`
+	Constraints *Constraints `json:"constraints"`
+	Metadata    *Metadata    `json:"metadata"`
+	Tests       []*Test      `json:"tests"`
 	CreatedAt   string       `json:"createdAt"`
 	UpdatedAt   string       `json:"updatedAt"`
+}
+
+type Test struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Input  string `json:"input"`
+	Answer string `json:"answer"`
 }
 
 type User struct {
