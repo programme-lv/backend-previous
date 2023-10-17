@@ -1,12 +1,36 @@
 extend type Query {
+    """
+    Returns a list of all tasks that have a published version.
+    Used for rendering the public task view.
+    """
     listPublishedTasks: [Task!]!
+
+    """
+    Returns the latest published version / snapshot of a task.
+    Used when accessing url like /task/:code.
+    """
     getPublishedTaskVersionByCode(code: String!): Task!
 
+    """
+    Returns a list of all tasks that are editable by the current user.
+    Used for rendering the editable task list in user profile.
+    """
     listEditableTasks: [Task!]!
+
+    """
+    Returns the latest version of a task.
+    Used for task preparation / development / editing.
+    """
     getCurrentTaskVersionById(id: ID!): Task!
 }
 
 extend type Mutation {
+    """
+    Creates a new task with the given name and code.
+    The code is used to access the task via url like /task/:code.
+    Currently only admins can create tasks.
+    A default task version is assigned to the task.
+    """
     createTask(name: String!, code: String!): Task!
 
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
@@ -22,7 +46,7 @@ type Task {
     id: ID!
     code: String!
     name: String!
-    
+
     description: Description!
     constraints: Constraints!
     metadata: Metadata!
