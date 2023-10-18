@@ -275,7 +275,46 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 
 // GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
 func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetPublishedTaskVersionByCode - getPublishedTaskVersionByCode"))
+	stmt := postgres.SELECT(table.Tasks.AllColumns, table.TaskVersions.AllColumns, table.MarkdownStatements.AllColumns).
+		FROM(table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersions.ID.EQ(table.Tasks.PublishedVersionID)).
+			LEFT_JOIN(table.MarkdownStatements, table.MarkdownStatements.TaskVersionID.EQ(table.Tasks.PublishedVersionID))).
+		WHERE(table.TaskVersions.ShortCode.EQ(postgres.String(code)).
+			AND(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv"))))
+	log.Println(stmt.DebugSql())
+	var publishedTask struct {
+		model.Tasks
+		model.TaskVersions
+		model.MarkdownStatements
+	}
+	err := stmt.Query(r.PostgresDB, &publishedTask)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Task{
+		ID:   strconv.FormatInt(publishedTask.Tasks.ID, 10),
+		Code: publishedTask.ShortCode,
+		Name: publishedTask.FullName,
+		Description: &Description{
+			ID:       strconv.FormatInt(publishedTask.MarkdownStatements.ID, 10),
+			Story:    publishedTask.Story,
+			Input:    publishedTask.Input,
+			Output:   publishedTask.Output,
+			Examples: nil, // TODO: fetch examples
+			Notes:    publishedTask.Notes,
+		},
+		Constraints: &Constraints{
+			TimeLimitMs:   int(publishedTask.TimeLimMs),
+			MemoryLimitKb: int(publishedTask.MemLimKb),
+		},
+		Metadata: &Metadata{
+			Authors: nil, // TODO: fetch authors
+			Origin:  publishedTask.Origin,
+		},
+		Tests:     nil, // TODO: fetch tests
+		CreatedAt: publishedTask.Tasks.CreatedAt.UTC().String(),
+		UpdatedAt: publishedTask.TaskVersions.CreatedAt.UTC().String(),
+	}, nil
 }
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
@@ -286,145 +325,4 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 // GetCurrentTaskVersionByID is the resolver for the getCurrentTaskVersionById field.
 func (r *queryResolver) GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error) {
 	panic(fmt.Errorf("not implemented: GetCurrentTaskVersionByID - getCurrentTaskVersionById"))
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Task, error) {
-	requestLogger := r.Logger.With(slog.String("resolver", "GetRelevantTaskByID"))
-	requestLogger.Info("received get relevant task by id request")
-
-	// fetch task from database
-	stmt := `SELECT * FROM tasks WHERE id = $1`
-	var task database.Task
-	err := r.PostgresDB.Get(&task, stmt, id)
-	if err != nil {
-		requestLogger.Error("failed to select task", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	if task.RelevantVersionID == nil {
-		requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
-		return nil, err
-	}
-
-	// fetch task version from database
-	stmt = `SELECT * FROM task_versions WHERE id = $1`
-	var version database.TaskVersion
-	err = r.PostgresDB.Get(&version, stmt, *task.RelevantVersionID)
-	if err != nil {
-		requestLogger.Error("failed to select task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	// fetch markdown statement from database
-	stmt = `SELECT * FROM markdown_statements WHERE task_version_id = $1`
-	var mdStatement database.MarkdownStatement
-	err = r.PostgresDB.Get(&mdStatement, stmt, version.ID)
-	if err != nil {
-		requestLogger.Error("failed to select markdown statement", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	return &Task{
-		ID:   fmt.Sprintf("%d", version.TaskID),
-		Code: version.ShortCode,
-		Name: version.FullName,
-		Description: &Description{
-			ID:       fmt.Sprintf("%d", mdStatement.ID),
-			Story:    mdStatement.Story,
-			Input:    mdStatement.Input,
-			Output:   mdStatement.Output,
-			Examples: nil, // TODO: fetch examples
-			Notes:    mdStatement.Notes,
-		},
-		Constraints: &Constraints{
-			TimeLimitMs:   version.TimeLimMs,
-			MemoryLimitKb: version.MemLimKb,
-		},
-		Metadata: &Metadata{
-			Authors: []string{}, // TODO: fetch authors
-			Origin:  version.Origin,
-		},
-		CreatedAt: task.CreatedAt.UTC().String(),
-		UpdatedAt: version.CreatedAt.UTC().String(),
-	}, nil
-}
-func (r *queryResolver) GetPublishedTaskByCode(ctx context.Context, code string) (*Task, error) {
-	requestLogger := r.Logger.With(slog.String("resolver", "GetPublishedTaskByCode"))
-	requestLogger.Info("received get published task by code request")
-
-	// fetch task from database
-	stmt := `
-    SELECT tasks.id FROM tasks INNER JOIN task_versions
-    ON tasks.published_version_id = task_versions.id
-    WHERE task_versions.short_code = $1`
-	var taskID int64
-	err := r.PostgresDB.Get(&taskID, stmt, code)
-	if err != nil {
-		requestLogger.Error("failed to select task", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	var task database.Task
-	stmt = `SELECT * FROM tasks WHERE id = $1`
-	err = r.PostgresDB.Get(&task, stmt, taskID)
-	if err != nil {
-		requestLogger.Error("failed to select task", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	if task.PublishedVersionID == nil {
-		requestLogger.Error("task has no published version", slog.Int64("task_id", task.ID))
-		return nil, err
-	}
-
-	// fetch task version from database
-	stmt = `SELECT * FROM task_versions WHERE id = $1`
-	var version database.TaskVersion
-	err = r.PostgresDB.Get(&version, stmt, *task.PublishedVersionID)
-	if err != nil {
-		requestLogger.Error("failed to select task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	// fetch markdown statement from database
-	stmt = `SELECT * FROM markdown_statements WHERE task_version_id = $1`
-	var mdStatement database.MarkdownStatement
-	err = r.PostgresDB.Get(&mdStatement, stmt, version.ID)
-	if err != nil {
-		requestLogger.Error("failed to select markdown statement", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	return &Task{
-		ID:   fmt.Sprintf("%d", version.TaskID),
-		Code: version.ShortCode,
-		Name: version.FullName,
-		Description: &Description{
-			ID:       fmt.Sprintf("%d", mdStatement.ID),
-			Story:    mdStatement.Story,
-			Input:    mdStatement.Input,
-			Output:   mdStatement.Output,
-			Examples: nil, // TODO: fetch examples
-			Notes:    mdStatement.Notes,
-		},
-		Constraints: &Constraints{
-			TimeLimitMs:   version.TimeLimMs,
-			MemoryLimitKb: version.MemLimKb,
-		},
-		Metadata: &Metadata{
-			Authors: []string{}, // TODO: fetch authors
-			Origin:  version.Origin,
-		},
-		CreatedAt: task.CreatedAt.UTC().String(),
-		UpdatedAt: version.CreatedAt.UTC().String(),
-	}, nil
-}
-func (r *queryResolver) ListTaskOrigins(ctx context.Context) ([]string, error) {
-	panic(fmt.Errorf("not implemented: ListTaskOrigins - listTaskOrigins"))
 }
