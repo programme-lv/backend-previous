@@ -7,7 +7,11 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/go-jet/jet/v2/postgres"
+	"github.com/programme-lv/backend/internal/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"log"
+	"strconv"
 
 	"github.com/programme-lv/backend/internal/database"
 	"golang.org/x/exp/slog"
@@ -222,87 +226,50 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	requestLogger := r.Logger.With(slog.String("resolver", "list published tasks"))
-	requestLogger.Info("received list tasks request")
-
-	var tasks []database.Task
-	err := r.PostgresDB.Select(&tasks, "SELECT * FROM tasks")
+	var publishedTasks []struct {
+		model.Tasks
+		model.TaskVersions
+		model.MarkdownStatements
+	}
+	stmt := postgres.SELECT(table.Tasks.AllColumns, table.TaskVersions.AllColumns, table.MarkdownStatements.AllColumns).
+		FROM(table.Tasks.
+			INNER_JOIN(table.TaskVersions,
+				table.TaskVersions.ID.EQ(table.Tasks.PublishedVersionID)).
+			LEFT_JOIN(table.MarkdownStatements,
+				table.MarkdownStatements.TaskVersionID.EQ(table.Tasks.PublishedVersionID))).
+		WHERE(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv")))
+	log.Println(stmt.DebugSql())
+	err := stmt.Query(r.PostgresDB, &publishedTasks)
 	if err != nil {
-		requestLogger.Error("failed to select tasks", slog.String("error", err.Error()))
 		return nil, err
-	}
-
-	var versions []database.TaskVersion
-	err = r.PostgresDB.Select(&versions, "SELECT * FROM task_versions")
-	if err != nil {
-		requestLogger.Error("failed to select task versions", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	versionIdsToVersions := make(map[int64]database.TaskVersion)
-	for _, version := range versions {
-		versionIdsToVersions[version.ID] = version
-	}
-
-	var mdStatements []database.MarkdownStatement
-	err = r.PostgresDB.Select(&mdStatements, "SELECT * FROM markdown_statements")
-	if err != nil {
-		requestLogger.Error("failed to select markdown statements", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	taskIdsToMdStatements := make(map[int64]*database.MarkdownStatement)
-	for _, mdStatement := range mdStatements {
-		taskIdsToMdStatements[mdStatement.TaskVersionID] = &mdStatement
 	}
 
 	var result []*Task
-	for _, task := range tasks {
-		if task.RelevantVersionID == nil {
-			requestLogger.Error("task has no relevant version", slog.Int64("task_id", task.ID))
-			continue
-		}
-		version, ok := versionIdsToVersions[*task.RelevantVersionID]
-		if !ok {
-			requestLogger.Error("failed to find relevant version for task", slog.Int64("task_id", task.ID))
-			continue
-		}
-
-		log.Println("relevant version id:", *task.RelevantVersionID)
-		log.Println("version id:", version.ID)
-
-		statement, ok := taskIdsToMdStatements[version.ID]
-		if !ok {
-			requestLogger.Error("failed to find markdown statement for task", slog.Int64("task_id", task.ID))
-			continue
-		}
-
+	for _, task := range publishedTasks {
 		result = append(result, &Task{
-			ID:   fmt.Sprintf("%d", version.TaskID),
-			Code: version.ShortCode,
-			Name: version.FullName,
+			ID:   strconv.FormatInt(task.Tasks.ID, 10),
+			Code: task.ShortCode,
+			Name: task.FullName,
 			Description: &Description{
-				ID:       fmt.Sprintf("%d", statement.ID),
-				Story:    statement.Story,
-				Input:    statement.Input,
-				Output:   statement.Output,
-				Examples: nil, // TODO: fetch examples
-				Notes:    statement.Notes,
+				ID:     strconv.FormatInt(task.MarkdownStatements.ID, 10),
+				Story:  task.Story,
+				Input:  task.Input,
+				Output: task.Output,
+				Notes:  task.Notes,
 			},
 			Constraints: &Constraints{
-				TimeLimitMs:   version.TimeLimMs,
-				MemoryLimitKb: version.MemLimKb,
+				TimeLimitMs:   int(task.TimeLimMs),
+				MemoryLimitKb: int(task.MemLimKb),
 			},
 			Metadata: &Metadata{
-				Authors: []string{}, // TODO: fetch authors
-				Origin:  version.Origin,
+				Authors: nil, // TODO: fetch authors
+				Origin:  task.Origin,
 			},
-			CreatedAt: task.CreatedAt.UTC().String(),
-			UpdatedAt: version.CreatedAt.UTC().String(),
+			CreatedAt: task.Tasks.CreatedAt.UTC().String(),
+			UpdatedAt: task.TaskVersions.CreatedAt.UTC().String(),
 		})
 	}
 
-	requestLogger.Info("successfully retrieved tasks")
 	return result, nil
 }
 
