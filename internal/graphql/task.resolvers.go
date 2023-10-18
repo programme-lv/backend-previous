@@ -222,32 +222,7 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListPublishedTasks - listPublishedTasks"))
-}
-
-// GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
-func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetPublishedTaskVersionByCode - getPublishedTaskVersionByCode"))
-}
-
-// ListEditableTasks is the resolver for the listEditableTasks field.
-func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListEditableTasks - listEditableTasks"))
-}
-
-// GetCurrentTaskVersionByID is the resolver for the getCurrentTaskVersionById field.
-func (r *queryResolver) GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetCurrentTaskVersionByID - getCurrentTaskVersionById"))
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
-	requestLogger := r.Logger.With(slog.String("resolver", "listTasks"))
+	requestLogger := r.Logger.With(slog.String("resolver", "list published tasks"))
 	requestLogger.Info("received list tasks request")
 
 	var tasks []database.Task
@@ -330,6 +305,28 @@ func (r *queryResolver) ListTasks(ctx context.Context) ([]*Task, error) {
 	requestLogger.Info("successfully retrieved tasks")
 	return result, nil
 }
+
+// GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
+func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
+	panic(fmt.Errorf("not implemented: GetPublishedTaskVersionByCode - getPublishedTaskVersionByCode"))
+}
+
+// ListEditableTasks is the resolver for the listEditableTasks field.
+func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
+	panic(fmt.Errorf("not implemented: ListEditableTasks - listEditableTasks"))
+}
+
+// GetCurrentTaskVersionByID is the resolver for the getCurrentTaskVersionById field.
+func (r *queryResolver) GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error) {
+	panic(fmt.Errorf("not implemented: GetCurrentTaskVersionByID - getCurrentTaskVersionById"))
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *queryResolver) GetRelevantTaskByID(ctx context.Context, id string) (*Task, error) {
 	requestLogger := r.Logger.With(slog.String("resolver", "GetRelevantTaskByID"))
 	requestLogger.Info("received get relevant task by id request")

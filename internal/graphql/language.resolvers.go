@@ -19,10 +19,7 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 		ProgrammingLanguages.MonacoID,
 	).FROM(ProgrammingLanguages)
 
-	var langs []struct {
-		model.ProgrammingLanguages
-	}
-
+	var langs []model.ProgrammingLanguages
 	err := stmt.Query(r.PostgresDB, &langs)
 	if err != nil {
 		return nil, err
