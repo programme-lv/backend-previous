@@ -1,8 +1,8 @@
 extend type Query {
-    listLanguages: [Language!]!
+    listLanguages: [ProgrammingLanguage!]!
 }
 
-type Language {
+type ProgrammingLanguage {
   id: ID!
   fullName: String!
   monacoID: ID!

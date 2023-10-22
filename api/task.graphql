@@ -80,7 +80,7 @@ type Metadata {
 type Example {
     id: ID!
     input: String!
-    output: String!
+    answer: String!
 }
 
 type Test {

@@ -7,13 +7,13 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/go-jet/jet/v2/postgres"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"log"
 	"strconv"
 
+	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database"
+	"github.com/programme-lv/backend/internal/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"golang.org/x/exp/slog"
 )
 
@@ -280,7 +280,6 @@ func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code 
 			LEFT_JOIN(table.MarkdownStatements, table.MarkdownStatements.TaskVersionID.EQ(table.Tasks.PublishedVersionID))).
 		WHERE(table.TaskVersions.ShortCode.EQ(postgres.String(code)).
 			AND(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv"))))
-	log.Println(stmt.DebugSql())
 	var publishedTask struct {
 		model.Tasks
 		model.TaskVersions
@@ -289,6 +288,24 @@ func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code 
 	err := stmt.Query(r.PostgresDB, &publishedTask)
 	if err != nil {
 		return nil, err
+	}
+
+	stmt = postgres.SELECT(table.StatementExamples.AllColumns).
+		FROM(table.StatementExamples).
+		WHERE(table.StatementExamples.TaskVersionID.EQ(postgres.Int64(publishedTask.TaskVersions.ID)))
+	var statementExamples []model.StatementExamples
+	err = stmt.Query(r.PostgresDB, &statementExamples)
+	if err != nil {
+		return nil, err
+	}
+
+	var examples []*Example
+	for _, example := range statementExamples {
+		examples = append(examples, &Example{
+			ID:     strconv.FormatInt(example.ID, 10),
+			Input:  example.Input,
+			Answer: example.Answer,
+		})
 	}
 
 	return &Task{
@@ -300,7 +317,7 @@ func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code 
 			Story:    publishedTask.Story,
 			Input:    publishedTask.Input,
 			Output:   publishedTask.Output,
-			Examples: nil, // TODO: fetch examples
+			Examples: examples,
 			Notes:    publishedTask.Notes,
 		},
 		Constraints: &Constraints{

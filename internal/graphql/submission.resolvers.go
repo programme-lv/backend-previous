@@ -111,7 +111,7 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 			ID: taskID,
 			// TODO: add other fields
 		},
-		Language: &Language{
+		Language: &ProgrammingLanguage{
 			// TODO: add other fields
 		},
 		Code: code,

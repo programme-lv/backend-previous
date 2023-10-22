@@ -6,18 +6,20 @@ package graphql
 
 import (
 	"context"
+
 	. "github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	. "github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 )
 
 // ListLanguages is the resolver for the listLanguages field.
-func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) {
+func (r *queryResolver) ListLanguages(ctx context.Context) ([]*ProgrammingLanguage, error) {
 	stmt := SELECT(
-		ProgrammingLanguages.ID,
-		ProgrammingLanguages.FullName,
-		ProgrammingLanguages.MonacoID,
-	).FROM(ProgrammingLanguages)
+		table.ProgrammingLanguages.ID,
+		table.ProgrammingLanguages.ID,
+		table.ProgrammingLanguages.FullName,
+		table.ProgrammingLanguages.MonacoID,
+	).FROM(table.ProgrammingLanguages)
 
 	var langs []model.ProgrammingLanguages
 	err := stmt.Query(r.PostgresDB, &langs)
@@ -26,10 +28,10 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*Language, error) 
 	}
 
 	// convert to graphql type
-	var gqlLangs []*Language
+	var gqlLangs []*ProgrammingLanguage
 	for _, lang := range langs {
 		if lang.MonacoID != nil {
-			gqlLangs = append(gqlLangs, &Language{
+			gqlLangs = append(gqlLangs, &ProgrammingLanguage{
 				ID:       lang.ID,
 				FullName: lang.FullName,
 				MonacoID: *lang.MonacoID,

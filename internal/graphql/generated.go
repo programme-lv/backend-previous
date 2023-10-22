@@ -60,20 +60,14 @@ type ComplexityRoot struct {
 	}
 
 	Example struct {
+		Answer func(childComplexity int) int
 		ID     func(childComplexity int) int
 		Input  func(childComplexity int) int
-		Output func(childComplexity int) int
 	}
 
 	ExecutionResult struct {
 		Stderr func(childComplexity int) int
 		Stdout func(childComplexity int) int
-	}
-
-	Language struct {
-		FullName func(childComplexity int) int
-		ID       func(childComplexity int) int
-		MonacoID func(childComplexity int) int
 	}
 
 	Metadata struct {
@@ -94,6 +88,12 @@ type ComplexityRoot struct {
 		UpdateTaskDescription func(childComplexity int, id string, code *string, name *string, story *string, input *string, output *string, notes *string) int
 		UpdateTaskExamples    func(childComplexity int, id string, inputs []string, outputs []string) int
 		UpdateTaskMetadata    func(childComplexity int, id string, authors []string, origin *string) int
+	}
+
+	ProgrammingLanguage struct {
+		FullName func(childComplexity int) int
+		ID       func(childComplexity int) int
+		MonacoID func(childComplexity int) int
 	}
 
 	Query struct {
@@ -162,7 +162,7 @@ type QueryResolver interface {
 	GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error)
 	ListEditableTasks(ctx context.Context) ([]*Task, error)
 	GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error)
-	ListLanguages(ctx context.Context) ([]*Language, error)
+	ListLanguages(ctx context.Context) ([]*ProgrammingLanguage, error)
 	ListSubmissions(ctx context.Context) ([]*Submission, error)
 }
 
@@ -241,6 +241,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Description.Story(childComplexity), true
 
+	case "Example.answer":
+		if e.complexity.Example.Answer == nil {
+			break
+		}
+
+		return e.complexity.Example.Answer(childComplexity), true
+
 	case "Example.id":
 		if e.complexity.Example.ID == nil {
 			break
@@ -255,13 +262,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Example.Input(childComplexity), true
 
-	case "Example.output":
-		if e.complexity.Example.Output == nil {
-			break
-		}
-
-		return e.complexity.Example.Output(childComplexity), true
-
 	case "ExecutionResult.stderr":
 		if e.complexity.ExecutionResult.Stderr == nil {
 			break
@@ -275,27 +275,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ExecutionResult.Stdout(childComplexity), true
-
-	case "Language.fullName":
-		if e.complexity.Language.FullName == nil {
-			break
-		}
-
-		return e.complexity.Language.FullName(childComplexity), true
-
-	case "Language.id":
-		if e.complexity.Language.ID == nil {
-			break
-		}
-
-		return e.complexity.Language.ID(childComplexity), true
-
-	case "Language.monacoID":
-		if e.complexity.Language.MonacoID == nil {
-			break
-		}
-
-		return e.complexity.Language.MonacoID(childComplexity), true
 
 	case "Metadata.authors":
 		if e.complexity.Metadata.Authors == nil {
@@ -449,6 +428,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateTaskMetadata(childComplexity, args["id"].(string), args["authors"].([]string), args["origin"].(*string)), true
+
+	case "ProgrammingLanguage.fullName":
+		if e.complexity.ProgrammingLanguage.FullName == nil {
+			break
+		}
+
+		return e.complexity.ProgrammingLanguage.FullName(childComplexity), true
+
+	case "ProgrammingLanguage.id":
+		if e.complexity.ProgrammingLanguage.ID == nil {
+			break
+		}
+
+		return e.complexity.ProgrammingLanguage.ID(childComplexity), true
+
+	case "ProgrammingLanguage.monacoID":
+		if e.complexity.ProgrammingLanguage.MonacoID == nil {
+			break
+		}
+
+		return e.complexity.ProgrammingLanguage.MonacoID(childComplexity), true
 
 	case "Query.getCurrentTaskVersionById":
 		if e.complexity.Query.GetCurrentTaskVersionByID == nil {
@@ -804,14 +804,38 @@ type User {
 }
 `, BuiltIn: false},
 	{Name: "../../api/task.graphql", Input: `extend type Query {
+    """
+    Returns a list of all tasks that have a published version.
+    Used for rendering the public task view.
+    """
     listPublishedTasks: [Task!]!
+
+    """
+    Returns the latest published version / snapshot of a task.
+    Used when accessing url like /task/:code.
+    """
     getPublishedTaskVersionByCode(code: String!): Task!
 
+    """
+    Returns a list of all tasks that are editable by the current user.
+    Used for rendering the editable task list in user profile.
+    """
     listEditableTasks: [Task!]!
+
+    """
+    Returns the latest version of a task.
+    Used for task preparation / development / editing.
+    """
     getCurrentTaskVersionById(id: ID!): Task!
 }
 
 extend type Mutation {
+    """
+    Creates a new task with the given name and code.
+    The code is used to access the task via url like /task/:code.
+    Currently only admins can create tasks.
+    A default task version is assigned to the task.
+    """
     createTask(name: String!, code: String!): Task!
 
     updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
@@ -827,7 +851,7 @@ type Task {
     id: ID!
     code: String!
     name: String!
-    
+
     description: Description!
     constraints: Constraints!
     metadata: Metadata!
@@ -861,7 +885,7 @@ type Metadata {
 type Example {
     id: ID!
     input: String!
-    output: String!
+    answer: String!
 }
 
 type Test {
@@ -871,10 +895,10 @@ type Test {
     answer: String!
 }`, BuiltIn: false},
 	{Name: "../../api/language.graphql", Input: `extend type Query {
-    listLanguages: [Language!]!
+    listLanguages: [ProgrammingLanguage!]!
 }
 
-type Language {
+type ProgrammingLanguage {
   id: ID!
   fullName: String!
   monacoID: ID!
@@ -891,7 +915,7 @@ extend type Mutation {
 type Submission {
   id: ID!
   task: Task!
-  language: Language!
+  language: ProgrammingLanguage!
   code: String!
 }
 `, BuiltIn: false},
@@ -1661,8 +1685,8 @@ func (ec *executionContext) fieldContext_Description_examples(ctx context.Contex
 				return ec.fieldContext_Example_id(ctx, field)
 			case "input":
 				return ec.fieldContext_Example_input(ctx, field)
-			case "output":
-				return ec.fieldContext_Example_output(ctx, field)
+			case "answer":
+				return ec.fieldContext_Example_answer(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Example", field.Name)
 		},
@@ -1799,8 +1823,8 @@ func (ec *executionContext) fieldContext_Example_input(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Example_output(ctx context.Context, field graphql.CollectedField, obj *Example) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Example_output(ctx, field)
+func (ec *executionContext) _Example_answer(ctx context.Context, field graphql.CollectedField, obj *Example) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Example_answer(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1813,7 +1837,7 @@ func (ec *executionContext) _Example_output(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Output, nil
+		return obj.Answer, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1830,7 +1854,7 @@ func (ec *executionContext) _Example_output(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Example_output(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Example_answer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Example",
 		Field:      field,
@@ -1926,138 +1950,6 @@ func (ec *executionContext) fieldContext_ExecutionResult_stderr(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Language_id(ctx context.Context, field graphql.CollectedField, obj *Language) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Language_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Language_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Language",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Language_fullName(ctx context.Context, field graphql.CollectedField, obj *Language) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Language_fullName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FullName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Language_fullName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Language",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Language_monacoID(ctx context.Context, field graphql.CollectedField, obj *Language) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Language_monacoID(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MonacoID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Language_monacoID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Language",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2978,6 +2870,138 @@ func (ec *executionContext) fieldContext_Mutation_executeCode(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ProgrammingLanguage_id(ctx context.Context, field graphql.CollectedField, obj *ProgrammingLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProgrammingLanguage_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProgrammingLanguage_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProgrammingLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProgrammingLanguage_fullName(ctx context.Context, field graphql.CollectedField, obj *ProgrammingLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FullName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProgrammingLanguage_fullName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProgrammingLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ProgrammingLanguage_monacoID(ctx context.Context, field graphql.CollectedField, obj *ProgrammingLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MonacoID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProgrammingLanguage_monacoID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProgrammingLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_whoami(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_whoami(ctx, field)
 	if err != nil {
@@ -3337,9 +3361,9 @@ func (ec *executionContext) _Query_listLanguages(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Language)
+	res := resTmp.([]*ProgrammingLanguage)
 	fc.Result = res
-	return ec.marshalNLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐLanguageᚄ(ctx, field.Selections, res)
+	return ec.marshalNProgrammingLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguageᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_listLanguages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3351,13 +3375,13 @@ func (ec *executionContext) fieldContext_Query_listLanguages(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Language_id(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_id(ctx, field)
 			case "fullName":
-				return ec.fieldContext_Language_fullName(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
 			case "monacoID":
-				return ec.fieldContext_Language_monacoID(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Language", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ProgrammingLanguage", field.Name)
 		},
 	}
 	return fc, nil
@@ -3680,9 +3704,9 @@ func (ec *executionContext) _Submission_language(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Language)
+	res := resTmp.(*ProgrammingLanguage)
 	fc.Result = res
-	return ec.marshalNLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐLanguage(ctx, field.Selections, res)
+	return ec.marshalNProgrammingLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Submission_language(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3694,13 +3718,13 @@ func (ec *executionContext) fieldContext_Submission_language(ctx context.Context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Language_id(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_id(ctx, field)
 			case "fullName":
-				return ec.fieldContext_Language_fullName(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
 			case "monacoID":
-				return ec.fieldContext_Language_monacoID(ctx, field)
+				return ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Language", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ProgrammingLanguage", field.Name)
 		},
 	}
 	return fc, nil
@@ -6526,8 +6550,8 @@ func (ec *executionContext) _Example(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "output":
-			out.Values[i] = ec._Example_output(ctx, field, obj)
+		case "answer":
+			out.Values[i] = ec._Example_answer(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -6572,55 +6596,6 @@ func (ec *executionContext) _ExecutionResult(ctx context.Context, sel ast.Select
 			}
 		case "stderr":
 			out.Values[i] = ec._ExecutionResult_stderr(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var languageImplementors = []string{"Language"}
-
-func (ec *executionContext) _Language(ctx context.Context, sel ast.SelectionSet, obj *Language) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, languageImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Language")
-		case "id":
-			out.Values[i] = ec._Language_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "fullName":
-			out.Values[i] = ec._Language_fullName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "monacoID":
-			out.Values[i] = ec._Language_monacoID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -6785,6 +6760,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_executeCode(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var programmingLanguageImplementors = []string{"ProgrammingLanguage"}
+
+func (ec *executionContext) _ProgrammingLanguage(ctx context.Context, sel ast.SelectionSet, obj *ProgrammingLanguage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, programmingLanguageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProgrammingLanguage")
+		case "id":
+			out.Values[i] = ec._ProgrammingLanguage_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "fullName":
+			out.Values[i] = ec._ProgrammingLanguage_fullName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "monacoID":
+			out.Values[i] = ec._ProgrammingLanguage_monacoID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7678,7 +7702,17 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []*Language) graphql.Marshaler {
+func (ec *executionContext) marshalNMetadata2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐMetadata(ctx context.Context, sel ast.SelectionSet, v *Metadata) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Metadata(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProgrammingLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguageᚄ(ctx context.Context, sel ast.SelectionSet, v []*ProgrammingLanguage) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -7702,7 +7736,7 @@ func (ec *executionContext) marshalNLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlv
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐLanguage(ctx, sel, v[i])
+			ret[i] = ec.marshalNProgrammingLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguage(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -7722,24 +7756,14 @@ func (ec *executionContext) marshalNLanguage2ᚕᚖgithubᚗcomᚋprogrammeᚑlv
 	return ret
 }
 
-func (ec *executionContext) marshalNLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐLanguage(ctx context.Context, sel ast.SelectionSet, v *Language) graphql.Marshaler {
+func (ec *executionContext) marshalNProgrammingLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguage(ctx context.Context, sel ast.SelectionSet, v *ProgrammingLanguage) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._Language(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNMetadata2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐMetadata(ctx context.Context, sel ast.SelectionSet, v *Metadata) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Metadata(ctx, sel, v)
+	return ec._ProgrammingLanguage(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

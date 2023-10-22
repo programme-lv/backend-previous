@@ -9,6 +9,6 @@ extend type Mutation {
 type Submission {
   id: ID!
   task: Task!
-  language: Language!
+  language: ProgrammingLanguage!
   code: String!
 }

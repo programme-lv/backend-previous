@@ -19,7 +19,7 @@ type Description struct {
 type Example struct {
 	ID     string `json:"id"`
 	Input  string `json:"input"`
-	Output string `json:"output"`
+	Answer string `json:"answer"`
 }
 
 type ExecutionResult struct {
@@ -27,22 +27,22 @@ type ExecutionResult struct {
 	Stderr string `json:"stderr"`
 }
 
-type Language struct {
-	ID       string `json:"id"`
-	FullName string `json:"fullName"`
-	MonacoID string `json:"monacoID"`
-}
-
 type Metadata struct {
 	Authors []string `json:"authors,omitempty"`
 	Origin  *string  `json:"origin,omitempty"`
 }
 
+type ProgrammingLanguage struct {
+	ID       string `json:"id"`
+	FullName string `json:"fullName"`
+	MonacoID string `json:"monacoID"`
+}
+
 type Submission struct {
-	ID       string    `json:"id"`
-	Task     *Task     `json:"task"`
-	Language *Language `json:"language"`
-	Code     string    `json:"code"`
+	ID       string               `json:"id"`
+	Task     *Task                `json:"task"`
+	Language *ProgrammingLanguage `json:"language"`
+	Code     string               `json:"code"`
 }
 
 type Task struct {

@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.39
 	github.com/alexedwards/scs/v2 v2.5.1
 	github.com/go-git/go-git/v5 v5.8.1
+	github.com/go-jet/jet/v2 v2.10.1
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
@@ -39,7 +40,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
-	github.com/go-jet/jet/v2 v2.10.1 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
