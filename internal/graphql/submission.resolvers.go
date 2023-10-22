@@ -118,6 +118,11 @@ func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string,
 	}, nil
 }
 
+// EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
+func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.Context, taskID string, languageID string, submissionCode string) (*Submission, error) {
+	panic(fmt.Errorf("not implemented: EnqueueSubmissionForPublishedTaskVersion - enqueueSubmissionForPublishedTaskVersion"))
+}
+
 // ListSubmissions is the resolver for the listSubmissions field.
 func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
 	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))

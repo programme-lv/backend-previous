@@ -76,18 +76,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateTask            func(childComplexity int, name string, code string) int
-		DeleteTask            func(childComplexity int, id string) int
-		EnqueueSubmission     func(childComplexity int, taskID string, languageID string, code string, versionID *string) int
-		ExecuteCode           func(childComplexity int, code string, languageID string) int
-		Login                 func(childComplexity int, username string, password string) int
-		Logout                func(childComplexity int) int
-		PublishTask           func(childComplexity int, id string) int
-		Register              func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
-		UpdateTaskConstraints func(childComplexity int, id string, timeLimitMs *int, memoryLimitKb *int) int
-		UpdateTaskDescription func(childComplexity int, id string, code *string, name *string, story *string, input *string, output *string, notes *string) int
-		UpdateTaskExamples    func(childComplexity int, id string, inputs []string, outputs []string) int
-		UpdateTaskMetadata    func(childComplexity int, id string, authors []string, origin *string) int
+		CreateTask                               func(childComplexity int, name string, code string) int
+		DeleteTask                               func(childComplexity int, id string) int
+		EnqueueSubmission                        func(childComplexity int, taskID string, languageID string, code string, versionID *string) int
+		EnqueueSubmissionForPublishedTaskVersion func(childComplexity int, taskID string, languageID string, submissionCode string) int
+		ExecuteCode                              func(childComplexity int, code string, languageID string) int
+		Login                                    func(childComplexity int, username string, password string) int
+		Logout                                   func(childComplexity int) int
+		PublishTask                              func(childComplexity int, id string) int
+		Register                                 func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
+		UpdateTaskConstraints                    func(childComplexity int, id string, timeLimitMs *int, memoryLimitKb *int) int
+		UpdateTaskDescription                    func(childComplexity int, id string, code *string, name *string, story *string, input *string, output *string, notes *string) int
+		UpdateTaskExamples                       func(childComplexity int, id string, inputs []string, outputs []string) int
+		UpdateTaskMetadata                       func(childComplexity int, id string, authors []string, origin *string) int
 	}
 
 	ProgrammingLanguage struct {
@@ -154,6 +155,7 @@ type MutationResolver interface {
 	PublishTask(ctx context.Context, id string) (*Task, error)
 	DeleteTask(ctx context.Context, id string) (*Task, error)
 	EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error)
+	EnqueueSubmissionForPublishedTaskVersion(ctx context.Context, taskID string, languageID string, submissionCode string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
 type QueryResolver interface {
@@ -325,6 +327,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EnqueueSubmission(childComplexity, args["taskID"].(string), args["languageID"].(string), args["code"].(string), args["versionID"].(*string)), true
+
+	case "Mutation.enqueueSubmissionForPublishedTaskVersion":
+		if e.complexity.Mutation.EnqueueSubmissionForPublishedTaskVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_enqueueSubmissionForPublishedTaskVersion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnqueueSubmissionForPublishedTaskVersion(childComplexity, args["taskID"].(string), args["languageID"].(string), args["submissionCode"].(string)), true
 
 	case "Mutation.executeCode":
 		if e.complexity.Mutation.ExecuteCode == nil {
@@ -848,6 +862,9 @@ extend type Mutation {
 }
 
 type Task {
+    """
+    The id of the task. Not the task version.
+    """
     id: ID!
     code: String!
     name: String!
@@ -910,6 +927,7 @@ type ProgrammingLanguage {
 
 extend type Mutation {
   enqueueSubmission(taskID: ID!, languageID: ID!, code: String!, versionID: ID): Submission!
+  enqueueSubmissionForPublishedTaskVersion(taskID: ID!, languageID: ID!, submissionCode: String!): Submission!
 }
 
 type Submission {
@@ -971,6 +989,39 @@ func (ec *executionContext) field_Mutation_deleteTask_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_enqueueSubmissionForPublishedTaskVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["taskID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["taskID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["languageID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languageID"))
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["languageID"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["submissionCode"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("submissionCode"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["submissionCode"] = arg2
 	return args, nil
 }
 
@@ -2803,6 +2854,71 @@ func (ec *executionContext) fieldContext_Mutation_enqueueSubmission(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_enqueueSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_enqueueSubmissionForPublishedTaskVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_enqueueSubmissionForPublishedTaskVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnqueueSubmissionForPublishedTaskVersion(rctx, fc.Args["taskID"].(string), fc.Args["languageID"].(string), fc.Args["submissionCode"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Submission)
+	fc.Result = res
+	return ec.marshalNSubmission2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐSubmission(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_enqueueSubmissionForPublishedTaskVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Submission_id(ctx, field)
+			case "task":
+				return ec.fieldContext_Submission_task(ctx, field)
+			case "language":
+				return ec.fieldContext_Submission_language(ctx, field)
+			case "code":
+				return ec.fieldContext_Submission_code(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Submission", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_enqueueSubmissionForPublishedTaskVersion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6752,6 +6868,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "enqueueSubmission":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_enqueueSubmission(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enqueueSubmissionForPublishedTaskVersion":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_enqueueSubmissionForPublishedTaskVersion(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

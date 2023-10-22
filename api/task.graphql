@@ -43,6 +43,9 @@ extend type Mutation {
 }
 
 type Task {
+    """
+    The id of the task. Not the task version.
+    """
     id: ID!
     code: String!
     name: String!

@@ -46,6 +46,7 @@ type Submission struct {
 }
 
 type Task struct {
+	// The id of the task. Not the task version.
 	ID          string       `json:"id"`
 	Code        string       `json:"code"`
 	Name        string       `json:"name"`

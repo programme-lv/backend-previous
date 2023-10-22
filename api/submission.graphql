@@ -4,6 +4,7 @@ extend type Query {
 
 extend type Mutation {
   enqueueSubmission(taskID: ID!, languageID: ID!, code: String!, versionID: ID): Submission!
+  enqueueSubmissionForPublishedTaskVersion(taskID: ID!, languageID: ID!, submissionCode: String!): Submission!
 }
 
 type Submission {
