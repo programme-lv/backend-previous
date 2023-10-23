@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/alexedwards/scs/redisstore"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,8 @@ import (
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 const defaultPort = "3001"
@@ -36,8 +39,16 @@ func main() {
 	defer rmqConn.Close()
 	log.Println("Connected to RabbitMQ")
 
+	redisPool := &redis.Pool{
+		MaxIdle: 10,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", conf.RedisConnString)
+		},
+	}
+
 	sessions := scs.New()
 	sessions.Lifetime = 24 * time.Hour
+	sessions.Store = redisstore.New(redisPool)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
