@@ -33,9 +33,9 @@ type Metadata struct {
 }
 
 type ProgrammingLanguage struct {
-	ID       string `json:"id"`
-	FullName string `json:"fullName"`
-	MonacoID string `json:"monacoID"`
+	ID       string  `json:"id"`
+	FullName string  `json:"fullName"`
+	MonacoID *string `json:"monacoID,omitempty"`
 }
 
 type Submission struct {

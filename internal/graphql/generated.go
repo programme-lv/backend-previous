@@ -918,7 +918,7 @@ type Test {
 type ProgrammingLanguage {
   id: ID!
   fullName: String!
-  monacoID: ID!
+  monacoID: ID
 }
 `, BuiltIn: false},
 	{Name: "../../api/submission.graphql", Input: `extend type Query {
@@ -3095,14 +3095,11 @@ func (ec *executionContext) _ProgrammingLanguage_monacoID(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ProgrammingLanguage_monacoID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -6932,9 +6929,6 @@ func (ec *executionContext) _ProgrammingLanguage(ctx context.Context, sel ast.Se
 			}
 		case "monacoID":
 			out.Values[i] = ec._ProgrammingLanguage_monacoID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

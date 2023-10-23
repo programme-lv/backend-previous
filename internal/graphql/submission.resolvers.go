@@ -8,13 +8,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-jet/jet/v2/postgres"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"math/rand"
 	"strconv"
 	"time"
 
+	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database"
+	"github.com/programme-lv/backend/internal/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/tester/pkg/messaging"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -134,7 +136,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare("submissions", false, false, false, false, nil)
+	q, err := ch.QueueDeclare("eval_q", true, false, false, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -210,20 +212,36 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	body := struct {
-		EvaluationId int64 `json:"evaluation_id"`
-	}{
-		EvaluationId: evaluationId.ID,
+	body := messaging.EvaluationRequest{
+		TaskVersionId: versionId,
+		Submission: messaging.Submission{
+			SourceCode: submissionCode,
+			LanguageId: languageID,
+		},
 	}
 
-	jsonData, err := json.Marshal(body)
+	correlation := messaging.Correlation{
+		HasEvaluationId: true,
+		EvaluationId:    evaluationId.ID,
+		UnixMillis:      time.Now().UnixMilli(),
+		RandomInt63:     rand.Int63(),
+	}
+
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	correlationJson, err := json.Marshal(correlation)
 	if err != nil {
 		return nil, err
 	}
 
 	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType: "application/json",
-		Body:        jsonData,
+		ContentType:   "application/json",
+		Body:          bodyJson,
+		ReplyTo:       "res_q",
+		CorrelationId: string(correlationJson),
 	})
 	if err != nil {
 		return nil, err
@@ -232,8 +250,13 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	return &Submission{
 		ID:   strconv.FormatInt(submissionId.ID, 10),
 		Task: nil,
+		Language: &ProgrammingLanguage{
+			ID:       language.ID,
+			FullName: language.FullName,
+			MonacoID: language.MonacoID,
+		},
+		Code: submissionCode,
 	}, nil
-
 }
 
 // ListSubmissions is the resolver for the listSubmissions field.
