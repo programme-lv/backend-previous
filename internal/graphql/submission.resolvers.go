@@ -155,9 +155,9 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}, nil
 }
 
-// ListSubmissions is the resolver for the listSubmissions field.
-func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
-	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))
+// ListPublicSubmissions is the resolver for the listPublicSubmissions field.
+func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
+	panic(fmt.Errorf("not implemented: ListPublicSubmissions - listPublicSubmissions"))
 }
 
 // !!! WARNING !!!
@@ -166,6 +166,9 @@ func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, err
 //   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //     it when you're done.
 //   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
+	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))
+}
 func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error) {
 	panic(fmt.Errorf("not implemented: EnqueueSubmission - enqueueSubmission"))
 }

@@ -101,8 +101,8 @@ type ComplexityRoot struct {
 		GetPublishedTaskVersionByCode func(childComplexity int, code string) int
 		ListEditableTasks             func(childComplexity int) int
 		ListLanguages                 func(childComplexity int) int
+		ListPublicSubmissions         func(childComplexity int) int
 		ListPublishedTasks            func(childComplexity int) int
-		ListSubmissions               func(childComplexity int) int
 		Whoami                        func(childComplexity int) int
 	}
 
@@ -163,7 +163,7 @@ type QueryResolver interface {
 	ListEditableTasks(ctx context.Context) ([]*Task, error)
 	GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error)
 	ListLanguages(ctx context.Context) ([]*ProgrammingLanguage, error)
-	ListSubmissions(ctx context.Context) ([]*Submission, error)
+	ListPublicSubmissions(ctx context.Context) ([]*Submission, error)
 }
 
 type executableSchema struct {
@@ -488,19 +488,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ListLanguages(childComplexity), true
 
+	case "Query.listPublicSubmissions":
+		if e.complexity.Query.ListPublicSubmissions == nil {
+			break
+		}
+
+		return e.complexity.Query.ListPublicSubmissions(childComplexity), true
+
 	case "Query.listPublishedTasks":
 		if e.complexity.Query.ListPublishedTasks == nil {
 			break
 		}
 
 		return e.complexity.Query.ListPublishedTasks(childComplexity), true
-
-	case "Query.listSubmissions":
-		if e.complexity.Query.ListSubmissions == nil {
-			break
-		}
-
-		return e.complexity.Query.ListSubmissions(childComplexity), true
 
 	case "Query.whoami":
 		if e.complexity.Query.Whoami == nil {
@@ -908,7 +908,11 @@ type ProgrammingLanguage {
 }
 `, BuiltIn: false},
 	{Name: "../../api/submission.graphql", Input: `extend type Query {
-  listSubmissions: [Submission!]!
+  """
+  Returns all not hidden submissions for tasks that have a published version.
+  An example of a hidden submission is a submission made by an admin for testing purposes.
+  """
+  listPublicSubmissions: [Submission!]!
 }
 
 extend type Mutation {
@@ -3378,8 +3382,8 @@ func (ec *executionContext) fieldContext_Query_listLanguages(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_listSubmissions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_listSubmissions(ctx, field)
+func (ec *executionContext) _Query_listPublicSubmissions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_listPublicSubmissions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3392,7 +3396,7 @@ func (ec *executionContext) _Query_listSubmissions(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListSubmissions(rctx)
+		return ec.resolvers.Query().ListPublicSubmissions(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3409,7 +3413,7 @@ func (ec *executionContext) _Query_listSubmissions(ctx context.Context, field gr
 	return ec.marshalNSubmission2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐSubmissionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_listSubmissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_listPublicSubmissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6971,7 +6975,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "listSubmissions":
+		case "listPublicSubmissions":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -6980,7 +6984,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_listSubmissions(ctx, field)
+				res = ec._Query_listPublicSubmissions(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

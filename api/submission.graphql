@@ -1,5 +1,9 @@
 extend type Query {
-  listSubmissions: [Submission!]!
+  """
+  Returns all not hidden submissions for tasks that have a published version.
+  An example of a hidden submission is a submission made by an admin for testing purposes.
+  """
+  listPublicSubmissions: [Submission!]!
 }
 
 extend type Mutation {
