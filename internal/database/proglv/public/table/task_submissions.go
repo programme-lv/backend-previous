@@ -23,6 +23,7 @@ type taskSubmissionsTable struct {
 	ProgrammingLangID postgres.ColumnString
 	Submission        postgres.ColumnString
 	CreatedAt         postgres.ColumnTimestampz
+	Hidden            postgres.ColumnBool
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -69,8 +70,9 @@ func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmis
 		ProgrammingLangIDColumn = postgres.StringColumn("programming_lang_id")
 		SubmissionColumn        = postgres.StringColumn("submission")
 		CreatedAtColumn         = postgres.TimestampzColumn("created_at")
-		allColumns              = postgres.ColumnList{IDColumn, UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn}
-		mutableColumns          = postgres.ColumnList{UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn}
+		HiddenColumn            = postgres.BoolColumn("hidden")
+		allColumns              = postgres.ColumnList{IDColumn, UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn, HiddenColumn}
+		mutableColumns          = postgres.ColumnList{UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn, HiddenColumn}
 	)
 
 	return taskSubmissionsTable{
@@ -83,6 +85,7 @@ func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmis
 		ProgrammingLangID: ProgrammingLangIDColumn,
 		Submission:        SubmissionColumn,
 		CreatedAt:         CreatedAtColumn,
+		Hidden:            HiddenColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

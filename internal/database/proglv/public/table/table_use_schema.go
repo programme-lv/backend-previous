@@ -12,10 +12,13 @@ package table
 func UseSchema(schema string) {
 	EvaluationStatuses = EvaluationStatuses.FromSchema(schema)
 	EvaluationTestResults = EvaluationTestResults.FromSchema(schema)
+	Evaluations = Evaluations.FromSchema(schema)
 	FlywaySchemaHistory = FlywaySchemaHistory.FromSchema(schema)
 	MarkdownStatements = MarkdownStatements.FromSchema(schema)
 	ProblemTags = ProblemTags.FromSchema(schema)
 	ProgrammingLanguages = ProgrammingLanguages.FromSchema(schema)
+	RuntimeData = RuntimeData.FromSchema(schema)
+	RuntimeStatistics = RuntimeStatistics.FromSchema(schema)
 	StatementExamples = StatementExamples.FromSchema(schema)
 	SubmissionEvaluations = SubmissionEvaluations.FromSchema(schema)
 	TaskOrigins = TaskOrigins.FromSchema(schema)

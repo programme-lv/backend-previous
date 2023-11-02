@@ -17,22 +17,12 @@ type evaluationTestResultsTable struct {
 	postgres.Table
 
 	// Columns
-	ID                      postgres.ColumnInteger
-	SubmissionEvaluationsID postgres.ColumnInteger
-	TaskVersionTestID       postgres.ColumnInteger
-	ExecStdout              postgres.ColumnString
-	ExecStderr              postgres.ColumnString
-	ExecTimeMs              postgres.ColumnInteger
-	ExecMemoryKb            postgres.ColumnInteger
-	ExecTimeWallMs          postgres.ColumnInteger
-	ExecExitCode            postgres.ColumnInteger
-	CheckerStdout           postgres.ColumnString
-	CheckerStderr           postgres.ColumnString
-	CheckerTimeMs           postgres.ColumnInteger
-	CheckerMemoryKb         postgres.ColumnInteger
-	CheckerTimeWallMs       postgres.ColumnInteger
-	CheckerExitCode         postgres.ColumnInteger
-	EvalStatusID            postgres.ColumnString
+	ID             postgres.ColumnInteger
+	EvaluationID   postgres.ColumnInteger
+	EvalStatusID   postgres.ColumnString
+	TaskVTestID    postgres.ColumnInteger
+	ExecRDataID    postgres.ColumnInteger
+	CheckerRDataID postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -73,46 +63,26 @@ func newEvaluationTestResultsTable(schemaName, tableName, alias string) *Evaluat
 
 func newEvaluationTestResultsTableImpl(schemaName, tableName, alias string) evaluationTestResultsTable {
 	var (
-		IDColumn                      = postgres.IntegerColumn("id")
-		SubmissionEvaluationsIDColumn = postgres.IntegerColumn("submission_evaluations_id")
-		TaskVersionTestIDColumn       = postgres.IntegerColumn("task_version_test_id")
-		ExecStdoutColumn              = postgres.StringColumn("exec_stdout")
-		ExecStderrColumn              = postgres.StringColumn("exec_stderr")
-		ExecTimeMsColumn              = postgres.IntegerColumn("exec_time_ms")
-		ExecMemoryKbColumn            = postgres.IntegerColumn("exec_memory_kb")
-		ExecTimeWallMsColumn          = postgres.IntegerColumn("exec_time_wall_ms")
-		ExecExitCodeColumn            = postgres.IntegerColumn("exec_exit_code")
-		CheckerStdoutColumn           = postgres.StringColumn("checker_stdout")
-		CheckerStderrColumn           = postgres.StringColumn("checker_stderr")
-		CheckerTimeMsColumn           = postgres.IntegerColumn("checker_time_ms")
-		CheckerMemoryKbColumn         = postgres.IntegerColumn("checker_memory_kb")
-		CheckerTimeWallMsColumn       = postgres.IntegerColumn("checker_time_wall_ms")
-		CheckerExitCodeColumn         = postgres.IntegerColumn("checker_exit_code")
-		EvalStatusIDColumn            = postgres.StringColumn("eval_status_id")
-		allColumns                    = postgres.ColumnList{IDColumn, SubmissionEvaluationsIDColumn, TaskVersionTestIDColumn, ExecStdoutColumn, ExecStderrColumn, ExecTimeMsColumn, ExecMemoryKbColumn, ExecTimeWallMsColumn, ExecExitCodeColumn, CheckerStdoutColumn, CheckerStderrColumn, CheckerTimeMsColumn, CheckerMemoryKbColumn, CheckerTimeWallMsColumn, CheckerExitCodeColumn, EvalStatusIDColumn}
-		mutableColumns                = postgres.ColumnList{SubmissionEvaluationsIDColumn, TaskVersionTestIDColumn, ExecStdoutColumn, ExecStderrColumn, ExecTimeMsColumn, ExecMemoryKbColumn, ExecTimeWallMsColumn, ExecExitCodeColumn, CheckerStdoutColumn, CheckerStderrColumn, CheckerTimeMsColumn, CheckerMemoryKbColumn, CheckerTimeWallMsColumn, CheckerExitCodeColumn, EvalStatusIDColumn}
+		IDColumn             = postgres.IntegerColumn("id")
+		EvaluationIDColumn   = postgres.IntegerColumn("evaluation_id")
+		EvalStatusIDColumn   = postgres.StringColumn("eval_status_id")
+		TaskVTestIDColumn    = postgres.IntegerColumn("task_v_test_id")
+		ExecRDataIDColumn    = postgres.IntegerColumn("exec_r_data_id")
+		CheckerRDataIDColumn = postgres.IntegerColumn("checker_r_data_id")
+		allColumns           = postgres.ColumnList{IDColumn, EvaluationIDColumn, EvalStatusIDColumn, TaskVTestIDColumn, ExecRDataIDColumn, CheckerRDataIDColumn}
+		mutableColumns       = postgres.ColumnList{EvaluationIDColumn, EvalStatusIDColumn, TaskVTestIDColumn, ExecRDataIDColumn, CheckerRDataIDColumn}
 	)
 
 	return evaluationTestResultsTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:                      IDColumn,
-		SubmissionEvaluationsID: SubmissionEvaluationsIDColumn,
-		TaskVersionTestID:       TaskVersionTestIDColumn,
-		ExecStdout:              ExecStdoutColumn,
-		ExecStderr:              ExecStderrColumn,
-		ExecTimeMs:              ExecTimeMsColumn,
-		ExecMemoryKb:            ExecMemoryKbColumn,
-		ExecTimeWallMs:          ExecTimeWallMsColumn,
-		ExecExitCode:            ExecExitCodeColumn,
-		CheckerStdout:           CheckerStdoutColumn,
-		CheckerStderr:           CheckerStderrColumn,
-		CheckerTimeMs:           CheckerTimeMsColumn,
-		CheckerMemoryKb:         CheckerMemoryKbColumn,
-		CheckerTimeWallMs:       CheckerTimeWallMsColumn,
-		CheckerExitCode:         CheckerExitCodeColumn,
-		EvalStatusID:            EvalStatusIDColumn,
+		ID:             IDColumn,
+		EvaluationID:   EvaluationIDColumn,
+		EvalStatusID:   EvalStatusIDColumn,
+		TaskVTestID:    TaskVTestIDColumn,
+		ExecRDataID:    ExecRDataIDColumn,
+		CheckerRDataID: CheckerRDataIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

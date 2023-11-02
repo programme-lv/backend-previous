@@ -7,25 +7,8 @@
 
 package model
 
-import (
-	"time"
-)
-
 type SubmissionEvaluations struct {
-	ID                  int64 `sql:"primary_key"`
-	TaskSubmissionID    int64
-	EvalTaskVersionID   int64
-	TestMaximumTimeMs   *int64
-	TestMaximumMemoryKb *int64
-	TestTotalTimeMs     int64
-	TestTotalMemoryKb   int64
-	EvalStatusID        string
-	EvalTotalScore      int64
-	CompilationStdout   *string
-	CompilationStderr   *string
-	CompilationTimeMs   *int64
-	CompilationMemoryKb *int64
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	EvalPossibleScore   *int64
+	ID           int64 `sql:"primary_key"`
+	SubmissionID int64
+	EvaluationID int64
 }

@@ -17,22 +17,9 @@ type submissionEvaluationsTable struct {
 	postgres.Table
 
 	// Columns
-	ID                  postgres.ColumnInteger
-	TaskSubmissionID    postgres.ColumnInteger
-	EvalTaskVersionID   postgres.ColumnInteger
-	TestMaximumTimeMs   postgres.ColumnInteger
-	TestMaximumMemoryKb postgres.ColumnInteger
-	TestTotalTimeMs     postgres.ColumnInteger
-	TestTotalMemoryKb   postgres.ColumnInteger
-	EvalStatusID        postgres.ColumnString
-	EvalTotalScore      postgres.ColumnInteger
-	CompilationStdout   postgres.ColumnString
-	CompilationStderr   postgres.ColumnString
-	CompilationTimeMs   postgres.ColumnInteger
-	CompilationMemoryKb postgres.ColumnInteger
-	CreatedAt           postgres.ColumnTimestampz
-	UpdatedAt           postgres.ColumnTimestampz
-	EvalPossibleScore   postgres.ColumnInteger
+	ID           postgres.ColumnInteger
+	SubmissionID postgres.ColumnInteger
+	EvaluationID postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -73,46 +60,20 @@ func newSubmissionEvaluationsTable(schemaName, tableName, alias string) *Submiss
 
 func newSubmissionEvaluationsTableImpl(schemaName, tableName, alias string) submissionEvaluationsTable {
 	var (
-		IDColumn                  = postgres.IntegerColumn("id")
-		TaskSubmissionIDColumn    = postgres.IntegerColumn("task_submission_id")
-		EvalTaskVersionIDColumn   = postgres.IntegerColumn("eval_task_version_id")
-		TestMaximumTimeMsColumn   = postgres.IntegerColumn("test_maximum_time_ms")
-		TestMaximumMemoryKbColumn = postgres.IntegerColumn("test_maximum_memory_kb")
-		TestTotalTimeMsColumn     = postgres.IntegerColumn("test_total_time_ms")
-		TestTotalMemoryKbColumn   = postgres.IntegerColumn("test_total_memory_kb")
-		EvalStatusIDColumn        = postgres.StringColumn("eval_status_id")
-		EvalTotalScoreColumn      = postgres.IntegerColumn("eval_total_score")
-		CompilationStdoutColumn   = postgres.StringColumn("compilation_stdout")
-		CompilationStderrColumn   = postgres.StringColumn("compilation_stderr")
-		CompilationTimeMsColumn   = postgres.IntegerColumn("compilation_time_ms")
-		CompilationMemoryKbColumn = postgres.IntegerColumn("compilation_memory_kb")
-		CreatedAtColumn           = postgres.TimestampzColumn("created_at")
-		UpdatedAtColumn           = postgres.TimestampzColumn("updated_at")
-		EvalPossibleScoreColumn   = postgres.IntegerColumn("eval_possible_score")
-		allColumns                = postgres.ColumnList{IDColumn, TaskSubmissionIDColumn, EvalTaskVersionIDColumn, TestMaximumTimeMsColumn, TestMaximumMemoryKbColumn, TestTotalTimeMsColumn, TestTotalMemoryKbColumn, EvalStatusIDColumn, EvalTotalScoreColumn, CompilationStdoutColumn, CompilationStderrColumn, CompilationTimeMsColumn, CompilationMemoryKbColumn, CreatedAtColumn, UpdatedAtColumn, EvalPossibleScoreColumn}
-		mutableColumns            = postgres.ColumnList{TaskSubmissionIDColumn, EvalTaskVersionIDColumn, TestMaximumTimeMsColumn, TestMaximumMemoryKbColumn, TestTotalTimeMsColumn, TestTotalMemoryKbColumn, EvalStatusIDColumn, EvalTotalScoreColumn, CompilationStdoutColumn, CompilationStderrColumn, CompilationTimeMsColumn, CompilationMemoryKbColumn, CreatedAtColumn, UpdatedAtColumn, EvalPossibleScoreColumn}
+		IDColumn           = postgres.IntegerColumn("id")
+		SubmissionIDColumn = postgres.IntegerColumn("submission_id")
+		EvaluationIDColumn = postgres.IntegerColumn("evaluation_id")
+		allColumns         = postgres.ColumnList{IDColumn, SubmissionIDColumn, EvaluationIDColumn}
+		mutableColumns     = postgres.ColumnList{SubmissionIDColumn, EvaluationIDColumn}
 	)
 
 	return submissionEvaluationsTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:                  IDColumn,
-		TaskSubmissionID:    TaskSubmissionIDColumn,
-		EvalTaskVersionID:   EvalTaskVersionIDColumn,
-		TestMaximumTimeMs:   TestMaximumTimeMsColumn,
-		TestMaximumMemoryKb: TestMaximumMemoryKbColumn,
-		TestTotalTimeMs:     TestTotalTimeMsColumn,
-		TestTotalMemoryKb:   TestTotalMemoryKbColumn,
-		EvalStatusID:        EvalStatusIDColumn,
-		EvalTotalScore:      EvalTotalScoreColumn,
-		CompilationStdout:   CompilationStdoutColumn,
-		CompilationStderr:   CompilationStderrColumn,
-		CompilationTimeMs:   CompilationTimeMsColumn,
-		CompilationMemoryKb: CompilationMemoryKbColumn,
-		CreatedAt:           CreatedAtColumn,
-		UpdatedAt:           UpdatedAtColumn,
-		EvalPossibleScore:   EvalPossibleScoreColumn,
+		ID:           IDColumn,
+		SubmissionID: SubmissionIDColumn,
+		EvaluationID: EvaluationIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

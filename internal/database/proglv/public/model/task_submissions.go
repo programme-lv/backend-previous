@@ -18,4 +18,5 @@ type TaskSubmissions struct {
 	ProgrammingLangID string
 	Submission        string
 	CreatedAt         time.Time
+	Hidden            bool
 }

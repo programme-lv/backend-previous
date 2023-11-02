@@ -8,20 +8,10 @@
 package model
 
 type EvaluationTestResults struct {
-	ID                      int64 `sql:"primary_key"`
-	SubmissionEvaluationsID int64
-	TaskVersionTestID       int64
-	ExecStdout              *string
-	ExecStderr              *string
-	ExecTimeMs              *int64
-	ExecMemoryKb            *int64
-	ExecTimeWallMs          *int64
-	ExecExitCode            *int32
-	CheckerStdout           *string
-	CheckerStderr           *string
-	CheckerTimeMs           *int64
-	CheckerMemoryKb         *int64
-	CheckerTimeWallMs       *int64
-	CheckerExitCode         *int32
-	EvalStatusID            string
+	ID             int64 `sql:"primary_key"`
+	EvaluationID   int64
+	EvalStatusID   string
+	TaskVTestID    int64
+	ExecRDataID    *int64
+	CheckerRDataID *int64
 }
