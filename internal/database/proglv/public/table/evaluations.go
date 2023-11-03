@@ -24,6 +24,7 @@ type evaluationsTable struct {
 	TestRuntimeStatisticsID postgres.ColumnInteger
 	CompilationDataID       postgres.ColumnInteger
 	CreatedAt               postgres.ColumnTimestampz
+	TaskVersionID           postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -71,8 +72,9 @@ func newEvaluationsTableImpl(schemaName, tableName, alias string) evaluationsTab
 		TestRuntimeStatisticsIDColumn = postgres.IntegerColumn("test_runtime_statistics_id")
 		CompilationDataIDColumn       = postgres.IntegerColumn("compilation_data_id")
 		CreatedAtColumn               = postgres.TimestampzColumn("created_at")
-		allColumns                    = postgres.ColumnList{IDColumn, EvalStatusIDColumn, EvalTotalScoreColumn, EvalPossibleScoreColumn, TestRuntimeStatisticsIDColumn, CompilationDataIDColumn, CreatedAtColumn}
-		mutableColumns                = postgres.ColumnList{EvalStatusIDColumn, EvalTotalScoreColumn, EvalPossibleScoreColumn, TestRuntimeStatisticsIDColumn, CompilationDataIDColumn, CreatedAtColumn}
+		TaskVersionIDColumn           = postgres.IntegerColumn("task_version_id")
+		allColumns                    = postgres.ColumnList{IDColumn, EvalStatusIDColumn, EvalTotalScoreColumn, EvalPossibleScoreColumn, TestRuntimeStatisticsIDColumn, CompilationDataIDColumn, CreatedAtColumn, TaskVersionIDColumn}
+		mutableColumns                = postgres.ColumnList{EvalStatusIDColumn, EvalTotalScoreColumn, EvalPossibleScoreColumn, TestRuntimeStatisticsIDColumn, CompilationDataIDColumn, CreatedAtColumn, TaskVersionIDColumn}
 	)
 
 	return evaluationsTable{
@@ -86,6 +88,7 @@ func newEvaluationsTableImpl(schemaName, tableName, alias string) evaluationsTab
 		TestRuntimeStatisticsID: TestRuntimeStatisticsIDColumn,
 		CompilationDataID:       CompilationDataIDColumn,
 		CreatedAt:               CreatedAtColumn,
+		TaskVersionID:           TaskVersionIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

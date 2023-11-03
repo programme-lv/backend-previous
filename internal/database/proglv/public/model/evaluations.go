@@ -19,4 +19,5 @@ type Evaluations struct {
 	TestRuntimeStatisticsID *int64
 	CompilationDataID       *int64
 	CreatedAt               time.Time
+	TaskVersionID           int64
 }
