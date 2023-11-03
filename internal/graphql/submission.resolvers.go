@@ -161,7 +161,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 			FullName: language.FullName,
 			MonacoID: language.MonacoID,
 		},
-		Code: submissionCode,
+		Submission: submissionCode,
 	}, nil
 }
 
@@ -172,16 +172,19 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		table.Tasks.AllColumns,
 		table.TaskVersions.AllColumns,
 		table.ProgrammingLanguages.AllColumns,
+		table.Users.AllColumns,
 	).FROM(table.TaskSubmissions.
 		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
 		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
-		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)))
+		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
+		LEFT_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)))
 
 	var submissions []struct {
 		model.TaskSubmissions
 		model.Tasks
 		model.TaskVersions
 		model.ProgrammingLanguages
+		model.Users
 	}
 	err := selectStmt.Query(r.PostgresDB, &submissions)
 	if err != nil {
@@ -201,13 +204,15 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 				ID:       submission.ProgrammingLanguages.ID,
 				FullName: submission.ProgrammingLanguages.FullName,
 			},
-			Code: submission.Submission,
+			Submission: submission.Submission,
 			Evaluation: &Evaluation{
 				ID:            strconv.Itoa(69),
 				Status:        "IQ",
 				TotalScore:    0,
 				PossibleScore: nil,
 			},
+			Username:  submission.Username,
+			CreatedAt: submission.TaskSubmissions.CreatedAt.Format(time.RFC3339),
 		})
 	}
 

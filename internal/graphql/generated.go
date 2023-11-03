@@ -114,11 +114,13 @@ type ComplexityRoot struct {
 	}
 
 	Submission struct {
-		Code       func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
 		Evaluation func(childComplexity int) int
 		ID         func(childComplexity int) int
 		Language   func(childComplexity int) int
+		Submission func(childComplexity int) int
 		Task       func(childComplexity int) int
+		Username   func(childComplexity int) int
 	}
 
 	Task struct {
@@ -545,12 +547,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Whoami(childComplexity), true
 
-	case "Submission.code":
-		if e.complexity.Submission.Code == nil {
+	case "Submission.createdAt":
+		if e.complexity.Submission.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.Submission.Code(childComplexity), true
+		return e.complexity.Submission.CreatedAt(childComplexity), true
 
 	case "Submission.evaluation":
 		if e.complexity.Submission.Evaluation == nil {
@@ -573,12 +575,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Submission.Language(childComplexity), true
 
+	case "Submission.submission":
+		if e.complexity.Submission.Submission == nil {
+			break
+		}
+
+		return e.complexity.Submission.Submission(childComplexity), true
+
 	case "Submission.task":
 		if e.complexity.Submission.Task == nil {
 			break
 		}
 
 		return e.complexity.Submission.Task(childComplexity), true
+
+	case "Submission.username":
+		if e.complexity.Submission.Username == nil {
+			break
+		}
+
+		return e.complexity.Submission.Username(childComplexity), true
 
 	case "Task.code":
 		if e.complexity.Task.Code == nil {
@@ -967,8 +983,10 @@ type Submission {
   id: ID!
   task: Task!
   language: ProgrammingLanguage!
-  code: String!
+  submission: String!
   evaluation: Evaluation!
+  username: String!
+  createdAt: String!
 }
 
 type Evaluation {
@@ -3013,10 +3031,14 @@ func (ec *executionContext) fieldContext_Mutation_enqueueSubmissionForPublishedT
 				return ec.fieldContext_Submission_task(ctx, field)
 			case "language":
 				return ec.fieldContext_Submission_language(ctx, field)
-			case "code":
-				return ec.fieldContext_Submission_code(ctx, field)
+			case "submission":
+				return ec.fieldContext_Submission_submission(ctx, field)
 			case "evaluation":
 				return ec.fieldContext_Submission_evaluation(ctx, field)
+			case "username":
+				return ec.fieldContext_Submission_username(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Submission_createdAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Submission", field.Name)
 		},
@@ -3655,10 +3677,14 @@ func (ec *executionContext) fieldContext_Query_listPublicSubmissions(ctx context
 				return ec.fieldContext_Submission_task(ctx, field)
 			case "language":
 				return ec.fieldContext_Submission_language(ctx, field)
-			case "code":
-				return ec.fieldContext_Submission_code(ctx, field)
+			case "submission":
+				return ec.fieldContext_Submission_submission(ctx, field)
 			case "evaluation":
 				return ec.fieldContext_Submission_evaluation(ctx, field)
+			case "username":
+				return ec.fieldContext_Submission_username(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Submission_createdAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Submission", field.Name)
 		},
@@ -3955,8 +3981,8 @@ func (ec *executionContext) fieldContext_Submission_language(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Submission_code(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Submission_code(ctx, field)
+func (ec *executionContext) _Submission_submission(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Submission_submission(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3969,7 +3995,7 @@ func (ec *executionContext) _Submission_code(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Code, nil
+		return obj.Submission, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3986,7 +4012,7 @@ func (ec *executionContext) _Submission_code(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Submission_code(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Submission_submission(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Submission",
 		Field:      field,
@@ -4048,6 +4074,94 @@ func (ec *executionContext) fieldContext_Submission_evaluation(ctx context.Conte
 				return ec.fieldContext_Evaluation_possibleScore(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Evaluation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Submission_username(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Submission_username(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Submission_username(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Submission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Submission_createdAt(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Submission_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Submission_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Submission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7389,13 +7503,23 @@ func (ec *executionContext) _Submission(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "code":
-			out.Values[i] = ec._Submission_code(ctx, field, obj)
+		case "submission":
+			out.Values[i] = ec._Submission_submission(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "evaluation":
 			out.Values[i] = ec._Submission_evaluation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "username":
+			out.Values[i] = ec._Submission_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Submission_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

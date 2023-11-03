@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database"
@@ -329,8 +330,8 @@ func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code 
 			Origin:  publishedTask.Origin,
 		},
 		Tests:     nil, // TODO: fetch tests
-		CreatedAt: publishedTask.Tasks.CreatedAt.UTC().String(),
-		UpdatedAt: publishedTask.TaskVersions.CreatedAt.UTC().String(),
+		CreatedAt: publishedTask.Tasks.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: publishedTask.TaskVersions.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
 

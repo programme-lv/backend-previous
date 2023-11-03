@@ -15,8 +15,10 @@ type Submission {
   id: ID!
   task: Task!
   language: ProgrammingLanguage!
-  code: String!
+  submission: String!
   evaluation: Evaluation!
+  username: String!
+  createdAt: String!
 }
 
 type Evaluation {

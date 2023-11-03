@@ -49,8 +49,10 @@ type Submission struct {
 	ID         string               `json:"id"`
 	Task       *Task                `json:"task"`
 	Language   *ProgrammingLanguage `json:"language"`
-	Code       string               `json:"code"`
+	Submission string               `json:"submission"`
 	Evaluation *Evaluation          `json:"evaluation"`
+	Username   string               `json:"username"`
+	CreatedAt  string               `json:"createdAt"`
 }
 
 type Task struct {
