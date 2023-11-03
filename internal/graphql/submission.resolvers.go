@@ -21,7 +21,113 @@ import (
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.Context, taskID string, languageID string, submissionCode string) (*Submission, error) {
+	// validate task id
 	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// authenticate user
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch task published version id
+	var task model.Tasks
+	err = postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).
+		WHERE(table.Tasks.ID.EQ(postgres.Int64(taskIDInt64))).Query(r.PostgresDB, &task)
+	if err != nil {
+		return nil, err
+	}
+	if task.PublishedVersionID == nil {
+		return nil, fmt.Errorf("task has no published version")
+	}
+
+	// fetch programming language
+	var language model.ProgrammingLanguages
+	err = postgres.SELECT(table.ProgrammingLanguages.AllColumns).FROM(table.ProgrammingLanguages).
+		WHERE(table.ProgrammingLanguages.ID.EQ(postgres.String(languageID))).Query(r.PostgresDB, &language)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: do all inserts in one transaction
+
+	// create a new submission
+	submission := model.TaskSubmissions{
+		UserID:            user.ID,
+		TaskID:            task.ID,
+		ProgrammingLangID: language.ID,
+		Submission:        submissionCode,
+	}
+
+	insertStmt := table.TaskSubmissions.INSERT(
+		table.TaskSubmissions.UserID,
+		table.TaskSubmissions.TaskID,
+		table.TaskSubmissions.ProgrammingLangID,
+		table.TaskSubmissions.Submission,
+	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
+	err = insertStmt.Query(r.PostgresDB, &submission)
+	if err != nil {
+		return nil, err
+	}
+
+	// create a new evaluation
+	evaluation := model.Evaluations{
+		EvalStatusID:  "IQ",
+		TaskVersionID: int64(*task.PublishedVersionID),
+	}
+
+	insertStmt = table.Evaluations.INSERT(
+		table.Evaluations.EvalStatusID,
+		table.Evaluations.TaskVersionID,
+	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
+	err = insertStmt.Query(r.PostgresDB, &evaluation)
+	if err != nil {
+		return nil, err
+	}
+
+	// link the evaluation to the submission
+	submissionEvaluation := model.SubmissionEvaluations{
+		SubmissionID: submission.ID,
+		EvaluationID: evaluation.ID,
+	}
+
+	insertStmt = table.SubmissionEvaluations.INSERT(
+		table.SubmissionEvaluations.SubmissionID,
+		table.SubmissionEvaluations.EvaluationID,
+	).MODEL(submissionEvaluation).RETURNING(table.SubmissionEvaluations.ID)
+	err = insertStmt.Query(r.PostgresDB, &submissionEvaluation)
+	if err != nil {
+		return nil, err
+	}
+
+	// publish submission
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	body := messaging.EvaluationRequest{
+		TaskVersionId: int64(*task.PublishedVersionID),
+		Submission: messaging.Submission{
+			SourceCode: submissionCode,
+			LanguageId: languageID,
+		},
+	}
+
+	correlation := messaging.Correlation{
+		HasEvaluationId: true,
+		EvaluationId:    evaluation.ID,
+		UnixMillis:      time.Now().UnixMilli(),
+		RandomInt63:     rand.Int63(),
+	}
+
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	correlationJson, err := json.Marshal(correlation)
 	if err != nil {
 		return nil, err
 	}
@@ -37,102 +143,6 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		return nil, err
 	}
 
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var task model.Tasks
-	err = postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).
-		WHERE(table.Tasks.ID.EQ(postgres.Int64(taskIDInt64))).Query(r.PostgresDB, &task)
-	if err != nil {
-		return nil, err
-	}
-
-	if task.PublishedVersionID == nil {
-		return nil, fmt.Errorf("task has no published version")
-	}
-
-	var language model.ProgrammingLanguages
-	err = postgres.SELECT(table.ProgrammingLanguages.AllColumns).FROM(table.ProgrammingLanguages).
-		WHERE(table.ProgrammingLanguages.ID.EQ(postgres.String(languageID))).Query(r.PostgresDB, &language)
-	if err != nil {
-		return nil, err
-	}
-
-	var versionId int64 = int64(*task.PublishedVersionID)
-
-	submission := model.TaskSubmissions{
-		UserID:            user.ID,
-		TaskID:            task.ID,
-		ProgrammingLangID: language.ID,
-		Submission:        submissionCode,
-	}
-
-	// create task submission
-	var submissionId struct {
-		model.TaskSubmissions
-	}
-	insertStmt := table.TaskSubmissions.INSERT(
-		table.TaskSubmissions.UserID,
-		table.TaskSubmissions.TaskID,
-		table.TaskSubmissions.ProgrammingLangID,
-		table.TaskSubmissions.Submission,
-	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
-	err = insertStmt.Query(r.PostgresDB, &submissionId)
-	if err != nil {
-		return nil, err
-	}
-
-	// create submission evaluation
-	evaluation := model.SubmissionEvaluations{
-		TaskSubmissionID:  submissionId.ID,
-		EvalTaskVersionID: versionId,
-		EvalStatusID:      "IQ",
-	}
-
-	var evaluationId struct {
-		ID int64 `db:"id"`
-	}
-	insertStmt = table.SubmissionEvaluations.INSERT(
-		table.SubmissionEvaluations.TaskSubmissionID,
-		table.SubmissionEvaluations.EvalTaskVersionID,
-		table.SubmissionEvaluations.EvalStatusID,
-	).MODEL(evaluation).RETURNING(table.SubmissionEvaluations.ID)
-	err = insertStmt.Query(r.PostgresDB, &evaluationId)
-	if err != nil {
-		return nil, err
-	}
-
-	// publish submission
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	body := messaging.EvaluationRequest{
-		TaskVersionId: versionId,
-		Submission: messaging.Submission{
-			SourceCode: submissionCode,
-			LanguageId: languageID,
-		},
-	}
-
-	correlation := messaging.Correlation{
-		HasEvaluationId: true,
-		EvaluationId:    evaluationId.ID,
-		UnixMillis:      time.Now().UnixMilli(),
-		RandomInt63:     rand.Int63(),
-	}
-
-	bodyJson, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-
-	correlationJson, err := json.Marshal(correlation)
-	if err != nil {
-		return nil, err
-	}
-
 	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
 		ContentType:   "application/json",
 		Body:          bodyJson,
@@ -144,7 +154,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	return &Submission{
-		ID:   strconv.FormatInt(submissionId.ID, 10),
+		ID:   strconv.FormatInt(submission.ID, 10),
 		Task: nil,
 		Language: &ProgrammingLanguage{
 			ID:       language.ID,
@@ -158,17 +168,4 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
 	panic(fmt.Errorf("not implemented: ListPublicSubmissions - listPublicSubmissions"))
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) ListSubmissions(ctx context.Context) ([]*Submission, error) {
-	panic(fmt.Errorf("not implemented: ListSubmissions - listSubmissions"))
-}
-func (r *mutationResolver) EnqueueSubmission(ctx context.Context, taskID string, languageID string, code string, versionID *string) (*Submission, error) {
-	panic(fmt.Errorf("not implemented: EnqueueSubmission - enqueueSubmission"))
 }
