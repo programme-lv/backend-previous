@@ -167,5 +167,14 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
-	panic(fmt.Errorf("not implemented: ListPublicSubmissions - listPublicSubmissions"))
+	var submissions []model.TaskSubmissions
+	err := postgres.SELECT(table.TaskSubmissions.AllColumns).FROM(table.TaskSubmissions).
+		Query(r.PostgresDB, &submissions)
+	if err != nil {
+		return nil, err
+	}
+
+	var gqlSubmissions []*Submission
+
+	return gqlSubmissions, nil
 }

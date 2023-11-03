@@ -16,6 +16,13 @@ type Description struct {
 	Notes    *string    `json:"notes,omitempty"`
 }
 
+type Evaluation struct {
+	ID            string `json:"id"`
+	Status        string `json:"status"`
+	TotalScore    int    `json:"totalScore"`
+	PossibleScore *int   `json:"possibleScore,omitempty"`
+}
+
 type Example struct {
 	ID     string `json:"id"`
 	Input  string `json:"input"`
@@ -39,10 +46,11 @@ type ProgrammingLanguage struct {
 }
 
 type Submission struct {
-	ID       string               `json:"id"`
-	Task     *Task                `json:"task"`
-	Language *ProgrammingLanguage `json:"language"`
-	Code     string               `json:"code"`
+	ID         string               `json:"id"`
+	Task       *Task                `json:"task"`
+	Language   *ProgrammingLanguage `json:"language"`
+	Code       string               `json:"code"`
+	Evaluation *Evaluation          `json:"evaluation"`
 }
 
 type Task struct {

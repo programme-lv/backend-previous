@@ -1,6 +1,6 @@
 extend type Query {
   """
-  Returns all not hidden submissions for tasks that have a published version.
+  Returns all visible (not hidden) submissions for tasks that have a published version.
   An example of a hidden submission is a submission made by an admin for testing purposes.
   """
   listPublicSubmissions: [Submission!]!
@@ -10,9 +10,19 @@ extend type Mutation {
   enqueueSubmissionForPublishedTaskVersion(taskID: ID!, languageID: ID!, submissionCode: String!): Submission!
 }
 
+# submission must be somehow linked to an evaluation
 type Submission {
   id: ID!
   task: Task!
   language: ProgrammingLanguage!
   code: String!
+  evaluation: Evaluation!
 }
+
+type Evaluation {
+  id: ID!
+  status: String!
+  totalScore: Int!
+  possibleScore: Int
+}
+
