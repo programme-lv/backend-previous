@@ -167,14 +167,49 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
-	var submissions []model.TaskSubmissions
-	err := postgres.SELECT(table.TaskSubmissions.AllColumns).FROM(table.TaskSubmissions).
-		Query(r.PostgresDB, &submissions)
+	selectStmt := postgres.SELECT(
+		table.TaskSubmissions.AllColumns,
+		table.Tasks.AllColumns,
+		table.TaskVersions.AllColumns,
+		table.ProgrammingLanguages.AllColumns,
+	).FROM(table.TaskSubmissions.
+		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
+		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
+		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)))
+
+	var submissions []struct {
+		model.TaskSubmissions
+		model.Tasks
+		model.TaskVersions
+		model.ProgrammingLanguages
+	}
+	err := selectStmt.Query(r.PostgresDB, &submissions)
 	if err != nil {
 		return nil, err
 	}
 
 	var gqlSubmissions []*Submission
+	for _, submission := range submissions {
+		gqlSubmissions = append(gqlSubmissions, &Submission{
+			ID: strconv.FormatInt(submission.TaskSubmissions.ID, 10),
+			Task: &Task{
+				ID:   strconv.FormatInt(submission.Tasks.ID, 10),
+				Code: submission.TaskVersions.ShortCode,
+				Name: submission.TaskVersions.FullName,
+			},
+			Language: &ProgrammingLanguage{
+				ID:       submission.ProgrammingLanguages.ID,
+				FullName: submission.ProgrammingLanguages.FullName,
+			},
+			Code: submission.Submission,
+			Evaluation: &Evaluation{
+				ID:            strconv.Itoa(69),
+				Status:        "IQ",
+				TotalScore:    0,
+				PossibleScore: nil,
+			},
+		})
+	}
 
 	return gqlSubmissions, nil
 }
