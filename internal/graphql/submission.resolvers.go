@@ -177,11 +177,15 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		table.TaskVersions.AllColumns,
 		table.ProgrammingLanguages.AllColumns,
 		table.Users.AllColumns,
+		table.Evaluations.AllColumns,
 	).FROM(table.TaskSubmissions.
 		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
 		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
 		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
-		LEFT_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)))
+		LEFT_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
+		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID))).WHERE(
+		table.TaskSubmissions.Hidden.EQ(postgres.Bool(false)),
+	).ORDER_BY(table.TaskSubmissions.CreatedAt.DESC())
 
 	var submissions []struct {
 		model.TaskSubmissions
@@ -189,6 +193,7 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		model.TaskVersions
 		model.ProgrammingLanguages
 		model.Users
+		model.Evaluations
 	}
 	err := selectStmt.Query(r.PostgresDB, &submissions)
 	if err != nil {
@@ -197,6 +202,10 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 
 	var gqlSubmissions []*Submission
 	for _, submission := range submissions {
+		var possibleScorePtr *int = nil
+		if submission.Evaluations.EvalPossibleScore != nil {
+			*possibleScorePtr = int(*submission.Evaluations.EvalPossibleScore)
+		}
 		gqlSubmissions = append(gqlSubmissions, &Submission{
 			ID: strconv.FormatInt(submission.TaskSubmissions.ID, 10),
 			Task: &Task{
@@ -210,10 +219,10 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 			},
 			Submission: submission.Submission,
 			Evaluation: &Evaluation{
-				ID:            strconv.Itoa(69),
-				Status:        "IQ",
-				TotalScore:    0,
-				PossibleScore: nil,
+				ID:            strconv.FormatInt(submission.Evaluations.ID, 10),
+				Status:        submission.Evaluations.EvalStatusID,
+				TotalScore:    int(submission.Evaluations.EvalTotalScore),
+				PossibleScore: possibleScorePtr,
 			},
 			Username:  submission.Username,
 			CreatedAt: submission.TaskSubmissions.CreatedAt.Format(time.RFC3339),
