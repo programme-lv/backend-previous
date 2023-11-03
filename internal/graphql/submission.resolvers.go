@@ -54,36 +54,38 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 
 	// TODO: do all inserts in one transaction
 
-	// create a new submission
-	submission := model.TaskSubmissions{
-		UserID:            user.ID,
-		TaskID:            task.ID,
-		ProgrammingLangID: language.ID,
-		Submission:        submissionCode,
-	}
-
-	insertStmt := table.TaskSubmissions.INSERT(
-		table.TaskSubmissions.UserID,
-		table.TaskSubmissions.TaskID,
-		table.TaskSubmissions.ProgrammingLangID,
-		table.TaskSubmissions.Submission,
-	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
-	err = insertStmt.Query(r.PostgresDB, &submission)
-	if err != nil {
-		return nil, err
-	}
-
 	// create a new evaluation
 	evaluation := model.Evaluations{
 		EvalStatusID:  "IQ",
 		TaskVersionID: int64(*task.PublishedVersionID),
 	}
 
-	insertStmt = table.Evaluations.INSERT(
+	insertStmt := table.Evaluations.INSERT(
 		table.Evaluations.EvalStatusID,
 		table.Evaluations.TaskVersionID,
 	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
 	err = insertStmt.Query(r.PostgresDB, &evaluation)
+	if err != nil {
+		return nil, err
+	}
+
+	// create a new submission
+	submission := model.TaskSubmissions{
+		UserID:            user.ID,
+		TaskID:            task.ID,
+		ProgrammingLangID: language.ID,
+		Submission:        submissionCode,
+		Hidden:            false,
+		VisibleEvalID:     &evaluation.ID,
+	}
+
+	insertStmt = table.TaskSubmissions.INSERT(
+		table.TaskSubmissions.UserID,
+		table.TaskSubmissions.TaskID,
+		table.TaskSubmissions.ProgrammingLangID,
+		table.TaskSubmissions.Submission,
+	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
+	err = insertStmt.Query(r.PostgresDB, &submission)
 	if err != nil {
 		return nil, err
 	}

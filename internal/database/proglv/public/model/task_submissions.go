@@ -19,4 +19,5 @@ type TaskSubmissions struct {
 	Submission        string
 	CreatedAt         time.Time
 	Hidden            bool
+	VisibleEvalID     *int64
 }
