@@ -84,6 +84,8 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.TaskSubmissions.TaskID,
 		table.TaskSubmissions.ProgrammingLangID,
 		table.TaskSubmissions.Submission,
+		table.TaskSubmissions.Hidden,
+		table.TaskSubmissions.VisibleEvalID,
 	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
 	err = insertStmt.Query(r.PostgresDB, &submission)
 	if err != nil {
