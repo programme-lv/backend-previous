@@ -14,5 +14,5 @@ type RuntimeData struct {
 	TimeMillis      *int64
 	MemoryKibibytes *int64
 	TimeWallMillis  *int64
-	ExitCode        *int32
+	ExitCode        *int64
 }

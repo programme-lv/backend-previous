@@ -204,7 +204,8 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 	for _, submission := range submissions {
 		var possibleScorePtr *int = nil
 		if submission.Evaluations.EvalPossibleScore != nil {
-			*possibleScorePtr = int(*submission.Evaluations.EvalPossibleScore)
+			tmp := int(*submission.Evaluations.EvalPossibleScore)
+			possibleScorePtr = &tmp
 		}
 		gqlSubmissions = append(gqlSubmissions, &Submission{
 			ID: strconv.FormatInt(submission.TaskSubmissions.ID, 10),
