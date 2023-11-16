@@ -26,6 +26,7 @@ type programmingLanguagesTable struct {
 	HelloWorldCode   postgres.ColumnString
 	MonacoID         postgres.ColumnString
 	CompiledFilename postgres.ColumnString
+	Enabled          postgres.ColumnBool
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -75,8 +76,9 @@ func newProgrammingLanguagesTableImpl(schemaName, tableName, alias string) progr
 		HelloWorldCodeColumn   = postgres.StringColumn("hello_world_code")
 		MonacoIDColumn         = postgres.StringColumn("monaco_id")
 		CompiledFilenameColumn = postgres.StringColumn("compiled_filename")
-		allColumns             = postgres.ColumnList{IDColumn, FullNameColumn, CodeFilenameColumn, CompileCmdColumn, ExecuteCmdColumn, EnvVersionCmdColumn, HelloWorldCodeColumn, MonacoIDColumn, CompiledFilenameColumn}
-		mutableColumns         = postgres.ColumnList{FullNameColumn, CodeFilenameColumn, CompileCmdColumn, ExecuteCmdColumn, EnvVersionCmdColumn, HelloWorldCodeColumn, MonacoIDColumn, CompiledFilenameColumn}
+		EnabledColumn          = postgres.BoolColumn("enabled")
+		allColumns             = postgres.ColumnList{IDColumn, FullNameColumn, CodeFilenameColumn, CompileCmdColumn, ExecuteCmdColumn, EnvVersionCmdColumn, HelloWorldCodeColumn, MonacoIDColumn, CompiledFilenameColumn, EnabledColumn}
+		mutableColumns         = postgres.ColumnList{FullNameColumn, CodeFilenameColumn, CompileCmdColumn, ExecuteCmdColumn, EnvVersionCmdColumn, HelloWorldCodeColumn, MonacoIDColumn, CompiledFilenameColumn, EnabledColumn}
 	)
 
 	return programmingLanguagesTable{
@@ -92,6 +94,7 @@ func newProgrammingLanguagesTableImpl(schemaName, tableName, alias string) progr
 		HelloWorldCode:   HelloWorldCodeColumn,
 		MonacoID:         MonacoIDColumn,
 		CompiledFilename: CompiledFilenameColumn,
+		Enabled:          EnabledColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

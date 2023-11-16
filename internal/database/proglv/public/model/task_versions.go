@@ -12,16 +12,16 @@ import (
 )
 
 type TaskVersions struct {
-	ID            int64 `sql:"primary_key"`
-	TaskID        int64
-	ShortCode     string
-	FullName      string
-	TimeLimMs     int64
-	MemLimKb      int64
-	TestingTypeID string
-	Origin        *string
-	CreatedAt     time.Time
-	UpdatedAt     *time.Time
-	CheckerID     *int64
-	InteractorID  *int64
+	ID              int64 `sql:"primary_key"`
+	TaskID          int64
+	ShortCode       string
+	FullName        string
+	TimeLimMs       int64
+	MemLimKibibytes int64
+	TestingTypeID   string
+	Origin          *string
+	CreatedAt       time.Time
+	UpdatedAt       *time.Time
+	CheckerID       *int64
+	InteractorID    *int64
 }

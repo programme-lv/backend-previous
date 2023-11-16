@@ -17,18 +17,18 @@ type taskVersionsTable struct {
 	postgres.Table
 
 	// Columns
-	ID            postgres.ColumnInteger
-	TaskID        postgres.ColumnInteger
-	ShortCode     postgres.ColumnString
-	FullName      postgres.ColumnString
-	TimeLimMs     postgres.ColumnInteger
-	MemLimKb      postgres.ColumnInteger
-	TestingTypeID postgres.ColumnString
-	Origin        postgres.ColumnString
-	CreatedAt     postgres.ColumnTimestampz
-	UpdatedAt     postgres.ColumnTimestampz
-	CheckerID     postgres.ColumnInteger
-	InteractorID  postgres.ColumnInteger
+	ID              postgres.ColumnInteger
+	TaskID          postgres.ColumnInteger
+	ShortCode       postgres.ColumnString
+	FullName        postgres.ColumnString
+	TimeLimMs       postgres.ColumnInteger
+	MemLimKibibytes postgres.ColumnInteger
+	TestingTypeID   postgres.ColumnString
+	Origin          postgres.ColumnString
+	CreatedAt       postgres.ColumnTimestampz
+	UpdatedAt       postgres.ColumnTimestampz
+	CheckerID       postgres.ColumnInteger
+	InteractorID    postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -69,38 +69,38 @@ func newTaskVersionsTable(schemaName, tableName, alias string) *TaskVersionsTabl
 
 func newTaskVersionsTableImpl(schemaName, tableName, alias string) taskVersionsTable {
 	var (
-		IDColumn            = postgres.IntegerColumn("id")
-		TaskIDColumn        = postgres.IntegerColumn("task_id")
-		ShortCodeColumn     = postgres.StringColumn("short_code")
-		FullNameColumn      = postgres.StringColumn("full_name")
-		TimeLimMsColumn     = postgres.IntegerColumn("time_lim_ms")
-		MemLimKbColumn      = postgres.IntegerColumn("mem_lim_kb")
-		TestingTypeIDColumn = postgres.StringColumn("testing_type_id")
-		OriginColumn        = postgres.StringColumn("origin")
-		CreatedAtColumn     = postgres.TimestampzColumn("created_at")
-		UpdatedAtColumn     = postgres.TimestampzColumn("updated_at")
-		CheckerIDColumn     = postgres.IntegerColumn("checker_id")
-		InteractorIDColumn  = postgres.IntegerColumn("interactor_id")
-		allColumns          = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKbColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
-		mutableColumns      = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKbColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
+		IDColumn              = postgres.IntegerColumn("id")
+		TaskIDColumn          = postgres.IntegerColumn("task_id")
+		ShortCodeColumn       = postgres.StringColumn("short_code")
+		FullNameColumn        = postgres.StringColumn("full_name")
+		TimeLimMsColumn       = postgres.IntegerColumn("time_lim_ms")
+		MemLimKibibytesColumn = postgres.IntegerColumn("mem_lim_kibibytes")
+		TestingTypeIDColumn   = postgres.StringColumn("testing_type_id")
+		OriginColumn          = postgres.StringColumn("origin")
+		CreatedAtColumn       = postgres.TimestampzColumn("created_at")
+		UpdatedAtColumn       = postgres.TimestampzColumn("updated_at")
+		CheckerIDColumn       = postgres.IntegerColumn("checker_id")
+		InteractorIDColumn    = postgres.IntegerColumn("interactor_id")
+		allColumns            = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
+		mutableColumns        = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
 	)
 
 	return taskVersionsTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:            IDColumn,
-		TaskID:        TaskIDColumn,
-		ShortCode:     ShortCodeColumn,
-		FullName:      FullNameColumn,
-		TimeLimMs:     TimeLimMsColumn,
-		MemLimKb:      MemLimKbColumn,
-		TestingTypeID: TestingTypeIDColumn,
-		Origin:        OriginColumn,
-		CreatedAt:     CreatedAtColumn,
-		UpdatedAt:     UpdatedAtColumn,
-		CheckerID:     CheckerIDColumn,
-		InteractorID:  InteractorIDColumn,
+		ID:              IDColumn,
+		TaskID:          TaskIDColumn,
+		ShortCode:       ShortCodeColumn,
+		FullName:        FullNameColumn,
+		TimeLimMs:       TimeLimMsColumn,
+		MemLimKibibytes: MemLimKibibytesColumn,
+		TestingTypeID:   TestingTypeIDColumn,
+		Origin:          OriginColumn,
+		CreatedAt:       CreatedAtColumn,
+		UpdatedAt:       UpdatedAtColumn,
+		CheckerID:       CheckerIDColumn,
+		InteractorID:    InteractorIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

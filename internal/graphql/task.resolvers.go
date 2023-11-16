@@ -260,7 +260,7 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 			},
 			Constraints: &Constraints{
 				TimeLimitMs:   int(task.TimeLimMs),
-				MemoryLimitKb: int(task.MemLimKb),
+				MemoryLimitKb: int(task.MemLimKibibytes),
 			},
 			Metadata: &Metadata{
 				Authors: nil, // TODO: fetch authors
@@ -323,7 +323,7 @@ func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code 
 		},
 		Constraints: &Constraints{
 			TimeLimitMs:   int(publishedTask.TimeLimMs),
-			MemoryLimitKb: int(publishedTask.MemLimKb),
+			MemoryLimitKb: int(publishedTask.MemLimKibibytes),
 		},
 		Metadata: &Metadata{
 			Authors: nil, // TODO: fetch authors

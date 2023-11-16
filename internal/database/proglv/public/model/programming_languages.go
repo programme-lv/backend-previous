@@ -17,4 +17,5 @@ type ProgrammingLanguages struct {
 	HelloWorldCode   *string
 	MonacoID         *string
 	CompiledFilename *string
+	Enabled          bool
 }
