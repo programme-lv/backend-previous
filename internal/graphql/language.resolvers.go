@@ -13,12 +13,12 @@ import (
 )
 
 // ListLanguages is the resolver for the listLanguages field.
-func (r *queryResolver) ListLanguages(ctx context.Context) ([]*ProgrammingLanguage, error) {
+func (r *queryResolver) ListLanguages(_ context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
 	stmt := SELECT(
-		table.ProgrammingLanguages.ID,
 		table.ProgrammingLanguages.ID,
 		table.ProgrammingLanguages.FullName,
 		table.ProgrammingLanguages.MonacoID,
+		table.ProgrammingLanguages.Enabled,
 	).FROM(table.ProgrammingLanguages)
 
 	var langs []model.ProgrammingLanguages
@@ -30,11 +30,15 @@ func (r *queryResolver) ListLanguages(ctx context.Context) ([]*ProgrammingLangua
 	// convert to graphql type
 	var gqlLangs []*ProgrammingLanguage
 	for _, lang := range langs {
+		if enabled != nil && *enabled != lang.Enabled {
+			continue
+		}
 		if lang.MonacoID != nil {
 			gqlLangs = append(gqlLangs, &ProgrammingLanguage{
 				ID:       lang.ID,
 				FullName: lang.FullName,
 				MonacoID: lang.MonacoID,
+				Enabled:  lang.Enabled,
 			})
 		}
 	}

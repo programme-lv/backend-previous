@@ -43,6 +43,7 @@ type ProgrammingLanguage struct {
 	ID       string  `json:"id"`
 	FullName string  `json:"fullName"`
 	MonacoID *string `json:"monacoID,omitempty"`
+	Enabled  bool    `json:"enabled"`
 }
 
 type Submission struct {

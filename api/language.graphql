@@ -1,9 +1,10 @@
 extend type Query {
-    listLanguages: [ProgrammingLanguage!]!
+    listLanguages(enabled: Boolean): [ProgrammingLanguage!]!
 }
 
 type ProgrammingLanguage {
-  id: ID!
-  fullName: String!
-  monacoID: ID
+    id: ID!
+    fullName: String!
+    monacoID: ID
+    enabled: Boolean!
 }

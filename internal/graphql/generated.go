@@ -98,6 +98,7 @@ type ComplexityRoot struct {
 	}
 
 	ProgrammingLanguage struct {
+		Enabled  func(childComplexity int) int
 		FullName func(childComplexity int) int
 		ID       func(childComplexity int) int
 		MonacoID func(childComplexity int) int
@@ -107,7 +108,7 @@ type ComplexityRoot struct {
 		GetCurrentTaskVersionByID     func(childComplexity int, id string) int
 		GetPublishedTaskVersionByCode func(childComplexity int, code string) int
 		ListEditableTasks             func(childComplexity int) int
-		ListLanguages                 func(childComplexity int) int
+		ListLanguages                 func(childComplexity int, enabled *bool) int
 		ListPublicSubmissions         func(childComplexity int) int
 		ListPublishedTasks            func(childComplexity int) int
 		Whoami                        func(childComplexity int) int
@@ -172,7 +173,7 @@ type QueryResolver interface {
 	GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error)
 	ListEditableTasks(ctx context.Context) ([]*Task, error)
 	GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error)
-	ListLanguages(ctx context.Context) ([]*ProgrammingLanguage, error)
+	ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error)
 	ListPublicSubmissions(ctx context.Context) ([]*Submission, error)
 }
 
@@ -467,6 +468,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateTaskMetadata(childComplexity, args["id"].(string), args["authors"].([]string), args["origin"].(*string)), true
 
+	case "ProgrammingLanguage.enabled":
+		if e.complexity.ProgrammingLanguage.Enabled == nil {
+			break
+		}
+
+		return e.complexity.ProgrammingLanguage.Enabled(childComplexity), true
+
 	case "ProgrammingLanguage.fullName":
 		if e.complexity.ProgrammingLanguage.FullName == nil {
 			break
@@ -524,7 +532,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.ListLanguages(childComplexity), true
+		args, err := ec.field_Query_listLanguages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ListLanguages(childComplexity, args["enabled"].(*bool)), true
 
 	case "Query.listPublicSubmissions":
 		if e.complexity.Query.ListPublicSubmissions == nil {
@@ -957,13 +970,14 @@ type Test {
     answer: String!
 }`, BuiltIn: false},
 	{Name: "../../api/language.graphql", Input: `extend type Query {
-    listLanguages: [ProgrammingLanguage!]!
+    listLanguages(enabled: Boolean): [ProgrammingLanguage!]!
 }
 
 type ProgrammingLanguage {
-  id: ID!
-  fullName: String!
-  monacoID: ID
+    id: ID!
+    fullName: String!
+    monacoID: ID
+    enabled: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../api/submission.graphql", Input: `extend type Query {
@@ -1409,6 +1423,21 @@ func (ec *executionContext) field_Query_getPublishedTaskVersionByCode_args(ctx c
 		}
 	}
 	args["code"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_listLanguages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["enabled"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["enabled"] = arg0
 	return args, nil
 }
 
@@ -3247,6 +3276,50 @@ func (ec *executionContext) fieldContext_ProgrammingLanguage_monacoID(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _ProgrammingLanguage_enabled(ctx context.Context, field graphql.CollectedField, obj *ProgrammingLanguage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ProgrammingLanguage_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ProgrammingLanguage_enabled(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProgrammingLanguage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_whoami(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_whoami(ctx, field)
 	if err != nil {
@@ -3594,7 +3667,7 @@ func (ec *executionContext) _Query_listLanguages(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListLanguages(rctx)
+		return ec.resolvers.Query().ListLanguages(rctx, fc.Args["enabled"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3625,9 +3698,22 @@ func (ec *executionContext) fieldContext_Query_listLanguages(ctx context.Context
 				return ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
 			case "monacoID":
 				return ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
+			case "enabled":
+				return ec.fieldContext_ProgrammingLanguage_enabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProgrammingLanguage", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_listLanguages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3974,6 +4060,8 @@ func (ec *executionContext) fieldContext_Submission_language(ctx context.Context
 				return ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
 			case "monacoID":
 				return ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
+			case "enabled":
+				return ec.fieldContext_ProgrammingLanguage_enabled(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ProgrammingLanguage", field.Name)
 		},
@@ -7253,6 +7341,11 @@ func (ec *executionContext) _ProgrammingLanguage(ctx context.Context, sel ast.Se
 			}
 		case "monacoID":
 			out.Values[i] = ec._ProgrammingLanguage_monacoID(ctx, field, obj)
+		case "enabled":
+			out.Values[i] = ec._ProgrammingLanguage_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
