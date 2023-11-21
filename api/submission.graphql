@@ -21,10 +21,21 @@ type Submission {
   createdAt: String!
 }
 
+type TestVerdictStatistic {
+  verdict: String!
+  count: Int!
+}
+
 type Evaluation {
   id: ID!
   status: String!
   totalScore: Int!
   possibleScore: Int
+  totalTimeMs: Int
+  maxTimeMs: Int
+  totalMemoryKb: Int
+  maxMemoryKb: Int
+  testVerdictStatistics: [TestVerdictStatistic!]!
 }
+
 

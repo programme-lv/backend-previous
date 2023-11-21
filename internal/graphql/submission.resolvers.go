@@ -202,6 +202,8 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 
 	var gqlSubmissions []*Submission
 	for _, submission := range submissions {
+		int6969 := 6969
+		int420 := 420
 		var possibleScorePtr *int = nil
 		if submission.Evaluations.EvalPossibleScore != nil {
 			tmp := int(*submission.Evaluations.EvalPossibleScore)
@@ -224,6 +226,24 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 				Status:        submission.Evaluations.EvalStatusID,
 				TotalScore:    int(submission.Evaluations.EvalTotalScore),
 				PossibleScore: possibleScorePtr,
+				TotalTimeMs:   &int6969,
+				MaxTimeMs:     &int420,
+				TotalMemoryKb: &int6969,
+				MaxMemoryKb:   &int420,
+				TestVerdictStatistics: []*TestVerdictStatistic{
+					{
+						Verdict: "OK",
+						Count:   4,
+					},
+					{
+						Verdict: "WA",
+						Count:   1,
+					},
+					{
+						Verdict: "TLE",
+						Count:   3,
+					},
+				},
 			},
 			Username:  submission.Username,
 			CreatedAt: submission.TaskSubmissions.CreatedAt.Format(time.RFC3339),

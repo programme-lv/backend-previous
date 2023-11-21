@@ -13,7 +13,7 @@ import (
 )
 
 // ListLanguages is the resolver for the listLanguages field.
-func (r *queryResolver) ListLanguages(_ context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
+func (r *queryResolver) ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
 	stmt := SELECT(
 		table.ProgrammingLanguages.ID,
 		table.ProgrammingLanguages.FullName,

@@ -60,10 +60,15 @@ type ComplexityRoot struct {
 	}
 
 	Evaluation struct {
-		ID            func(childComplexity int) int
-		PossibleScore func(childComplexity int) int
-		Status        func(childComplexity int) int
-		TotalScore    func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		MaxMemoryKb           func(childComplexity int) int
+		MaxTimeMs             func(childComplexity int) int
+		PossibleScore         func(childComplexity int) int
+		Status                func(childComplexity int) int
+		TestVerdictStatistics func(childComplexity int) int
+		TotalMemoryKb         func(childComplexity int) int
+		TotalScore            func(childComplexity int) int
+		TotalTimeMs           func(childComplexity int) int
 	}
 
 	Example struct {
@@ -141,6 +146,11 @@ type ComplexityRoot struct {
 		ID     func(childComplexity int) int
 		Input  func(childComplexity int) int
 		Name   func(childComplexity int) int
+	}
+
+	TestVerdictStatistic struct {
+		Count   func(childComplexity int) int
+		Verdict func(childComplexity int) int
 	}
 
 	User struct {
@@ -259,6 +269,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Evaluation.ID(childComplexity), true
 
+	case "Evaluation.maxMemoryKb":
+		if e.complexity.Evaluation.MaxMemoryKb == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.MaxMemoryKb(childComplexity), true
+
+	case "Evaluation.maxTimeMs":
+		if e.complexity.Evaluation.MaxTimeMs == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.MaxTimeMs(childComplexity), true
+
 	case "Evaluation.possibleScore":
 		if e.complexity.Evaluation.PossibleScore == nil {
 			break
@@ -273,12 +297,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Evaluation.Status(childComplexity), true
 
+	case "Evaluation.testVerdictStatistics":
+		if e.complexity.Evaluation.TestVerdictStatistics == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.TestVerdictStatistics(childComplexity), true
+
+	case "Evaluation.totalMemoryKb":
+		if e.complexity.Evaluation.TotalMemoryKb == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.TotalMemoryKb(childComplexity), true
+
 	case "Evaluation.totalScore":
 		if e.complexity.Evaluation.TotalScore == nil {
 			break
 		}
 
 		return e.complexity.Evaluation.TotalScore(childComplexity), true
+
+	case "Evaluation.totalTimeMs":
+		if e.complexity.Evaluation.TotalTimeMs == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.TotalTimeMs(childComplexity), true
 
 	case "Example.answer":
 		if e.complexity.Example.Answer == nil {
@@ -700,6 +745,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Test.Name(childComplexity), true
 
+	case "TestVerdictStatistic.count":
+		if e.complexity.TestVerdictStatistic.Count == nil {
+			break
+		}
+
+		return e.complexity.TestVerdictStatistic.Count(childComplexity), true
+
+	case "TestVerdictStatistic.verdict":
+		if e.complexity.TestVerdictStatistic.Verdict == nil {
+			break
+		}
+
+		return e.complexity.TestVerdictStatistic.Verdict(childComplexity), true
+
 	case "User.email":
 		if e.complexity.User.Email == nil {
 			break
@@ -1003,12 +1062,23 @@ type Submission {
   createdAt: String!
 }
 
+type TestVerdictStatistic {
+  verdict: String!
+  count: Int!
+}
+
 type Evaluation {
   id: ID!
   status: String!
   totalScore: Int!
   possibleScore: Int
+  totalTimeMs: Int
+  maxTimeMs: Int
+  totalMemoryKb: Int
+  maxMemoryKb: Int
+  testVerdictStatistics: [TestVerdictStatistic!]!
 }
+
 
 `, BuiltIn: false},
 	{Name: "../../api/execution.graphql", Input: `extend type Mutation {
@@ -2001,6 +2071,220 @@ func (ec *executionContext) fieldContext_Evaluation_possibleScore(ctx context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Evaluation_totalTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_totalTimeMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalTimeMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Evaluation_totalTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Evaluation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Evaluation_maxTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_maxTimeMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTimeMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Evaluation_maxTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Evaluation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Evaluation_totalMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_totalMemoryKb(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalMemoryKb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Evaluation_totalMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Evaluation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Evaluation_maxMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_maxMemoryKb(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxMemoryKb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Evaluation_maxMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Evaluation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Evaluation_testVerdictStatistics(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_testVerdictStatistics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TestVerdictStatistics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*TestVerdictStatistic)
+	fc.Result = res
+	return ec.marshalNTestVerdictStatistic2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestVerdictStatisticᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Evaluation_testVerdictStatistics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Evaluation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "verdict":
+				return ec.fieldContext_TestVerdictStatistic_verdict(ctx, field)
+			case "count":
+				return ec.fieldContext_TestVerdictStatistic_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TestVerdictStatistic", field.Name)
 		},
 	}
 	return fc, nil
@@ -4160,6 +4444,16 @@ func (ec *executionContext) fieldContext_Submission_evaluation(ctx context.Conte
 				return ec.fieldContext_Evaluation_totalScore(ctx, field)
 			case "possibleScore":
 				return ec.fieldContext_Evaluation_possibleScore(ctx, field)
+			case "totalTimeMs":
+				return ec.fieldContext_Evaluation_totalTimeMs(ctx, field)
+			case "maxTimeMs":
+				return ec.fieldContext_Evaluation_maxTimeMs(ctx, field)
+			case "totalMemoryKb":
+				return ec.fieldContext_Evaluation_totalMemoryKb(ctx, field)
+			case "maxMemoryKb":
+				return ec.fieldContext_Evaluation_maxMemoryKb(ctx, field)
+			case "testVerdictStatistics":
+				return ec.fieldContext_Evaluation_testVerdictStatistics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Evaluation", field.Name)
 		},
@@ -4858,6 +5152,94 @@ func (ec *executionContext) fieldContext_Test_answer(ctx context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestVerdictStatistic_verdict(ctx context.Context, field graphql.CollectedField, obj *TestVerdictStatistic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestVerdictStatistic_verdict(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Verdict, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestVerdictStatistic_verdict(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestVerdictStatistic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestVerdictStatistic_count(ctx context.Context, field graphql.CollectedField, obj *TestVerdictStatistic) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestVerdictStatistic_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestVerdictStatistic_count(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestVerdictStatistic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7038,6 +7420,19 @@ func (ec *executionContext) _Evaluation(ctx context.Context, sel ast.SelectionSe
 			}
 		case "possibleScore":
 			out.Values[i] = ec._Evaluation_possibleScore(ctx, field, obj)
+		case "totalTimeMs":
+			out.Values[i] = ec._Evaluation_totalTimeMs(ctx, field, obj)
+		case "maxTimeMs":
+			out.Values[i] = ec._Evaluation_maxTimeMs(ctx, field, obj)
+		case "totalMemoryKb":
+			out.Values[i] = ec._Evaluation_totalMemoryKb(ctx, field, obj)
+		case "maxMemoryKb":
+			out.Values[i] = ec._Evaluation_maxMemoryKb(ctx, field, obj)
+		case "testVerdictStatistics":
+			out.Values[i] = ec._Evaluation_testVerdictStatistics(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7746,6 +8141,50 @@ func (ec *executionContext) _Test(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "answer":
 			out.Values[i] = ec._Test_answer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var testVerdictStatisticImplementors = []string{"TestVerdictStatistic"}
+
+func (ec *executionContext) _TestVerdictStatistic(ctx context.Context, sel ast.SelectionSet, obj *TestVerdictStatistic) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, testVerdictStatisticImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TestVerdictStatistic")
+		case "verdict":
+			out.Values[i] = ec._TestVerdictStatistic_verdict(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._TestVerdictStatistic_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8508,6 +8947,60 @@ func (ec *executionContext) marshalNTest2ᚖgithubᚗcomᚋprogrammeᚑlvᚋback
 		return graphql.Null
 	}
 	return ec._Test(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTestVerdictStatistic2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestVerdictStatisticᚄ(ctx context.Context, sel ast.SelectionSet, v []*TestVerdictStatistic) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTestVerdictStatistic2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestVerdictStatistic(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTestVerdictStatistic2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTestVerdictStatistic(ctx context.Context, sel ast.SelectionSet, v *TestVerdictStatistic) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TestVerdictStatistic(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {

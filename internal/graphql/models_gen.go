@@ -17,10 +17,15 @@ type Description struct {
 }
 
 type Evaluation struct {
-	ID            string `json:"id"`
-	Status        string `json:"status"`
-	TotalScore    int    `json:"totalScore"`
-	PossibleScore *int   `json:"possibleScore,omitempty"`
+	ID                    string                  `json:"id"`
+	Status                string                  `json:"status"`
+	TotalScore            int                     `json:"totalScore"`
+	PossibleScore         *int                    `json:"possibleScore,omitempty"`
+	TotalTimeMs           *int                    `json:"totalTimeMs,omitempty"`
+	MaxTimeMs             *int                    `json:"maxTimeMs,omitempty"`
+	TotalMemoryKb         *int                    `json:"totalMemoryKb,omitempty"`
+	MaxMemoryKb           *int                    `json:"maxMemoryKb,omitempty"`
+	TestVerdictStatistics []*TestVerdictStatistic `json:"testVerdictStatistics"`
 }
 
 type Example struct {
@@ -74,6 +79,11 @@ type Test struct {
 	Name   string `json:"name"`
 	Input  string `json:"input"`
 	Answer string `json:"answer"`
+}
+
+type TestVerdictStatistic struct {
+	Verdict string `json:"verdict"`
+	Count   int    `json:"count"`
 }
 
 type User struct {
