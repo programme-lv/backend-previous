@@ -21,9 +21,9 @@ type Evaluation struct {
 	Status                string                  `json:"status"`
 	TotalScore            int                     `json:"totalScore"`
 	PossibleScore         *int                    `json:"possibleScore,omitempty"`
-	TotalTimeMs           *int                    `json:"totalTimeMs,omitempty"`
+	AvgTimeMs             *int                    `json:"avgTimeMs,omitempty"`
 	MaxTimeMs             *int                    `json:"maxTimeMs,omitempty"`
-	TotalMemoryKb         *int                    `json:"totalMemoryKb,omitempty"`
+	AvgMemoryKb           *int                    `json:"avgMemoryKb,omitempty"`
 	MaxMemoryKb           *int                    `json:"maxMemoryKb,omitempty"`
 	TestVerdictStatistics []*TestVerdictStatistic `json:"testVerdictStatistics"`
 }

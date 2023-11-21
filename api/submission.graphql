@@ -31,9 +31,9 @@ type Evaluation {
   status: String!
   totalScore: Int!
   possibleScore: Int
-  totalTimeMs: Int
+  avgTimeMs: Int
   maxTimeMs: Int
-  totalMemoryKb: Int
+  avgMemoryKb: Int
   maxMemoryKb: Int
   testVerdictStatistics: [TestVerdictStatistic!]!
 }

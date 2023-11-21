@@ -226,9 +226,9 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 				Status:        submission.Evaluations.EvalStatusID,
 				TotalScore:    int(submission.Evaluations.EvalTotalScore),
 				PossibleScore: possibleScorePtr,
-				TotalTimeMs:   &int6969,
+				AvgTimeMs:     &int6969,
 				MaxTimeMs:     &int420,
-				TotalMemoryKb: &int6969,
+				AvgMemoryKb:   &int6969,
 				MaxMemoryKb:   &int420,
 				TestVerdictStatistics: []*TestVerdictStatistic{
 					{

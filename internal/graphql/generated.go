@@ -60,15 +60,15 @@ type ComplexityRoot struct {
 	}
 
 	Evaluation struct {
+		AvgMemoryKb           func(childComplexity int) int
+		AvgTimeMs             func(childComplexity int) int
 		ID                    func(childComplexity int) int
 		MaxMemoryKb           func(childComplexity int) int
 		MaxTimeMs             func(childComplexity int) int
 		PossibleScore         func(childComplexity int) int
 		Status                func(childComplexity int) int
 		TestVerdictStatistics func(childComplexity int) int
-		TotalMemoryKb         func(childComplexity int) int
 		TotalScore            func(childComplexity int) int
-		TotalTimeMs           func(childComplexity int) int
 	}
 
 	Example struct {
@@ -262,6 +262,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Description.Story(childComplexity), true
 
+	case "Evaluation.avgMemoryKb":
+		if e.complexity.Evaluation.AvgMemoryKb == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.AvgMemoryKb(childComplexity), true
+
+	case "Evaluation.avgTimeMs":
+		if e.complexity.Evaluation.AvgTimeMs == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.AvgTimeMs(childComplexity), true
+
 	case "Evaluation.id":
 		if e.complexity.Evaluation.ID == nil {
 			break
@@ -304,26 +318,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Evaluation.TestVerdictStatistics(childComplexity), true
 
-	case "Evaluation.totalMemoryKb":
-		if e.complexity.Evaluation.TotalMemoryKb == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.TotalMemoryKb(childComplexity), true
-
 	case "Evaluation.totalScore":
 		if e.complexity.Evaluation.TotalScore == nil {
 			break
 		}
 
 		return e.complexity.Evaluation.TotalScore(childComplexity), true
-
-	case "Evaluation.totalTimeMs":
-		if e.complexity.Evaluation.TotalTimeMs == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.TotalTimeMs(childComplexity), true
 
 	case "Example.answer":
 		if e.complexity.Example.Answer == nil {
@@ -1072,9 +1072,9 @@ type Evaluation {
   status: String!
   totalScore: Int!
   possibleScore: Int
-  totalTimeMs: Int
+  avgTimeMs: Int
   maxTimeMs: Int
-  totalMemoryKb: Int
+  avgMemoryKb: Int
   maxMemoryKb: Int
   testVerdictStatistics: [TestVerdictStatistic!]!
 }
@@ -2076,8 +2076,8 @@ func (ec *executionContext) fieldContext_Evaluation_possibleScore(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Evaluation_totalTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_totalTimeMs(ctx, field)
+func (ec *executionContext) _Evaluation_avgTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_avgTimeMs(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2090,7 +2090,7 @@ func (ec *executionContext) _Evaluation_totalTimeMs(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalTimeMs, nil
+		return obj.AvgTimeMs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2104,7 +2104,7 @@ func (ec *executionContext) _Evaluation_totalTimeMs(ctx context.Context, field g
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Evaluation_totalTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Evaluation_avgTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Evaluation",
 		Field:      field,
@@ -2158,8 +2158,8 @@ func (ec *executionContext) fieldContext_Evaluation_maxTimeMs(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Evaluation_totalMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_totalMemoryKb(ctx, field)
+func (ec *executionContext) _Evaluation_avgMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_avgMemoryKb(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2172,7 +2172,7 @@ func (ec *executionContext) _Evaluation_totalMemoryKb(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalMemoryKb, nil
+		return obj.AvgMemoryKb, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2186,7 +2186,7 @@ func (ec *executionContext) _Evaluation_totalMemoryKb(ctx context.Context, field
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Evaluation_totalMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Evaluation_avgMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Evaluation",
 		Field:      field,
@@ -4444,12 +4444,12 @@ func (ec *executionContext) fieldContext_Submission_evaluation(ctx context.Conte
 				return ec.fieldContext_Evaluation_totalScore(ctx, field)
 			case "possibleScore":
 				return ec.fieldContext_Evaluation_possibleScore(ctx, field)
-			case "totalTimeMs":
-				return ec.fieldContext_Evaluation_totalTimeMs(ctx, field)
+			case "avgTimeMs":
+				return ec.fieldContext_Evaluation_avgTimeMs(ctx, field)
 			case "maxTimeMs":
 				return ec.fieldContext_Evaluation_maxTimeMs(ctx, field)
-			case "totalMemoryKb":
-				return ec.fieldContext_Evaluation_totalMemoryKb(ctx, field)
+			case "avgMemoryKb":
+				return ec.fieldContext_Evaluation_avgMemoryKb(ctx, field)
 			case "maxMemoryKb":
 				return ec.fieldContext_Evaluation_maxMemoryKb(ctx, field)
 			case "testVerdictStatistics":
@@ -7420,12 +7420,12 @@ func (ec *executionContext) _Evaluation(ctx context.Context, sel ast.SelectionSe
 			}
 		case "possibleScore":
 			out.Values[i] = ec._Evaluation_possibleScore(ctx, field, obj)
-		case "totalTimeMs":
-			out.Values[i] = ec._Evaluation_totalTimeMs(ctx, field, obj)
+		case "avgTimeMs":
+			out.Values[i] = ec._Evaluation_avgTimeMs(ctx, field, obj)
 		case "maxTimeMs":
 			out.Values[i] = ec._Evaluation_maxTimeMs(ctx, field, obj)
-		case "totalMemoryKb":
-			out.Values[i] = ec._Evaluation_totalMemoryKb(ctx, field, obj)
+		case "avgMemoryKb":
+			out.Values[i] = ec._Evaluation_avgMemoryKb(ctx, field, obj)
 		case "maxMemoryKb":
 			out.Values[i] = ec._Evaluation_maxMemoryKb(ctx, field, obj)
 		case "testVerdictStatistics":
