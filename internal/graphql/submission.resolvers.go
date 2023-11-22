@@ -178,14 +178,17 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		table.ProgrammingLanguages.AllColumns,
 		table.Users.AllColumns,
 		table.Evaluations.AllColumns,
+		table.RuntimeStatistics.AllColumns,
 	).FROM(table.TaskSubmissions.
 		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
 		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
 		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
 		LEFT_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
-		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID))).WHERE(
-		table.TaskSubmissions.Hidden.EQ(postgres.Bool(false)),
-	).ORDER_BY(table.TaskSubmissions.CreatedAt.DESC())
+		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID)).
+		LEFT_JOIN(table.RuntimeStatistics, table.Evaluations.TestRuntimeStatisticsID.EQ(table.RuntimeStatistics.ID))).
+		WHERE(
+			table.TaskSubmissions.Hidden.EQ(postgres.Bool(false)),
+		).ORDER_BY(table.TaskSubmissions.CreatedAt.DESC())
 
 	var submissions []struct {
 		model.TaskSubmissions
@@ -194,6 +197,7 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		model.ProgrammingLanguages
 		model.Users
 		model.Evaluations
+		model.RuntimeStatistics // TODO: this can be a pointer
 	}
 	err := selectStmt.Query(r.PostgresDB, &submissions)
 	if err != nil {
@@ -202,8 +206,11 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 
 	var gqlSubmissions []*Submission
 	for _, submission := range submissions {
-		int6969 := 6969
-		int420 := 420
+		avgTimeMsInt := int(submission.AvgTimeMillis)
+		maxTimeMsInt := int(submission.RuntimeStatistics.MaximumTimeMillis)
+		avgMemoryKbInt := int(submission.RuntimeStatistics.AvgMemoryKibibytes)
+		maxMemoryKbInt := int(submission.RuntimeStatistics.MaximumMemoryKibibytes)
+
 		var possibleScorePtr *int = nil
 		if submission.Evaluations.EvalPossibleScore != nil {
 			tmp := int(*submission.Evaluations.EvalPossibleScore)
@@ -226,10 +233,10 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 				Status:        submission.Evaluations.EvalStatusID,
 				TotalScore:    int(submission.Evaluations.EvalTotalScore),
 				PossibleScore: possibleScorePtr,
-				AvgTimeMs:     &int6969,
-				MaxTimeMs:     &int420,
-				AvgMemoryKb:   &int6969,
-				MaxMemoryKb:   &int420,
+				AvgTimeMs:     &avgTimeMsInt,
+				MaxTimeMs:     &maxTimeMsInt,
+				AvgMemoryKb:   &avgMemoryKbInt,
+				MaxMemoryKb:   &maxMemoryKbInt,
 				TestVerdictStatistics: []*TestVerdictStatistic{
 					{
 						Verdict: "OK",

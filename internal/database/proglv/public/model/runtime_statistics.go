@@ -13,4 +13,6 @@ type RuntimeStatistics struct {
 	MaximumMemoryKibibytes int64
 	TotalTimeMillis        int64
 	TotalMemoryKibibytes   int64
+	AvgTimeMillis          float64
+	AvgMemoryKibibytes     float64
 }

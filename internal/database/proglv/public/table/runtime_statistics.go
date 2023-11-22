@@ -22,6 +22,8 @@ type runtimeStatisticsTable struct {
 	MaximumMemoryKibibytes postgres.ColumnInteger
 	TotalTimeMillis        postgres.ColumnInteger
 	TotalMemoryKibibytes   postgres.ColumnInteger
+	AvgTimeMillis          postgres.ColumnFloat
+	AvgMemoryKibibytes     postgres.ColumnFloat
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -67,8 +69,10 @@ func newRuntimeStatisticsTableImpl(schemaName, tableName, alias string) runtimeS
 		MaximumMemoryKibibytesColumn = postgres.IntegerColumn("maximum_memory_kibibytes")
 		TotalTimeMillisColumn        = postgres.IntegerColumn("total_time_millis")
 		TotalMemoryKibibytesColumn   = postgres.IntegerColumn("total_memory_kibibytes")
-		allColumns                   = postgres.ColumnList{IDColumn, MaximumTimeMillisColumn, MaximumMemoryKibibytesColumn, TotalTimeMillisColumn, TotalMemoryKibibytesColumn}
-		mutableColumns               = postgres.ColumnList{MaximumTimeMillisColumn, MaximumMemoryKibibytesColumn, TotalTimeMillisColumn, TotalMemoryKibibytesColumn}
+		AvgTimeMillisColumn          = postgres.FloatColumn("avg_time_millis")
+		AvgMemoryKibibytesColumn     = postgres.FloatColumn("avg_memory_kibibytes")
+		allColumns                   = postgres.ColumnList{IDColumn, MaximumTimeMillisColumn, MaximumMemoryKibibytesColumn, TotalTimeMillisColumn, TotalMemoryKibibytesColumn, AvgTimeMillisColumn, AvgMemoryKibibytesColumn}
+		mutableColumns               = postgres.ColumnList{MaximumTimeMillisColumn, MaximumMemoryKibibytesColumn, TotalTimeMillisColumn, TotalMemoryKibibytesColumn, AvgTimeMillisColumn, AvgMemoryKibibytesColumn}
 	)
 
 	return runtimeStatisticsTable{
@@ -80,6 +84,8 @@ func newRuntimeStatisticsTableImpl(schemaName, tableName, alias string) runtimeS
 		MaximumMemoryKibibytes: MaximumMemoryKibibytesColumn,
 		TotalTimeMillis:        TotalTimeMillisColumn,
 		TotalMemoryKibibytes:   TotalMemoryKibibytesColumn,
+		AvgTimeMillis:          AvgTimeMillisColumn,
+		AvgMemoryKibibytes:     AvgMemoryKibibytesColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
