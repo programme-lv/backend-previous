@@ -2,6 +2,20 @@
 
 package graphql
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
+type CompilationDetails struct {
+	TimeMs   *int    `json:"timeMs,omitempty"`
+	MemoryKb *int    `json:"memoryKb,omitempty"`
+	ExitCode *int    `json:"exitCode,omitempty"`
+	Stdout   *string `json:"stdout,omitempty"`
+	Stderr   *string `json:"stderr,omitempty"`
+}
+
 type Constraints struct {
 	TimeLimitMs   int `json:"timeLimitMs"`
 	MemoryLimitKb int `json:"memoryLimitKb"`
@@ -17,15 +31,17 @@ type Description struct {
 }
 
 type Evaluation struct {
-	ID                    string                  `json:"id"`
-	Status                string                  `json:"status"`
-	TotalScore            int                     `json:"totalScore"`
-	PossibleScore         *int                    `json:"possibleScore,omitempty"`
-	AvgTimeMs             *int                    `json:"avgTimeMs,omitempty"`
-	MaxTimeMs             *int                    `json:"maxTimeMs,omitempty"`
-	AvgMemoryKb           *int                    `json:"avgMemoryKb,omitempty"`
-	MaxMemoryKb           *int                    `json:"maxMemoryKb,omitempty"`
-	TestVerdictStatistics []*TestVerdictStatistic `json:"testVerdictStatistics"`
+	ID            string `json:"id"`
+	Status        string `json:"status"`
+	TotalScore    int    `json:"totalScore"`
+	PossibleScore *int   `json:"possibleScore,omitempty"`
+	AvgTimeMs     *int   `json:"avgTimeMs,omitempty"`
+	MaxTimeMs     *int   `json:"maxTimeMs,omitempty"`
+	AvgMemoryKb   *int   `json:"avgMemoryKb,omitempty"`
+	MaxMemoryKb   *int   `json:"maxMemoryKb,omitempty"`
+	// Some programming languages do not support compilation, so this field may be null.
+	Compilation *CompilationDetails `json:"compilation,omitempty"`
+	TestResults []*TestResult       `json:"testResults"`
 }
 
 type Example struct {
@@ -81,9 +97,11 @@ type Test struct {
 	Answer string `json:"answer"`
 }
 
-type TestVerdictStatistic struct {
-	Verdict string `json:"verdict"`
-	Count   int    `json:"count"`
+type TestResult struct {
+	SubtaskID string          `json:"subtaskId"`
+	TimeMs    *int            `json:"timeMs,omitempty"`
+	MemoryKb  *int            `json:"memoryKb,omitempty"`
+	Result    *TestResultType `json:"result,omitempty"`
 }
 
 type User struct {
@@ -93,4 +111,63 @@ type User struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	IsAdmin   bool   `json:"isAdmin"`
+}
+
+type TestResultType string
+
+const (
+	TestResultTypeAc  TestResultType = "AC"
+	TestResultTypePt  TestResultType = "PT"
+	TestResultTypeWa  TestResultType = "WA"
+	TestResultTypePe  TestResultType = "PE"
+	TestResultTypeTle TestResultType = "TLE"
+	TestResultTypeMle TestResultType = "MLE"
+	TestResultTypeIle TestResultType = "ILE"
+	TestResultTypeIg  TestResultType = "IG"
+	TestResultTypeRe  TestResultType = "RE"
+	TestResultTypeSv  TestResultType = "SV"
+	TestResultTypeIse TestResultType = "ISE"
+)
+
+var AllTestResultType = []TestResultType{
+	TestResultTypeAc,
+	TestResultTypePt,
+	TestResultTypeWa,
+	TestResultTypePe,
+	TestResultTypeTle,
+	TestResultTypeMle,
+	TestResultTypeIle,
+	TestResultTypeIg,
+	TestResultTypeRe,
+	TestResultTypeSv,
+	TestResultTypeIse,
+}
+
+func (e TestResultType) IsValid() bool {
+	switch e {
+	case TestResultTypeAc, TestResultTypePt, TestResultTypeWa, TestResultTypePe, TestResultTypeTle, TestResultTypeMle, TestResultTypeIle, TestResultTypeIg, TestResultTypeRe, TestResultTypeSv, TestResultTypeIse:
+		return true
+	}
+	return false
+}
+
+func (e TestResultType) String() string {
+	return string(e)
+}
+
+func (e *TestResultType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TestResultType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TestResultType", str)
+	}
+	return nil
+}
+
+func (e TestResultType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

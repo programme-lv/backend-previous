@@ -237,20 +237,6 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 				MaxTimeMs:     &maxTimeMsInt,
 				AvgMemoryKb:   &avgMemoryKbInt,
 				MaxMemoryKb:   &maxMemoryKbInt,
-				TestVerdictStatistics: []*TestVerdictStatistic{
-					{
-						Verdict: "OK",
-						Count:   4,
-					},
-					{
-						Verdict: "WA",
-						Count:   1,
-					},
-					{
-						Verdict: "TLE",
-						Count:   3,
-					},
-				},
 			},
 			Username:  submission.Username,
 			CreatedAt: submission.TaskSubmissions.CreatedAt.Format(time.RFC3339),
@@ -258,4 +244,9 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 	}
 
 	return gqlSubmissions, nil
+}
+
+// GetSubmission is the resolver for the getSubmission field.
+func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
+	panic(fmt.Errorf("not implemented: GetSubmission - getSubmission"))
 }
