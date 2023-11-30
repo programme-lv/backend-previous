@@ -68,16 +68,13 @@ type ComplexityRoot struct {
 	}
 
 	Evaluation struct {
-		AvgMemoryKb   func(childComplexity int) int
-		AvgTimeMs     func(childComplexity int) int
-		Compilation   func(childComplexity int) int
-		ID            func(childComplexity int) int
-		MaxMemoryKb   func(childComplexity int) int
-		MaxTimeMs     func(childComplexity int) int
-		PossibleScore func(childComplexity int) int
-		Status        func(childComplexity int) int
-		TestResults   func(childComplexity int) int
-		TotalScore    func(childComplexity int) int
+		Compilation       func(childComplexity int) int
+		ID                func(childComplexity int) int
+		PossibleScore     func(childComplexity int) int
+		RuntimeStatistics func(childComplexity int) int
+		Status            func(childComplexity int) int
+		TestResults       func(childComplexity int) int
+		TotalScore        func(childComplexity int) int
 	}
 
 	Example struct {
@@ -127,6 +124,13 @@ type ComplexityRoot struct {
 		ListPublicSubmissions         func(childComplexity int) int
 		ListPublishedTasks            func(childComplexity int) int
 		Whoami                        func(childComplexity int) int
+	}
+
+	RuntimeStatistics struct {
+		AvgMemoryKb func(childComplexity int) int
+		AvgTimeMs   func(childComplexity int) int
+		MaxMemoryKb func(childComplexity int) int
+		MaxTimeMs   func(childComplexity int) int
 	}
 
 	Submission struct {
@@ -310,20 +314,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Description.Story(childComplexity), true
 
-	case "Evaluation.avgMemoryKb":
-		if e.complexity.Evaluation.AvgMemoryKb == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.AvgMemoryKb(childComplexity), true
-
-	case "Evaluation.avgTimeMs":
-		if e.complexity.Evaluation.AvgTimeMs == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.AvgTimeMs(childComplexity), true
-
 	case "Evaluation.compilation":
 		if e.complexity.Evaluation.Compilation == nil {
 			break
@@ -338,26 +328,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Evaluation.ID(childComplexity), true
 
-	case "Evaluation.maxMemoryKb":
-		if e.complexity.Evaluation.MaxMemoryKb == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.MaxMemoryKb(childComplexity), true
-
-	case "Evaluation.maxTimeMs":
-		if e.complexity.Evaluation.MaxTimeMs == nil {
-			break
-		}
-
-		return e.complexity.Evaluation.MaxTimeMs(childComplexity), true
-
 	case "Evaluation.possibleScore":
 		if e.complexity.Evaluation.PossibleScore == nil {
 			break
 		}
 
 		return e.complexity.Evaluation.PossibleScore(childComplexity), true
+
+	case "Evaluation.runtimeStatistics":
+		if e.complexity.Evaluation.RuntimeStatistics == nil {
+			break
+		}
+
+		return e.complexity.Evaluation.RuntimeStatistics(childComplexity), true
 
 	case "Evaluation.status":
 		if e.complexity.Evaluation.Status == nil {
@@ -671,6 +654,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Whoami(childComplexity), true
+
+	case "RuntimeStatistics.avgMemoryKb":
+		if e.complexity.RuntimeStatistics.AvgMemoryKb == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatistics.AvgMemoryKb(childComplexity), true
+
+	case "RuntimeStatistics.avgTimeMs":
+		if e.complexity.RuntimeStatistics.AvgTimeMs == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatistics.AvgTimeMs(childComplexity), true
+
+	case "RuntimeStatistics.maxMemoryKb":
+		if e.complexity.RuntimeStatistics.MaxMemoryKb == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatistics.MaxMemoryKb(childComplexity), true
+
+	case "RuntimeStatistics.maxTimeMs":
+		if e.complexity.RuntimeStatistics.MaxTimeMs == nil {
+			break
+		}
+
+		return e.complexity.RuntimeStatistics.MaxTimeMs(childComplexity), true
 
 	case "Submission.createdAt":
 		if e.complexity.Submission.CreatedAt == nil {
@@ -1148,16 +1159,22 @@ type Submission {
 type Evaluation {
   id: ID!
   status: String!
+
   totalScore: Int!
   possibleScore: Int
-  avgTimeMs: Int
-  maxTimeMs: Int
-  avgMemoryKb: Int
-  maxMemoryKb: Int
+
+  runtimeStatistics: RuntimeStatistics
 
   """Some programming languages do not support compilation, so this field may be null."""
   compilation: CompilationDetails
   testResults: [TestResult!]!
+}
+
+type RuntimeStatistics {
+  avgTimeMs: Int!
+  maxTimeMs: Int!
+  avgMemoryKb: Int!
+  maxMemoryKb: Int!
 }
 
 type CompilationDetails {
@@ -2404,8 +2421,8 @@ func (ec *executionContext) fieldContext_Evaluation_possibleScore(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Evaluation_avgTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_avgTimeMs(ctx, field)
+func (ec *executionContext) _Evaluation_runtimeStatistics(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Evaluation_runtimeStatistics(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2418,7 +2435,7 @@ func (ec *executionContext) _Evaluation_avgTimeMs(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AvgTimeMs, nil
+		return obj.RuntimeStatistics, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2427,142 +2444,29 @@ func (ec *executionContext) _Evaluation_avgTimeMs(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*RuntimeStatistics)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalORuntimeStatistics2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐRuntimeStatistics(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Evaluation_avgTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Evaluation_runtimeStatistics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Evaluation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Evaluation_maxTimeMs(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_maxTimeMs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MaxTimeMs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Evaluation_maxTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Evaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Evaluation_avgMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_avgMemoryKb(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AvgMemoryKb, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Evaluation_avgMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Evaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Evaluation_maxMemoryKb(ctx context.Context, field graphql.CollectedField, obj *Evaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Evaluation_maxMemoryKb(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MaxMemoryKb, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Evaluation_maxMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Evaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "avgTimeMs":
+				return ec.fieldContext_RuntimeStatistics_avgTimeMs(ctx, field)
+			case "maxTimeMs":
+				return ec.fieldContext_RuntimeStatistics_maxTimeMs(ctx, field)
+			case "avgMemoryKb":
+				return ec.fieldContext_RuntimeStatistics_avgMemoryKb(ctx, field)
+			case "maxMemoryKb":
+				return ec.fieldContext_RuntimeStatistics_maxMemoryKb(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeStatistics", field.Name)
 		},
 	}
 	return fc, nil
@@ -4647,6 +4551,182 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _RuntimeStatistics_avgTimeMs(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RuntimeStatistics_avgTimeMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvgTimeMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RuntimeStatistics_avgTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeStatistics_maxTimeMs(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RuntimeStatistics_maxTimeMs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTimeMs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RuntimeStatistics_maxTimeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeStatistics_avgMemoryKb(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RuntimeStatistics_avgMemoryKb(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvgMemoryKb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RuntimeStatistics_avgMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RuntimeStatistics_maxMemoryKb(ctx context.Context, field graphql.CollectedField, obj *RuntimeStatistics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RuntimeStatistics_maxMemoryKb(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxMemoryKb, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RuntimeStatistics_maxMemoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RuntimeStatistics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Submission_id(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Submission_id(ctx, field)
 	if err != nil {
@@ -4900,14 +4980,8 @@ func (ec *executionContext) fieldContext_Submission_evaluation(ctx context.Conte
 				return ec.fieldContext_Evaluation_totalScore(ctx, field)
 			case "possibleScore":
 				return ec.fieldContext_Evaluation_possibleScore(ctx, field)
-			case "avgTimeMs":
-				return ec.fieldContext_Evaluation_avgTimeMs(ctx, field)
-			case "maxTimeMs":
-				return ec.fieldContext_Evaluation_maxTimeMs(ctx, field)
-			case "avgMemoryKb":
-				return ec.fieldContext_Evaluation_avgMemoryKb(ctx, field)
-			case "maxMemoryKb":
-				return ec.fieldContext_Evaluation_maxMemoryKb(ctx, field)
+			case "runtimeStatistics":
+				return ec.fieldContext_Evaluation_runtimeStatistics(ctx, field)
 			case "compilation":
 				return ec.fieldContext_Evaluation_compilation(ctx, field)
 			case "testResults":
@@ -8001,14 +8075,8 @@ func (ec *executionContext) _Evaluation(ctx context.Context, sel ast.SelectionSe
 			}
 		case "possibleScore":
 			out.Values[i] = ec._Evaluation_possibleScore(ctx, field, obj)
-		case "avgTimeMs":
-			out.Values[i] = ec._Evaluation_avgTimeMs(ctx, field, obj)
-		case "maxTimeMs":
-			out.Values[i] = ec._Evaluation_maxTimeMs(ctx, field, obj)
-		case "avgMemoryKb":
-			out.Values[i] = ec._Evaluation_avgMemoryKb(ctx, field, obj)
-		case "maxMemoryKb":
-			out.Values[i] = ec._Evaluation_maxMemoryKb(ctx, field, obj)
+		case "runtimeStatistics":
+			out.Values[i] = ec._Evaluation_runtimeStatistics(ctx, field, obj)
 		case "compilation":
 			out.Values[i] = ec._Evaluation_compilation(ctx, field, obj)
 		case "testResults":
@@ -8547,6 +8615,60 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var runtimeStatisticsImplementors = []string{"RuntimeStatistics"}
+
+func (ec *executionContext) _RuntimeStatistics(ctx context.Context, sel ast.SelectionSet, obj *RuntimeStatistics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeStatisticsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeStatistics")
+		case "avgTimeMs":
+			out.Values[i] = ec._RuntimeStatistics_avgTimeMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxTimeMs":
+			out.Values[i] = ec._RuntimeStatistics_maxTimeMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "avgMemoryKb":
+			out.Values[i] = ec._RuntimeStatistics_avgMemoryKb(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxMemoryKb":
+			out.Values[i] = ec._RuntimeStatistics_maxMemoryKb(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9986,6 +10108,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalORuntimeStatistics2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐRuntimeStatistics(ctx context.Context, sel ast.SelectionSet, v *RuntimeStatistics) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeStatistics(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {

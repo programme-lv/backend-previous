@@ -31,14 +31,11 @@ type Description struct {
 }
 
 type Evaluation struct {
-	ID            string `json:"id"`
-	Status        string `json:"status"`
-	TotalScore    int    `json:"totalScore"`
-	PossibleScore *int   `json:"possibleScore,omitempty"`
-	AvgTimeMs     *int   `json:"avgTimeMs,omitempty"`
-	MaxTimeMs     *int   `json:"maxTimeMs,omitempty"`
-	AvgMemoryKb   *int   `json:"avgMemoryKb,omitempty"`
-	MaxMemoryKb   *int   `json:"maxMemoryKb,omitempty"`
+	ID                string             `json:"id"`
+	Status            string             `json:"status"`
+	TotalScore        int                `json:"totalScore"`
+	PossibleScore     *int               `json:"possibleScore,omitempty"`
+	RuntimeStatistics *RuntimeStatistics `json:"runtimeStatistics,omitempty"`
 	// Some programming languages do not support compilation, so this field may be null.
 	Compilation *CompilationDetails `json:"compilation,omitempty"`
 	TestResults []*TestResult       `json:"testResults"`
@@ -65,6 +62,13 @@ type ProgrammingLanguage struct {
 	FullName string  `json:"fullName"`
 	MonacoID *string `json:"monacoID,omitempty"`
 	Enabled  bool    `json:"enabled"`
+}
+
+type RuntimeStatistics struct {
+	AvgTimeMs   int `json:"avgTimeMs"`
+	MaxTimeMs   int `json:"maxTimeMs"`
+	AvgMemoryKb int `json:"avgMemoryKb"`
+	MaxMemoryKb int `json:"maxMemoryKb"`
 }
 
 type Submission struct {

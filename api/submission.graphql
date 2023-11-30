@@ -26,16 +26,22 @@ type Submission {
 type Evaluation {
   id: ID!
   status: String!
+
   totalScore: Int!
   possibleScore: Int
-  avgTimeMs: Int
-  maxTimeMs: Int
-  avgMemoryKb: Int
-  maxMemoryKb: Int
+
+  runtimeStatistics: RuntimeStatistics
 
   """Some programming languages do not support compilation, so this field may be null."""
   compilation: CompilationDetails
   testResults: [TestResult!]!
+}
+
+type RuntimeStatistics {
+  avgTimeMs: Int!
+  maxTimeMs: Int!
+  avgMemoryKb: Int!
+  maxMemoryKb: Int!
 }
 
 type CompilationDetails {
