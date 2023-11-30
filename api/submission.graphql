@@ -45,18 +45,17 @@ type RuntimeStatistics {
 }
 
 type CompilationDetails {
-  timeMs: Int
-  memoryKb: Int
-  exitCode: Int
-  stdout: String
-  stderr: String
+  timeMs: Int!
+  memoryKb: Int!
+  exitCode: Int!
+  stdout: String!
+  stderr: String!
 }
 
 type TestResult {
-  subtaskId: ID!
-  timeMs: Int
-  memoryKb: Int
-  result: TestResultType
+  timeMs: Int!
+  memoryKb: Int!
+  result: TestResultType!
 }
 
 enum TestResultType {

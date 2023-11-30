@@ -9,11 +9,11 @@ import (
 )
 
 type CompilationDetails struct {
-	TimeMs   *int    `json:"timeMs,omitempty"`
-	MemoryKb *int    `json:"memoryKb,omitempty"`
-	ExitCode *int    `json:"exitCode,omitempty"`
-	Stdout   *string `json:"stdout,omitempty"`
-	Stderr   *string `json:"stderr,omitempty"`
+	TimeMs   int    `json:"timeMs"`
+	MemoryKb int    `json:"memoryKb"`
+	ExitCode int    `json:"exitCode"`
+	Stdout   string `json:"stdout"`
+	Stderr   string `json:"stderr"`
 }
 
 type Constraints struct {
@@ -102,10 +102,9 @@ type Test struct {
 }
 
 type TestResult struct {
-	SubtaskID string          `json:"subtaskId"`
-	TimeMs    *int            `json:"timeMs,omitempty"`
-	MemoryKb  *int            `json:"memoryKb,omitempty"`
-	Result    *TestResultType `json:"result,omitempty"`
+	TimeMs   int            `json:"timeMs"`
+	MemoryKb int            `json:"memoryKb"`
+	Result   TestResultType `json:"result"`
 }
 
 type User struct {

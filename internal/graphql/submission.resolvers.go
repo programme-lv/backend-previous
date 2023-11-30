@@ -256,8 +256,8 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 }
 
 // GetSubmission is the resolver for the getSubmission field.
-func (r *queryResolver) GetSubmission(ctx context.Context, idStr string) (*Submission, error) {
-	id, err := strconv.ParseInt(idStr, 10, 64)
+func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
+	idInt64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +281,7 @@ func (r *queryResolver) GetSubmission(ctx context.Context, idStr string) (*Submi
 		INNER_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
 		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID)).
 		LEFT_JOIN(table.RuntimeStatistics, table.Evaluations.TestRuntimeStatisticsID.EQ(table.RuntimeStatistics.ID))).
-		WHERE(table.TaskSubmissions.ID.EQ(postgres.Int64(id))).
+		WHERE(table.TaskSubmissions.ID.EQ(postgres.Int64(idInt64))).
 		ORDER_BY(table.TaskSubmissions.CreatedAt.DESC())
 
 	var submissionRow struct {
@@ -294,6 +294,26 @@ func (r *queryResolver) GetSubmission(ctx context.Context, idStr string) (*Submi
 		RuntimeStatistics *model.RuntimeStatistics
 	}
 	err = selectSubmissionStmt.Query(r.PostgresDB, &submissionRow)
+	if err != nil {
+		return nil, err
+	}
+
+	selectTestsStmt := postgres.SELECT(
+		table.EvaluationTestResults.ID,
+		table.EvaluationTestResults.TaskVTestID,
+		table.EvaluationTestResults.EvalStatusID,
+		table.RuntimeData.TimeMillis,
+		table.RuntimeData.MemoryKibibytes).
+		FROM(table.EvaluationTestResults.
+			INNER_JOIN(table.RuntimeData, table.EvaluationTestResults.ExecRDataID.EQ(table.RuntimeData.ID))).
+		WHERE(table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(submissionRow.Evaluations.ID)))
+
+	var testRows []struct {
+		model.EvaluationTestResults
+		model.RuntimeData
+	}
+
+	err = selectTestsStmt.Query(r.PostgresDB, &testRows)
 	if err != nil {
 		return nil, err
 	}
@@ -342,27 +362,52 @@ func (r *queryResolver) GetSubmission(ctx context.Context, idStr string) (*Submi
 		if err != nil {
 			return nil, err
 		}
-		var timeMsInt, memoryKbInt, exitCodeInt *int = nil, nil, nil
-		if compilationData.TimeMillis != nil {
-			timeMsInt = new(int)
-			*timeMsInt = int(*compilationData.TimeMillis)
-		}
-		if compilationData.MemoryKibibytes != nil {
-			memoryKbInt = new(int)
-			*memoryKbInt = int(*compilationData.MemoryKibibytes)
-		}
-		if compilationData.ExitCode != nil {
-			exitCodeInt = new(int)
-			*exitCodeInt = int(*compilationData.ExitCode)
-		}
-		evaluation.Compilation = &CompilationDetails{
-			TimeMs:   timeMsInt,
-			MemoryKb: memoryKbInt,
-			ExitCode: exitCodeInt,
-			Stdout:   compilationData.Stdout,
-			Stderr:   compilationData.Stderr,
+		skip := false
+		skip = skip || compilationData.TimeMillis == nil
+		skip = skip || compilationData.MemoryKibibytes == nil
+		skip = skip || compilationData.ExitCode == nil
+		skip = skip || compilationData.Stdout == nil
+		skip = skip || compilationData.Stderr == nil
+		if !skip {
+			evaluation.Compilation = &CompilationDetails{
+				TimeMs:   int(*compilationData.TimeMillis),
+				MemoryKb: int(*compilationData.MemoryKibibytes),
+				ExitCode: int(*compilationData.ExitCode),
+				Stdout:   *compilationData.Stdout,
+				Stderr:   *compilationData.Stderr,
+			}
 		}
 	}
+	var tests []*TestResult
+	for _, testRow := range testRows {
+		testResultTypes := map[string]TestResultType{
+			"AC":  TestResultTypeAc,
+			"PT":  TestResultTypePt,
+			"WA":  TestResultTypeWa,
+			"PE":  TestResultTypePe,
+			"TLE": TestResultTypeTle,
+			"MLE": TestResultTypeMle,
+			"ILE": TestResultTypeIle,
+			"IG":  TestResultTypeIg,
+			"RE":  TestResultTypeRe,
+			"SV":  TestResultTypeSv,
+			"ISE": TestResultTypeIse,
+		}
+		testResultType, ok := testResultTypes[testRow.EvalStatusID]
+		if !ok {
+			continue
+		}
+		if testRow.RuntimeData.TimeMillis == nil || testRow.RuntimeData.MemoryKibibytes == nil {
+			continue
+		}
+		test := TestResult{
+			Result:   testResultType,
+			TimeMs:   int(*testRow.RuntimeData.TimeMillis),
+			MemoryKb: int(*testRow.RuntimeData.MemoryKibibytes),
+		}
+		tests = append(tests, &test)
+	}
+	evaluation.TestResults = tests
 	submission.Evaluation = &evaluation
 
 	// fill created at field
