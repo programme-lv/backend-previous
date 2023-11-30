@@ -171,6 +171,11 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
+	/*
+		we first select task submissions, then select published task versions,
+		join with programming languages, join with users, join with evaluations and join with runtime statistics,
+		join with evaluations
+	*/
 	selectStmt := postgres.SELECT(
 		table.TaskSubmissions.AllColumns,
 		table.Tasks.AllColumns,
@@ -182,8 +187,8 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 	).FROM(table.TaskSubmissions.
 		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
 		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
-		LEFT_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
-		LEFT_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
+		INNER_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
+		INNER_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
 		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID)).
 		LEFT_JOIN(table.RuntimeStatistics, table.Evaluations.TestRuntimeStatisticsID.EQ(table.RuntimeStatistics.ID))).
 		WHERE(table.TaskSubmissions.Hidden.EQ(postgres.Bool(false))).
@@ -251,6 +256,117 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 }
 
 // GetSubmission is the resolver for the getSubmission field.
-func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
-	panic(fmt.Errorf("not implemented: GetSubmission - getSubmission"))
+func (r *queryResolver) GetSubmission(ctx context.Context, idStr string) (*Submission, error) {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	/*
+		we first select task submissions, then select published task versions,
+		join with programming languages, join with users, join with evaluations and join with runtime statistics,
+		join with evaluations
+	*/
+	selectSubmissionStmt := postgres.SELECT(
+		table.TaskSubmissions.AllColumns,
+		table.Tasks.AllColumns,
+		table.TaskVersions.AllColumns,
+		table.ProgrammingLanguages.AllColumns,
+		table.Users.AllColumns,
+		table.Evaluations.AllColumns,
+		table.RuntimeStatistics.AllColumns,
+	).FROM(table.TaskSubmissions.
+		LEFT_JOIN(table.Tasks, table.TaskSubmissions.TaskID.EQ(table.Tasks.ID)).
+		INNER_JOIN(table.TaskVersions, table.Tasks.PublishedVersionID.EQ(table.TaskVersions.ID)).
+		INNER_JOIN(table.ProgrammingLanguages, table.TaskSubmissions.ProgrammingLangID.EQ(table.ProgrammingLanguages.ID)).
+		INNER_JOIN(table.Users, table.TaskSubmissions.UserID.EQ(table.Users.ID)).
+		INNER_JOIN(table.Evaluations, table.TaskSubmissions.VisibleEvalID.EQ(table.Evaluations.ID)).
+		LEFT_JOIN(table.RuntimeStatistics, table.Evaluations.TestRuntimeStatisticsID.EQ(table.RuntimeStatistics.ID))).
+		WHERE(table.TaskSubmissions.ID.EQ(postgres.Int64(id))).
+		ORDER_BY(table.TaskSubmissions.CreatedAt.DESC())
+
+	var submissionRow struct {
+		model.TaskSubmissions
+		model.Tasks
+		model.TaskVersions
+		model.ProgrammingLanguages
+		model.Users
+		model.Evaluations
+		RuntimeStatistics *model.RuntimeStatistics
+	}
+	err = selectSubmissionStmt.Query(r.PostgresDB, &submissionRow)
+	if err != nil {
+		return nil, err
+	}
+
+	submission := Submission{ID: strconv.FormatInt(submissionRow.TaskSubmissions.ID, 10)}
+	submission.Submission = submissionRow.TaskSubmissions.Submission
+
+	// fill task field
+	task := Task{ID: strconv.FormatInt(submissionRow.Tasks.ID, 10)}
+	task.Code = submissionRow.TaskVersions.ShortCode
+	task.Name = submissionRow.TaskVersions.FullName
+	submission.Task = &task
+
+	// fill language field
+	language := ProgrammingLanguage{ID: submissionRow.ProgrammingLanguages.ID}
+	language.FullName = submissionRow.ProgrammingLanguages.FullName
+	language.MonacoID = submissionRow.ProgrammingLanguages.MonacoID
+	submission.Language = &language
+
+	// fill user fields
+	submission.Username = submissionRow.Users.Username
+
+	// fill evaluation field
+	evaluation := Evaluation{ID: strconv.FormatInt(submissionRow.Evaluations.ID, 10)}
+	evaluation.Status = submissionRow.Evaluations.EvalStatusID
+	evaluation.TotalScore = int(submissionRow.Evaluations.EvalTotalScore)
+	if submissionRow.Evaluations.EvalPossibleScore != nil {
+		possibleScore := int(*submissionRow.Evaluations.EvalPossibleScore)
+		evaluation.PossibleScore = &possibleScore
+	}
+	if submissionRow.RuntimeStatistics != nil {
+		runtimeStatistics := RuntimeStatistics{
+			AvgTimeMs:   int(submissionRow.RuntimeStatistics.AvgTimeMillis),
+			MaxTimeMs:   int(submissionRow.RuntimeStatistics.MaximumTimeMillis),
+			AvgMemoryKb: int(submissionRow.RuntimeStatistics.AvgMemoryKibibytes),
+			MaxMemoryKb: int(submissionRow.RuntimeStatistics.MaximumMemoryKibibytes),
+		}
+		evaluation.RuntimeStatistics = &runtimeStatistics
+	}
+	if submissionRow.Evaluations.CompilationDataID != nil {
+		// we will have to unfortunately fetch compilation data from the database
+		var compilationData model.RuntimeData
+		err = postgres.SELECT(table.RuntimeData.AllColumns).FROM(table.RuntimeData).
+			WHERE(table.RuntimeData.ID.EQ(postgres.Int64(*submissionRow.Evaluations.CompilationDataID))).
+			Query(r.PostgresDB, &compilationData)
+		if err != nil {
+			return nil, err
+		}
+		var timeMsInt, memoryKbInt, exitCodeInt *int = nil, nil, nil
+		if compilationData.TimeMillis != nil {
+			timeMsInt = new(int)
+			*timeMsInt = int(*compilationData.TimeMillis)
+		}
+		if compilationData.MemoryKibibytes != nil {
+			memoryKbInt = new(int)
+			*memoryKbInt = int(*compilationData.MemoryKibibytes)
+		}
+		if compilationData.ExitCode != nil {
+			exitCodeInt = new(int)
+			*exitCodeInt = int(*compilationData.ExitCode)
+		}
+		evaluation.Compilation = &CompilationDetails{
+			TimeMs:   timeMsInt,
+			MemoryKb: memoryKbInt,
+			ExitCode: exitCodeInt,
+			Stdout:   compilationData.Stdout,
+			Stderr:   compilationData.Stderr,
+		}
+	}
+	submission.Evaluation = &evaluation
+
+	// fill created at field
+	submission.CreatedAt = submissionRow.TaskSubmissions.CreatedAt.Format(time.RFC3339)
+
+	return &submission, nil
 }
