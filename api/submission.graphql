@@ -4,6 +4,8 @@ extend type Query {
   An example of a hidden submission is a submission made by an admin for testing purposes.
   """
   listPublicSubmissions: [Submission!]!
+
+  getSubmission(id: ID!): Submission!
 }
 
 extend type Mutation {
@@ -21,11 +23,6 @@ type Submission {
   createdAt: String!
 }
 
-type TestVerdictStatistic {
-  verdict: String!
-  count: Int!
-}
-
 type Evaluation {
   id: ID!
   status: String!
@@ -35,7 +32,37 @@ type Evaluation {
   maxTimeMs: Int
   avgMemoryKb: Int
   maxMemoryKb: Int
-  testVerdictStatistics: [TestVerdictStatistic!]!
+
+  """Some programming languages do not support compilation, so this field may be null."""
+  compilation: CompilationDetails
+  testResults: [TestResult!]!
 }
 
+type CompilationDetails {
+  timeMs: Int
+  memoryKb: Int
+  exitCode: Int
+  stdout: String
+  stderr: String
+}
 
+type TestResult {
+  subtaskId: ID!
+  timeMs: Int
+  memoryKb: Int
+  result: TestResultType
+}
+
+enum TestResultType {
+  AC,
+  PT,
+  WA,
+  PE,
+  TLE,
+  MLE,
+  ILE,
+  IG,
+  RE,
+  SV,
+  ISE
+}
