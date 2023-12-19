@@ -89,6 +89,7 @@ type Task struct {
 	Description *Description `json:"description"`
 	Constraints *Constraints `json:"constraints"`
 	Metadata    *Metadata    `json:"metadata"`
+	Solved      *bool        `json:"solved,omitempty"`
 	Tests       []*Test      `json:"tests"`
 	CreatedAt   string       `json:"createdAt"`
 	UpdatedAt   string       `json:"updatedAt"`

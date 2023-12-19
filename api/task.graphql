@@ -54,6 +54,8 @@ type Task {
     constraints: Constraints!
     metadata: Metadata!
 
+    solved: Boolean
+
     tests: [Test!]!
 
     createdAt: String!
