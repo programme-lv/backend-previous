@@ -225,15 +225,41 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	tasks, err := tasks.ListPublishedTaskVersions(r.PostgresDB)
+	publishedTaskVersions, err := tasks.ListPublishedTaskVersions(r.PostgresDB)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
+	solvedTaskSet := make(map[int64]bool)
+	isLoggedIn := false
+
+	// check if user logged in
+	user, err := r.GetUserFromContext(ctx)
+	if err == nil {
+		isLoggedIn = true
+
+		solvedTasks, err := tasks.ListSolvedTasksByUserID(r.PostgresDB, user.ID)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+
+		for _, solvedTask := range solvedTasks {
+			solvedTaskSet[solvedTask] = true
+		}
+	}
+
 	var result []*Task
-	for _, task := range tasks {
+	for _, task := range publishedTaskVersions {
 		result = append(result, internalTaskVersionToGraphQLTask(task))
+		if isLoggedIn {
+			isSolved := false
+			if val, ok := solvedTaskSet[task.ID]; ok {
+				isSolved = val
+			}
+			result[len(result)-1].Solved = &isSolved
+		}
 	}
 
 	return result, nil
