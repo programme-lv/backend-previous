@@ -42,9 +42,9 @@ func TestListPublishedTaskVersions(t *testing.T) {
 	assert.Equalf(t, 0, len(taskVersions), "Expected 0 tasks, got %d", len(taskVersions))
 
 	target := initTargetTaskVersion()
-	err = createTaskVersionTarget(tx, target, userID)
+	_, err = createTaskVersionTarget(tx, target, userID)
 	assert.Nilf(t, err, "Failed to create task version target: %v", err)
-	err = createTaskVersionTarget(tx, target, userID)
+	_, err = createTaskVersionTarget(tx, target, userID)
 	assert.Nilf(t, err, "Failed to create task version target: %v", err)
 
 	taskVersions, err = ListPublishedTaskVersions(tx)
@@ -65,12 +65,75 @@ func TestGetPublishedTaskVersionByCode(t *testing.T) {
 	assert.Nilf(t, err, "Failed to create temp user: %v", err)
 
 	target := initTargetTaskVersion()
-	err = createTaskVersionTarget(tx, target, userID)
+	_, err = createTaskVersionTarget(tx, target, userID)
 	assert.Nilf(t, err, "Failed to create task version target: %v", err)
 
 	taskVersion, err := GetPublishedTaskVersionByCode(tx, target.Code)
 	assert.Nilf(t, err, "Failed to get published task version by code: %v", err)
 	compareTaskVersion(t, target, *taskVersion)
+}
+
+func TestListSolvedTasksByUserID(t *testing.T) {
+	tx, err := db.BeginTxx(context.Background(), nil)
+	assert.Nilf(t, err, "Failed to begin transaction: %v", err)
+	defer tx.Rollback()
+
+	userID, err := insertTempTestUser(tx)
+	assert.Nilf(t, err, "Failed to create temp user: %v", err)
+
+	solvedTasks, err := ListSolvedTasksByUserID(tx, userID)
+	assert.Nilf(t, err, "Failed to list solved tasks by user id: %v", err)
+	assert.Equalf(t, 0, len(solvedTasks), "Expected 0 solved tasks, got %d", len(solvedTasks))
+
+	target := initTargetTaskVersion()
+	taskVersions := make([]int64, 2)
+	for i := 0; i < 2; i++ {
+		taskVersionID, err := createTaskVersionTarget(tx, target, userID)
+		assert.Nilf(t, err, "Failed to create task version target: %v", err)
+		taskVersions[i] = taskVersionID
+	}
+
+	taskIds := make([]int64, 2)
+	for i, taskVersionID := range taskVersions {
+		taskVersion, err := selectTaskVersionByID(tx, taskVersionID)
+		assert.Nilf(t, err, "Failed to select task version by id: %v", err)
+
+		taskIds[i] = taskVersion.TaskID
+
+		programmingLang, err := selectAnyProgrammingLangID(tx)
+		assert.Nilf(t, err, "Failed to select any programming lang: %v", err)
+
+		var maxScore int64 = 100
+		// create an evaluation
+		evaluation := model.Evaluations{
+			EvalStatusID:            "F",
+			EvalTotalScore:          maxScore,
+			EvalPossibleScore:       &maxScore,
+			TestRuntimeStatisticsID: nil,
+			CompilationDataID:       nil,
+			TaskVersionID:           taskVersionID,
+		}
+		evaluationID, err := insertEvaluation(tx, evaluation)
+		assert.Nilf(t, err, "Failed to insert evaluation: %v", err)
+
+		// create a task submission
+		taskSubmission := model.TaskSubmissions{
+			UserID:            userID,
+			TaskID:            taskVersion.TaskID,
+			ProgrammingLangID: programmingLang,
+			Submission:        "123",
+			VisibleEvalID:     &evaluationID,
+		}
+		_, err = insertTaskSubmission(tx, taskSubmission)
+		assert.Nilf(t, err, "Failed to insert task submission: %v", err)
+	}
+
+	solvedTasks, err = ListSolvedTasksByUserID(tx, userID)
+	assert.Nilf(t, err, "Failed to list solved tasks by user id: %v", err)
+	assert.Equalf(t, 2, len(solvedTasks), "Expected 2 solved tasks, got %d", len(solvedTasks))
+
+	assert.Equalf(t, taskIds[0], solvedTasks[0], "Expected task id %d, got %d", taskIds[0], solvedTasks[0])
+	assert.Equalf(t, taskIds[1], solvedTasks[1], "Expected task id %d, got %d", taskIds[1], solvedTasks[1])
 }
 
 func compareTaskVersion(t *testing.T, expected, received objects.TaskVersion) {
@@ -115,11 +178,12 @@ func initTargetTaskVersion() objects.TaskVersion {
 	}
 }
 
-func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion, userID int64) error {
+// Create a task version with the given target and return its ID.
+func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion, userID int64) (int64, error) {
 
 	taskID, err := insertTask(tx, userID)
 	if err != nil {
-		return fmt.Errorf("Failed to create task: %v", err)
+		return 0, fmt.Errorf("Failed to create task: %v", err)
 	}
 
 	taskVersion := model.TaskVersions{
@@ -132,7 +196,7 @@ func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion, userID int
 	}
 	taskVersionID, err := insertTaskVersion(tx, taskVersion)
 	if err != nil {
-		return fmt.Errorf("Failed to create task version: %v", err)
+		return 0, fmt.Errorf("Failed to create task version: %v", err)
 	}
 
 	markdownStatement := model.MarkdownStatements{
@@ -144,7 +208,7 @@ func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion, userID int
 	}
 	_, err = insertMarkdownStatement(tx, markdownStatement)
 	if err != nil {
-		return fmt.Errorf("Failed to create markdown statement: %v", err)
+		return 0, fmt.Errorf("Failed to create markdown statement: %v", err)
 	}
 
 	for _, example := range target.Description.Examples {
@@ -155,16 +219,16 @@ func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion, userID int
 		}
 		_, err = insertStatementExample(tx, statementExample)
 		if err != nil {
-			return fmt.Errorf("Failed to create statement example: %v", err)
+			return 0, fmt.Errorf("Failed to create statement example: %v", err)
 		}
 	}
 
 	err = updateTaskRelevantAndPublishedVersionIds(tx, taskID, taskVersionID)
 	if err != nil {
-		return fmt.Errorf("Failed to update task relevant and published version ids: %v", err)
+		return 0, fmt.Errorf("Failed to update task relevant and published version ids: %v", err)
 	}
 
-	return nil
+	return taskVersionID, nil
 }
 
 // Create a temporary test user and return its ID.
@@ -239,4 +303,49 @@ func updateTaskRelevantAndPublishedVersionIds(tx *sqlx.Tx, taskID, taskVersionID
 		taskVersionID, taskVersionID).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 	_, err := updateTaskStmt.Exec(tx)
 	return err
+}
+
+func insertTaskSubmission(tx *sqlx.Tx, taskSubmission model.TaskSubmissions) (int64, error) {
+	createTaskSubmissionStmt := table.TaskSubmissions.INSERT(
+		table.TaskSubmissions.UserID,
+		table.TaskSubmissions.TaskID,
+		table.TaskSubmissions.ProgrammingLangID,
+		table.TaskSubmissions.Submission,
+		table.TaskSubmissions.VisibleEvalID,
+		table.TaskSubmissions.Hidden,
+	).MODEL(taskSubmission).
+		RETURNING(table.TaskSubmissions.ID)
+	taskSubmissionDest := &model.TaskSubmissions{}
+	err := createTaskSubmissionStmt.Query(tx, taskSubmissionDest)
+	return taskSubmissionDest.ID, err
+}
+
+func selectTaskVersionByID(tx *sqlx.Tx, taskVersionID int64) (*model.TaskVersions, error) {
+	selectTaskVersionStmt := table.TaskVersions.SELECT(table.TaskVersions.AllColumns).
+		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID)))
+	taskVersionDest := &model.TaskVersions{}
+	err := selectTaskVersionStmt.Query(tx, taskVersionDest)
+	return taskVersionDest, err
+}
+
+func selectAnyProgrammingLangID(tx *sqlx.Tx) (string, error) {
+	selectProgrammingLangStmt := table.ProgrammingLanguages.SELECT(table.ProgrammingLanguages.ID).
+		LIMIT(1)
+	programmingLangDest := &model.ProgrammingLanguages{}
+	err := selectProgrammingLangStmt.Query(tx, programmingLangDest)
+	return programmingLangDest.ID, err
+}
+
+func insertEvaluation(tx *sqlx.Tx, evaluation model.Evaluations) (int64, error) {
+	createEvaluationStmt := table.Evaluations.INSERT(
+		table.Evaluations.EvalStatusID,
+		table.Evaluations.EvalTotalScore,
+		table.Evaluations.EvalPossibleScore,
+		table.Evaluations.TestRuntimeStatisticsID,
+		table.Evaluations.CompilationDataID,
+		table.Evaluations.TaskVersionID).MODEL(evaluation).
+		RETURNING(table.Evaluations.ID)
+	evaluationDest := &model.Evaluations{}
+	err := createEvaluationStmt.Query(tx, evaluationDest)
+	return evaluationDest.ID, err
 }
