@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/database/testdb"
+	"github.com/programme-lv/backend/internal/services/objects"
 )
 
 var db *sqlx.DB
@@ -33,52 +35,82 @@ func TestListPublishedTaskVersions(t *testing.T) {
 	}
 	defer tx.Rollback()
 
-	tasks, err := ListPublishedTaskVersions(tx)
+	taskVersions, err := ListPublishedTaskVersions(tx)
 	if err != nil {
 		t.Fatalf("Failed to list published task versions: %v", err)
 	}
 
-	if len(tasks) != 0 {
-		t.Fatalf("Expected 0 tasks, got %d", len(tasks))
+	if len(taskVersions) != 0 {
+		t.Fatalf("Expected 0 tasks, got %d", len(taskVersions))
 	}
 
-	userID, err := createTempTestUser(tx)
+	notesStr := "Piezīmes"
+	targetTaskVersion := objects.TaskVersion{
+		Code: "summa",
+		Name: "Summa",
+		Description: &objects.Description{
+			Story:  "Stāsts. Saskaiti skaitļus.",
+			Input:  "Ievaddati",
+			Output: "Izvaddati",
+			Examples: []objects.Example{
+				{
+					Input:  "1 2",
+					Answer: "3",
+				},
+			},
+			Notes: &notesStr,
+		},
+		TimeLimitMs:   1024,
+		MemoryLimitKb: 262144,
+	}
+	err = createTaskVersionTarget(tx, targetTaskVersion)
 	if err != nil {
-		t.Fatalf("Failed to create temp user: %v", err)
+		t.Fatalf("Failed to create task version target: %v", err)
 	}
 
-	taskID, err := createTask(tx, userID)
+	taskVersions, err = ListPublishedTaskVersions(tx)
 	if err != nil {
-		t.Fatalf("Failed to create task: %v", err)
+		t.Fatalf("Failed to list published task versions: %v", err)
 	}
 
-	taskVersionID, err := createTaskVersion(tx, taskID)
-	if err != nil {
-		t.Fatalf("Failed to create task version: %v", err)
+	if len(taskVersions) != 1 {
+		t.Fatalf("Expected 1 task, got %d", len(taskVersions))
 	}
 
-	_, err = createMarkdownStatement(tx, taskVersionID)
+}
+
+func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion) error {
+
+	userID, err := insertTempTestUser(tx)
 	if err != nil {
-		t.Fatalf("Failed to create markdown statement: %v", err)
+		return fmt.Errorf("Failed to create temp user: %v", err)
+	}
+
+	taskID, err := insertTask(tx, userID)
+	if err != nil {
+		return fmt.Errorf("Failed to create task: %v", err)
+	}
+
+	taskVersionID, err := insertTaskVersion(tx, taskID)
+	if err != nil {
+		return fmt.Errorf("Failed to create task version: %v", err)
+	}
+
+	_, err = insertMarkdownStatement(tx, taskVersionID)
+	if err != nil {
+		return fmt.Errorf("Failed to create markdown statement: %v", err)
 	}
 
 	err = updateTaskRelevantAndPublishedVersionIds(tx, taskID, taskVersionID)
 	if err != nil {
-		t.Fatalf("Failed to update task relevant and published version ids: %v", err)
+		return fmt.Errorf("Failed to update task relevant and published version ids: %v", err)
 	}
 
-	tasks, err = ListPublishedTaskVersions(tx)
-	if err != nil {
-		t.Fatalf("Failed to list published task versions: %v", err)
-	}
-
-	if len(tasks) != 1 {
-		t.Fatalf("Expected 1 task, got %d", len(tasks))
-	}
+	return nil
 }
 
 // Create a temporary test user and return its ID.
-func createTempTestUser(tx *sqlx.Tx) (int64, error) {
+func insertTempTestUser(tx *sqlx.Tx) (int64, error) {
 	userCreateStmt := table.Users.INSERT(
 		table.Users.Username,
 		table.Users.Email,
@@ -94,7 +126,7 @@ func createTempTestUser(tx *sqlx.Tx) (int64, error) {
 }
 
 // Create a task and return its ID.
-func createTask(tx *sqlx.Tx, userID int64) (int64, error) {
+func insertTask(tx *sqlx.Tx, userID int64) (int64, error) {
 	createTaskStmt := table.Tasks.INSERT(
 		table.Tasks.CreatedByID).VALUES(userID).RETURNING(table.Tasks.ID)
 	taskDest := &model.Tasks{}
@@ -103,7 +135,7 @@ func createTask(tx *sqlx.Tx, userID int64) (int64, error) {
 }
 
 // Create a task version "summa" for the given task and return its ID.
-func createTaskVersion(tx *sqlx.Tx, taskID int64) (int64, error) {
+func insertTaskVersion(tx *sqlx.Tx, taskID int64) (int64, error) {
 	taskVersion := model.TaskVersions{
 		TaskID:          taskID,
 		ShortCode:       "summa",
@@ -125,7 +157,7 @@ func createTaskVersion(tx *sqlx.Tx, taskID int64) (int64, error) {
 	return taskVersionDest.ID, err
 }
 
-func createMarkdownStatement(tx *sqlx.Tx, taskVersionID int64) (int64, error) {
+func insertMarkdownStatement(tx *sqlx.Tx, taskVersionID int64) (int64, error) {
 	markdownStatement := model.MarkdownStatements{
 		TaskVersionID: &taskVersionID,
 		LangIso6391:   "lv",
