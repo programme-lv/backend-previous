@@ -2,7 +2,7 @@ package objects
 
 import "time"
 
-type Task struct {
+type TaskVersion struct {
 	ID   int64
 	Code string
 	Name string
