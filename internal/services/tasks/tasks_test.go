@@ -52,28 +52,49 @@ func TestListPublishedTaskVersions(t *testing.T) {
 	assert.Equalf(t, 2, len(taskVersions), "Expected 1 task, got %d", len(taskVersions))
 
 	for _, received := range taskVersions {
-		assert.Equalf(t, target.Code, received.Code, "Expected code %s, got %s", target.Code, received.Code)
-		assert.Equalf(t, target.Name, received.Name, "Expected name %s, got %s", target.Name, received.Name)
-		assert.Equalf(t, target.TimeLimitMs, received.TimeLimitMs,
-			"Expected time limit %d, got %d", target.TimeLimitMs, received.TimeLimitMs)
-		assert.Equalf(t, target.MemoryLimitKb, received.MemoryLimitKb,
-			"Expected memory limit %d, got %d", target.MemoryLimitKb, received.MemoryLimitKb)
+		compareTaskVersion(t, target, received)
+	}
+}
 
-		assert.Equalf(t, target.Description.Story, received.Description.Story,
-			"Expected story %s, got %s", target.Description.Story, received.Description.Story)
-		assert.Equalf(t, target.Description.Input, received.Description.Input,
-			"Expected input %s, got %s", target.Description.Input, received.Description.Input)
-		assert.Equalf(t, target.Description.Output, received.Description.Output,
-			"Expected output %s, got %s", target.Description.Output, received.Description.Output)
+func TestGetPublishedTaskVersionByCode(t *testing.T) {
+	tx, err := db.BeginTxx(context.Background(), nil)
+	assert.Nilf(t, err, "Failed to begin transaction: %v", err)
+	defer tx.Rollback()
 
-		assert.Equalf(t, len(target.Description.Examples), len(received.Description.Examples),
-			"Expected %d examples, got %d", len(target.Description.Examples), len(received.Description.Examples))
-		for i, example := range target.Description.Examples {
-			assert.Equalf(t, example.Input, received.Description.Examples[i].Input,
-				"Expected example input %s, got %s", example.Input, received.Description.Examples[i].Input)
-			assert.Equalf(t, example.Answer, received.Description.Examples[i].Answer,
-				"Expected examples %v, got %v", target.Description.Examples, received.Description.Examples)
-		}
+	userID, err := insertTempTestUser(tx)
+	assert.Nilf(t, err, "Failed to create temp user: %v", err)
+
+	target := initTargetTaskVersion()
+	err = createTaskVersionTarget(tx, target, userID)
+	assert.Nilf(t, err, "Failed to create task version target: %v", err)
+
+	taskVersion, err := GetPublishedTaskVersionByCode(tx, target.Code)
+	assert.Nilf(t, err, "Failed to get published task version by code: %v", err)
+	compareTaskVersion(t, target, *taskVersion)
+}
+
+func compareTaskVersion(t *testing.T, expected, received objects.TaskVersion) {
+	assert.Equalf(t, expected.Code, received.Code, "Expected code %s, got %s", expected.Code, received.Code)
+	assert.Equalf(t, expected.Name, received.Name, "Expected name %s, got %s", expected.Name, received.Name)
+	assert.Equalf(t, expected.TimeLimitMs, received.TimeLimitMs,
+		"Expected time limit %d, got %d", expected.TimeLimitMs, received.TimeLimitMs)
+	assert.Equalf(t, expected.MemoryLimitKb, received.MemoryLimitKb,
+		"Expected memory limit %d, got %d", expected.MemoryLimitKb, received.MemoryLimitKb)
+
+	assert.Equalf(t, expected.Description.Story, received.Description.Story,
+		"Expected story %s, got %s", expected.Description.Story, received.Description.Story)
+	assert.Equalf(t, expected.Description.Input, received.Description.Input,
+		"Expected input %s, got %s", expected.Description.Input, received.Description.Input)
+	assert.Equalf(t, expected.Description.Output, received.Description.Output,
+		"Expected output %s, got %s", expected.Description.Output, received.Description.Output)
+
+	assert.Equalf(t, len(expected.Description.Examples), len(received.Description.Examples),
+		"Expected %d examples, got %d", len(expected.Description.Examples), len(received.Description.Examples))
+	for i, example := range expected.Description.Examples {
+		assert.Equalf(t, example.Input, received.Description.Examples[i].Input,
+			"Expected example input %s, got %s", example.Input, received.Description.Examples[i].Input)
+		assert.Equalf(t, example.Answer, received.Description.Examples[i].Answer,
+			"Expected examples %v, got %v", expected.Description.Examples, received.Description.Examples)
 	}
 }
 
