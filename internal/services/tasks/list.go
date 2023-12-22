@@ -11,10 +11,12 @@ import (
 func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) {
 	res := make([]objects.TaskVersion, 0)
 
-	stmt := postgres.SELECT(
+	selectPublishedTaskVersionsStmt := postgres.SELECT(
 		table.Tasks.ID,
 		table.Tasks.CreatedAt,
 
+		table.TaskVersions.ID,
+		table.TaskVersions.TaskID,
 		table.TaskVersions.ShortCode,
 		table.TaskVersions.FullName,
 		table.TaskVersions.TimeLimMs,
@@ -41,9 +43,49 @@ func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) 
 		model.TaskVersions
 		model.MarkdownStatements
 	}
-	err := stmt.Query(db, &publishedTaskVersions)
+	err := selectPublishedTaskVersionsStmt.Query(db, &publishedTaskVersions)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(publishedTaskVersions) == 0 {
+		return res, nil
+	}
+
+	var taskVersionIDs []postgres.Expression
+	for _, version := range publishedTaskVersions {
+		taskVersionIDs = append(taskVersionIDs, postgres.Int64(version.TaskVersions.ID))
+	}
+
+	selectExamplesStmt := postgres.SELECT(
+		table.StatementExamples.ID,
+		table.StatementExamples.Input,
+		table.StatementExamples.Answer,
+		table.StatementExamples.TaskVersionID).
+		FROM(table.StatementExamples).
+		WHERE(table.StatementExamples.TaskVersionID.IN(taskVersionIDs...))
+
+	var examples []struct {
+		model.StatementExamples
+	}
+
+	err = selectExamplesStmt.Query(db, &examples)
+	if err != nil {
+		return nil, err
+	}
+
+	examplesMap := make(map[int64][]objects.Example)
+	for _, example := range examples {
+		if _, ok := examplesMap[example.StatementExamples.TaskVersionID]; !ok {
+			examplesMap[example.StatementExamples.TaskVersionID] = make([]objects.Example, 0)
+		}
+		examplesMap[example.StatementExamples.TaskVersionID] = append(
+			examplesMap[example.StatementExamples.TaskVersionID],
+			objects.Example{
+				ID:     example.StatementExamples.ID,
+				Input:  example.StatementExamples.Input,
+				Answer: example.StatementExamples.Answer,
+			})
 	}
 
 	for _, version := range publishedTaskVersions {
@@ -57,7 +99,7 @@ func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) 
 				Story:    version.MarkdownStatements.Story,
 				Input:    version.MarkdownStatements.Input,
 				Output:   version.MarkdownStatements.Output,
-				Examples: nil,
+				Examples: examplesMap[version.TaskVersions.ID],
 				Notes:    version.MarkdownStatements.Notes,
 			},
 			TimeLimitMs:   version.TaskVersions.TimeLimMs,
