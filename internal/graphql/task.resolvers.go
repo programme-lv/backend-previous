@@ -9,12 +9,8 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
-	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
 	"golang.org/x/exp/slog"
@@ -243,6 +239,17 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 	return result, nil
 }
 
+// GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
+func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
+	task, err := tasks.GetPublishedTaskVersionByCode(r.PostgresDB, code)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return internalTaskVersionToGraphQLTask(*task), nil
+}
+
 func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
 	var examples []*Example
 	for _, example := range task.Description.Examples {
@@ -276,67 +283,6 @@ func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
 		CreatedAt: task.CreatedAt.UTC().String(),
 		UpdatedAt: task.CreatedAt.UTC().String(),
 	}
-}
-
-// GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
-func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
-	stmt := postgres.SELECT(table.Tasks.AllColumns, table.TaskVersions.AllColumns, table.MarkdownStatements.AllColumns).
-		FROM(table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersions.ID.EQ(table.Tasks.PublishedVersionID)).
-			LEFT_JOIN(table.MarkdownStatements, table.MarkdownStatements.TaskVersionID.EQ(table.Tasks.PublishedVersionID))).
-		WHERE(table.TaskVersions.ShortCode.EQ(postgres.String(code)).
-			AND(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv"))))
-	var publishedTask struct {
-		model.Tasks
-		model.TaskVersions
-		model.MarkdownStatements
-	}
-	err := stmt.Query(r.PostgresDB, &publishedTask)
-	if err != nil {
-		return nil, err
-	}
-
-	stmt = postgres.SELECT(table.StatementExamples.AllColumns).
-		FROM(table.StatementExamples).
-		WHERE(table.StatementExamples.TaskVersionID.EQ(postgres.Int64(publishedTask.TaskVersions.ID)))
-	var statementExamples []model.StatementExamples
-	err = stmt.Query(r.PostgresDB, &statementExamples)
-	if err != nil {
-		return nil, err
-	}
-
-	var examples []*Example
-	for _, example := range statementExamples {
-		examples = append(examples, &Example{
-			ID:     strconv.FormatInt(example.ID, 10),
-			Input:  example.Input,
-			Answer: example.Answer,
-		})
-	}
-
-	return &Task{
-		ID:   strconv.FormatInt(publishedTask.Tasks.ID, 10),
-		Code: publishedTask.ShortCode,
-		Name: publishedTask.FullName,
-		Description: &Description{
-			ID:       strconv.FormatInt(publishedTask.MarkdownStatements.ID, 10),
-			Story:    publishedTask.Story,
-			Input:    publishedTask.Input,
-			Output:   publishedTask.Output,
-			Examples: examples,
-			Notes:    publishedTask.Notes,
-		},
-		Constraints: &Constraints{
-			TimeLimitMs:   int(publishedTask.TimeLimMs),
-			MemoryLimitKb: int(publishedTask.MemLimKibibytes),
-		},
-		Metadata: &Metadata{
-			Authors: nil, // TODO: fetch authors
-			Origin:  publishedTask.Origin,
-		},
-		Tests:     nil, // TODO: fetch tests
-		CreatedAt: publishedTask.Tasks.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: publishedTask.TaskVersions.CreatedAt.Format(time.RFC3339),
-	}, nil
 }
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
