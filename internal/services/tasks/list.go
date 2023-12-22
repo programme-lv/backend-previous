@@ -9,7 +9,7 @@ import (
 )
 
 func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) {
-	tasks := make([]objects.TaskVersion, 0)
+	res := make([]objects.TaskVersion, 0)
 
 	stmt := postgres.SELECT(
 		table.Tasks.ID,
@@ -36,15 +36,36 @@ func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) 
 		WHERE(table.MarkdownStatements.LangIso6391.EQ(
 			postgres.String("lv")))
 
-	var publishedTasks []struct {
+	var publishedTaskVersions []struct {
 		model.Tasks
 		model.TaskVersions
 		model.MarkdownStatements
 	}
-	err := stmt.Query(db, &publishedTasks)
+	err := stmt.Query(db, &publishedTaskVersions)
 	if err != nil {
 		return nil, err
 	}
 
-	return tasks, nil
+	for _, version := range publishedTaskVersions {
+		res = append(res, objects.TaskVersion{
+			ID:     version.TaskVersions.ID,
+			TaskID: version.Tasks.ID,
+			Code:   version.TaskVersions.ShortCode,
+			Name:   version.TaskVersions.FullName,
+			Description: &objects.Description{
+				ID:       version.MarkdownStatements.ID,
+				Story:    version.MarkdownStatements.Story,
+				Input:    version.MarkdownStatements.Input,
+				Output:   version.MarkdownStatements.Output,
+				Examples: nil,
+				Notes:    version.MarkdownStatements.Notes,
+			},
+			TimeLimitMs:   version.TaskVersions.TimeLimMs,
+			MemoryLimitKb: version.TaskVersions.MemLimKibibytes,
+			CreatedAt:     version.TaskVersions.CreatedAt,
+			UpdatedAt:     nil,
+		})
+	}
+
+	return res, nil
 }

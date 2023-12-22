@@ -3,17 +3,18 @@ package objects
 import "time"
 
 type TaskVersion struct {
-	ID   int64
-	Code string
-	Name string
+	ID     int64
+	TaskID int64
+	Code   string
+	Name   string
 
 	Description *Description
 
-	TimeLimitMs   int
-	MemoryLimitKb int
+	TimeLimitMs   int64
+	MemoryLimitKb int64
 
 	CreatedAt time.Time
-	updatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
 type Description struct {
@@ -22,7 +23,7 @@ type Description struct {
 	Input    string
 	Output   string
 	Examples []Example
-	Notes    string
+	Notes    *string
 }
 
 type Example struct {

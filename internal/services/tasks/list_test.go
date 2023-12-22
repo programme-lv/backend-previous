@@ -57,6 +57,11 @@ func TestListPublishedTaskVersions(t *testing.T) {
 		t.Fatalf("Failed to create task version: %v", err)
 	}
 
+	_, err = createMarkdownStatement(tx, taskVersionID)
+	if err != nil {
+		t.Fatalf("Failed to create markdown statement: %v", err)
+	}
+
 	err = updateTaskRelevantAndPublishedVersionIds(tx, taskID, taskVersionID)
 	if err != nil {
 		t.Fatalf("Failed to update task relevant and published version ids: %v", err)
@@ -118,6 +123,26 @@ func createTaskVersion(tx *sqlx.Tx, taskID int64) (int64, error) {
 	taskVersionDest := &model.TaskVersions{}
 	err := createTaskVersionStmt.Query(tx, taskVersionDest)
 	return taskVersionDest.ID, err
+}
+
+func createMarkdownStatement(tx *sqlx.Tx, taskVersionID int64) (int64, error) {
+	markdownStatement := model.MarkdownStatements{
+		TaskVersionID: &taskVersionID,
+		LangIso6391:   "lv",
+		Story:         "Apraksts",
+		Input:         "Ieeja",
+		Output:        "Izeja",
+	}
+	createMarkdownStatementStmt := table.MarkdownStatements.INSERT(
+		table.MarkdownStatements.TaskVersionID,
+		table.MarkdownStatements.LangIso6391,
+		table.MarkdownStatements.Story,
+		table.MarkdownStatements.Input,
+		table.MarkdownStatements.Output).MODEL(markdownStatement).
+		RETURNING(table.MarkdownStatements.ID)
+	markdownStatementDest := &model.MarkdownStatements{}
+	err := createMarkdownStatementStmt.Query(tx, markdownStatementDest)
+	return markdownStatementDest.ID, err
 }
 
 // Update the task's relevant and published version IDs to the given task version ID.
