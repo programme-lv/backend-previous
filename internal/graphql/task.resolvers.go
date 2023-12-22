@@ -15,6 +15,7 @@ import (
 	"github.com/programme-lv/backend/internal/database"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/services/tasks"
 	"golang.org/x/exp/slog"
 )
 
@@ -227,47 +228,35 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, id string) (*Task, er
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	var publishedTasks []struct {
-		model.Tasks
-		model.TaskVersions
-		model.MarkdownStatements
-	}
-	stmt := postgres.SELECT(table.Tasks.AllColumns, table.TaskVersions.AllColumns, table.MarkdownStatements.AllColumns).
-		FROM(table.Tasks.
-			INNER_JOIN(table.TaskVersions,
-				table.TaskVersions.ID.EQ(table.Tasks.PublishedVersionID)).
-			LEFT_JOIN(table.MarkdownStatements,
-				table.MarkdownStatements.TaskVersionID.EQ(table.Tasks.PublishedVersionID))).
-		WHERE(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv")))
-	log.Println(stmt.DebugSql())
-	err := stmt.Query(r.PostgresDB, &publishedTasks)
+	tasks, err := tasks.ListPublishedTaskVersions(r.PostgresDB)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 
 	var result []*Task
-	for _, task := range publishedTasks {
+	for _, task := range tasks {
 		result = append(result, &Task{
-			ID:   strconv.FormatInt(task.Tasks.ID, 10),
-			Code: task.ShortCode,
-			Name: task.FullName,
+			ID:   strconv.FormatInt(task.ID, 10),
+			Code: task.Code,
+			Name: task.Name,
 			Description: &Description{
-				ID:     strconv.FormatInt(task.MarkdownStatements.ID, 10),
-				Story:  task.Story,
-				Input:  task.Input,
-				Output: task.Output,
-				Notes:  task.Notes,
-			},
-			Constraints: &Constraints{
-				TimeLimitMs:   int(task.TimeLimMs),
-				MemoryLimitKb: int(task.MemLimKibibytes),
+				ID:     strconv.FormatInt(task.Description.ID, 10),
+				Story:  task.Description.Story,
+				Input:  task.Description.Input,
+				Output: task.Description.Output,
+				Notes:  task.Description.Notes,
 			},
 			Metadata: &Metadata{
-				Authors: nil, // TODO: fetch authors
-				Origin:  task.Origin,
+				Authors: []string{},
+				Origin:  new(string),
 			},
-			CreatedAt: task.Tasks.CreatedAt.UTC().String(),
-			UpdatedAt: task.TaskVersions.CreatedAt.UTC().String(),
+			Constraints: &Constraints{
+				TimeLimitMs:   int(task.TimeLimitMs),
+				MemoryLimitKb: int(task.MemoryLimitKb),
+			},
+			CreatedAt: task.CreatedAt.UTC().String(),
+			UpdatedAt: task.CreatedAt.UTC().String(),
 		})
 	}
 
