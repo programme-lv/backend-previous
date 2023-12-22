@@ -12,6 +12,7 @@ import (
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/database/testdb"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/stretchr/testify/assert"
 )
 
 var db *sqlx.DB
@@ -30,53 +31,50 @@ func TestMain(m *testing.M) {
 
 func TestListPublishedTaskVersions(t *testing.T) {
 	tx, err := db.BeginTxx(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("Failed to begin transaction: %v", err)
-	}
+	assert.Nilf(t, err, "Failed to begin transaction: %v", err)
 	defer tx.Rollback()
 
 	taskVersions, err := ListPublishedTaskVersions(tx)
-	if err != nil {
-		t.Fatalf("Failed to list published task versions: %v", err)
-	}
+	assert.Nilf(t, err, "Failed to list published task versions: %v", err)
+	assert.Equal(t, 0, len(taskVersions), "Expected 0 tasks, got %d", len(taskVersions))
 
-	if len(taskVersions) != 0 {
-		t.Fatalf("Expected 0 tasks, got %d", len(taskVersions))
-	}
+	target := initTargetTaskVersion()
+	err = createTaskVersionTarget(tx, target)
+	assert.Nilf(t, err, "Failed to create task version target: %v", err)
 
+	taskVersions, err = ListPublishedTaskVersions(tx)
+	assert.Nilf(t, err, "Failed to list published task versions: %v", err)
+	assert.Equal(t, 1, len(taskVersions), "Expected 1 task, got %d", len(taskVersions))
+
+	received := taskVersions[0]
+	assert.Equal(t, target.Code, received.Code, "Expected code %s, got %s", target.Code, received.Code)
+	assert.Equal(t, target.Name, received.Name, "Expected name %s, got %s", target.Name, received.Name)
+
+	assert.Equal(t, target.Description.Story, received.Description.Story,
+		"Expected story %s, got %s", target.Description.Story, received.Description.Story)
+	assert.Equal(t, target.Description.Input, received.Description.Input,
+		"Expected input %s, got %s", target.Description.Input, received.Description.Input)
+	assert.Equal(t, target.Description.Output, received.Description.Output,
+		"Expected output %s, got %s", target.Description.Output, received.Description.Output)
+	assert.Equal(t, target.Description.Examples, received.Description.Examples,
+		"Expected examples %v, got %v", target.Description.Examples, received.Description.Examples)
+}
+
+func initTargetTaskVersion() objects.TaskVersion {
 	notesStr := "Piezīmes"
-	targetTaskVersion := objects.TaskVersion{
+	return objects.TaskVersion{
 		Code: "summa",
 		Name: "Summa",
 		Description: &objects.Description{
-			Story:  "Stāsts. Saskaiti skaitļus.",
-			Input:  "Ievaddati",
-			Output: "Izvaddati",
-			Examples: []objects.Example{
-				{
-					Input:  "1 2",
-					Answer: "3",
-				},
-			},
-			Notes: &notesStr,
+			Story:    "Stāsts. Saskaiti skaitļus.",
+			Input:    "Ievaddati",
+			Output:   "Izvaddati",
+			Examples: []objects.Example{{Input: "1 2", Answer: "3"}},
+			Notes:    &notesStr,
 		},
 		TimeLimitMs:   1024,
 		MemoryLimitKb: 262144,
 	}
-	err = createTaskVersionTarget(tx, targetTaskVersion)
-	if err != nil {
-		t.Fatalf("Failed to create task version target: %v", err)
-	}
-
-	taskVersions, err = ListPublishedTaskVersions(tx)
-	if err != nil {
-		t.Fatalf("Failed to list published task versions: %v", err)
-	}
-
-	if len(taskVersions) != 1 {
-		t.Fatalf("Expected 1 task, got %d", len(taskVersions))
-	}
-
 }
 
 func createTaskVersionTarget(tx *sqlx.Tx, target objects.TaskVersion) error {
