@@ -15,6 +15,7 @@ import (
 	"github.com/programme-lv/backend/internal/database"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
 	"golang.org/x/exp/slog"
 )
@@ -236,31 +237,45 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 
 	var result []*Task
 	for _, task := range tasks {
-		result = append(result, &Task{
-			ID:   strconv.FormatInt(task.ID, 10),
-			Code: task.Code,
-			Name: task.Name,
-			Description: &Description{
-				ID:     strconv.FormatInt(task.Description.ID, 10),
-				Story:  task.Description.Story,
-				Input:  task.Description.Input,
-				Output: task.Description.Output,
-				Notes:  task.Description.Notes,
-			},
-			Metadata: &Metadata{
-				Authors: []string{},
-				Origin:  new(string),
-			},
-			Constraints: &Constraints{
-				TimeLimitMs:   int(task.TimeLimitMs),
-				MemoryLimitKb: int(task.MemoryLimitKb),
-			},
-			CreatedAt: task.CreatedAt.UTC().String(),
-			UpdatedAt: task.CreatedAt.UTC().String(),
-		})
+		result = append(result, internalTaskVersionToGraphQLTask(task))
 	}
 
 	return result, nil
+}
+
+func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
+	var examples []*Example
+	for _, example := range task.Description.Examples {
+		examples = append(examples, &Example{
+			ID:     strconv.FormatInt(example.ID, 10),
+			Input:  example.Input,
+			Answer: example.Answer,
+		})
+	}
+
+	return &Task{
+		ID:   strconv.FormatInt(task.ID, 10),
+		Code: task.Code,
+		Name: task.Name,
+		Description: &Description{
+			ID:       strconv.FormatInt(task.Description.ID, 10),
+			Story:    task.Description.Story,
+			Input:    task.Description.Input,
+			Output:   task.Description.Output,
+			Examples: examples,
+			Notes:    task.Description.Notes,
+		},
+		Constraints: &Constraints{
+			TimeLimitMs:   int(task.TimeLimitMs),
+			MemoryLimitKb: int(task.MemoryLimitKb),
+		},
+		Metadata: &Metadata{
+			Authors: []string{},
+			Origin:  new(string),
+		},
+		CreatedAt: task.CreatedAt.UTC().String(),
+		UpdatedAt: task.CreatedAt.UTC().String(),
+	}
 }
 
 // GetPublishedTaskVersionByCode is the resolver for the getPublishedTaskVersionByCode field.
