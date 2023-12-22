@@ -8,7 +8,7 @@ import (
 	"github.com/programme-lv/backend/internal/services/objects"
 )
 
-func ListProgrammingLanguages(db qrm.Queryable) ([]objects.ProgrammingLanguage, error) {
+func ListEnabledProgrammingLanguages(db qrm.Queryable) ([]objects.ProgrammingLanguage, error) {
 	stmt := postgres.SELECT(table.ProgrammingLanguages.AllColumns).
 		FROM(table.ProgrammingLanguages).
 		WHERE(table.ProgrammingLanguages.Enabled.EQ(postgres.Bool(true)))

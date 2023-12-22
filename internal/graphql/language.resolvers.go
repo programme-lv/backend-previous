@@ -7,41 +7,31 @@ package graphql
 import (
 	"context"
 
-	. "github.com/go-jet/jet/v2/postgres"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/services/langs"
+	"github.com/programme-lv/backend/internal/services/objects"
 )
 
 // ListLanguages is the resolver for the listLanguages field.
 func (r *queryResolver) ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
-	stmt := SELECT(
-		table.ProgrammingLanguages.ID,
-		table.ProgrammingLanguages.FullName,
-		table.ProgrammingLanguages.MonacoID,
-		table.ProgrammingLanguages.Enabled,
-	).FROM(table.ProgrammingLanguages)
-
-	var langs []model.ProgrammingLanguages
-	err := stmt.Query(r.PostgresDB, &langs)
+	languages, err := langs.ListEnabledProgrammingLanguages(r.PostgresDB)
 	if err != nil {
 		return nil, err
 	}
 
 	// convert to graphql type
 	var gqlLangs []*ProgrammingLanguage
-	for _, lang := range langs {
-		if enabled != nil && *enabled != lang.Enabled {
-			continue
-		}
-		if lang.MonacoID != nil {
-			gqlLangs = append(gqlLangs, &ProgrammingLanguage{
-				ID:       lang.ID,
-				FullName: lang.FullName,
-				MonacoID: lang.MonacoID,
-				Enabled:  lang.Enabled,
-			})
-		}
+	for _, lang := range languages {
+		gqlLangs = append(gqlLangs, internalProgrammingLanguageToGraphQL(&lang))
 	}
 
 	return gqlLangs, nil
+}
+
+func internalProgrammingLanguageToGraphQL(lang *objects.ProgrammingLanguage) *ProgrammingLanguage {
+	return &ProgrammingLanguage{
+		ID:       lang.ID,
+		FullName: lang.Name,
+		MonacoID: lang.MonacoID,
+		Enabled:  true,
+	}
 }

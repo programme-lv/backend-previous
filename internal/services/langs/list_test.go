@@ -29,7 +29,7 @@ func TestListProgrammingLanguages(t *testing.T) {
 	assert.Nilf(t, err, "Failed to begin transaction: %v", err)
 	defer tx.Rollback()
 
-	langs, err := ListProgrammingLanguages(tx)
+	langs, err := ListEnabledProgrammingLanguages(tx)
 	if err != nil {
 		t.Fatal(err)
 	}
