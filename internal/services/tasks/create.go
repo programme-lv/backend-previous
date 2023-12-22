@@ -6,5 +6,5 @@ import (
 )
 
 func CreateTaskVersion(db *sqlx.DB, task objects.TaskVersion) (int64, error) {
-	return nil
+	return 0, nil
 }

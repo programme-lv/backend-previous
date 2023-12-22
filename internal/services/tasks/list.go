@@ -2,14 +2,14 @@ package tasks
 
 import (
 	"github.com/go-jet/jet/v2/postgres"
-	"github.com/jmoiron/sqlx"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/services/objects"
 )
 
-func ListPublishedTasks(db *sqlx.DB) ([]objects.Task, error) {
-	tasks := make([]objects.Task, 0)
+func ListPublishedTaskVersions(db qrm.Queryable) ([]objects.TaskVersion, error) {
+	tasks := make([]objects.TaskVersion, 0)
 
 	stmt := postgres.SELECT(
 		table.Tasks.ID,
