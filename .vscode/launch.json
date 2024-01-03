@@ -10,7 +10,9 @@
             "request": "launch",
             "mode": "auto",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/cmd/server"
+            "program": "${workspaceFolder}/cmd/server",
+            // -buildvcs=false
+            "buildFlags": ["-buildvcs=false"]
             
         }
     ]
