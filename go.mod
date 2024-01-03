@@ -5,7 +5,7 @@ go 1.21.1
 toolchain go1.21.3
 
 require (
-	github.com/99designs/gqlgen v0.17.40
+	github.com/99designs/gqlgen v0.17.41
 	github.com/alexedwards/scs/redisstore v0.0.0-20231113091146-cef4b05350c8
 	github.com/alexedwards/scs/v2 v2.7.0
 	github.com/go-git/go-git/v5 v5.10.0

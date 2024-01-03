@@ -151,6 +151,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Metadata    func(childComplexity int) int
 		Name        func(childComplexity int) int
+		Solved      func(childComplexity int) int
 		Tests       func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 	}
@@ -780,6 +781,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.Name(childComplexity), true
 
+	case "Task.solved":
+		if e.complexity.Task.Solved == nil {
+			break
+		}
+
+		return e.complexity.Task.Solved(childComplexity), true
+
 	case "Task.tests":
 		if e.complexity.Task.Tests == nil {
 			break
@@ -1073,6 +1081,8 @@ type Task {
     description: Description!
     constraints: Constraints!
     metadata: Metadata!
+
+    solved: Boolean
 
     tests: [Test!]!
 
@@ -3118,6 +3128,8 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3193,6 +3205,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskMetadata(ctx context
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3268,6 +3282,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskDescription(ctx cont
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3343,6 +3359,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskExamples(ctx context
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3418,6 +3436,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskConstraints(ctx cont
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3493,6 +3513,8 @@ func (ec *executionContext) fieldContext_Mutation_publishTask(ctx context.Contex
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -3568,6 +3590,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -4003,6 +4027,8 @@ func (ec *executionContext) fieldContext_Query_listPublishedTasks(ctx context.Co
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -4067,6 +4093,8 @@ func (ec *executionContext) fieldContext_Query_getPublishedTaskVersionByCode(ctx
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -4142,6 +4170,8 @@ func (ec *executionContext) fieldContext_Query_listEditableTasks(ctx context.Con
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -4206,6 +4236,8 @@ func (ec *executionContext) fieldContext_Query_getCurrentTaskVersionById(ctx con
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -4826,6 +4858,8 @@ func (ec *executionContext) fieldContext_Submission_task(ctx context.Context, fi
 				return ec.fieldContext_Task_constraints(ctx, field)
 			case "metadata":
 				return ec.fieldContext_Task_metadata(ctx, field)
+			case "solved":
+				return ec.fieldContext_Task_solved(ctx, field)
 			case "tests":
 				return ec.fieldContext_Task_tests(ctx, field)
 			case "createdAt":
@@ -5370,6 +5404,47 @@ func (ec *executionContext) fieldContext_Task_metadata(ctx context.Context, fiel
 				return ec.fieldContext_Metadata_origin(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Metadata", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Task_solved(ctx context.Context, field graphql.CollectedField, obj *Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Task_solved(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Solved, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Task_solved(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Task",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8786,6 +8861,8 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "solved":
+			out.Values[i] = ec._Task_solved(ctx, field, obj)
 		case "tests":
 			out.Values[i] = ec._Task_tests(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

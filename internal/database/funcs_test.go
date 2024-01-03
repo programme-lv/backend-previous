@@ -12,7 +12,7 @@ import (
 
 var (
 	once       sync.Once
-	dbProvider testdb.TestDBProvider
+	dbProvider testdb.DbProvider
 )
 
 func TestMain(m *testing.M) {

@@ -11,9 +11,9 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 )
 
-// TestDBProvider provides a migrated database
+// DbProvider provides a migrated database
 // and a method to close it (don't forget to do it).
-type TestDBProvider interface {
+type DbProvider interface {
 	GetTestDB() *sqlx.DB
 	Close()
 }
@@ -25,7 +25,7 @@ const (
 	defaultDBName = "proglv"
 )
 
-func NewPostgresTestcontainerProvider() (TestDBProvider, error) {
+func NewPostgresTestcontainerProvider() (DbProvider, error) {
 	return initPostgresContainerTestDB()
 }
 
