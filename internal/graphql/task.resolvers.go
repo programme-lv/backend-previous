@@ -255,7 +255,7 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 		result = append(result, internalTaskVersionToGraphQLTask(task))
 		if isLoggedIn {
 			isSolved := false
-			if val, ok := solvedTaskSet[task.ID]; ok {
+			if val, ok := solvedTaskSet[task.TaskID]; ok {
 				isSolved = val
 			}
 			result[len(result)-1].Solved = &isSolved
