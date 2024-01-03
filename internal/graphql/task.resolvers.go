@@ -287,7 +287,7 @@ func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
 	}
 
 	return &Task{
-		ID:   strconv.FormatInt(task.ID, 10),
+		ID:   strconv.FormatInt(task.TaskID, 10),
 		Code: task.Code,
 		Name: task.Name,
 		Description: &Description{
