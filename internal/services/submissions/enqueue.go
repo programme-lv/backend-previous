@@ -14,7 +14,7 @@ import (
 const EvalQueueName = "eval_q"
 const ResponseQueueName = "res_q"
 
-func EnqueueEvaluationIntoRMQ(evalutionRMQ *amqp.Connection,
+func EnqueueEvaluationIntoRMQ(rmq *amqp.Connection,
 	submission objects.RawSubmission, eval objects.EvaluationJob) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -45,7 +45,7 @@ func EnqueueEvaluationIntoRMQ(evalutionRMQ *amqp.Connection,
 		return err
 	}
 
-	ch, err := evalutionRMQ.Channel()
+	ch, err := rmq.Channel()
 	if err != nil {
 		return err
 	}
