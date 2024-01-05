@@ -36,7 +36,7 @@ type migratedPostgresTestcontainer struct {
 func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error) {
 	x = &migratedPostgresTestcontainer{}
 
-	x.network, err = createNetwork(networkName)
+	x.network, err = createNewNetwork()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
