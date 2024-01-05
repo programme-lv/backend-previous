@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/programme-lv/backend/internal/database/testdb"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/testing/testdb"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -16,12 +16,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	provider, err := testdb.NewPostgresTestcontainer()
+	dbContainer, err := testdb.NewPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}
-	db = provider.GetConn()
-	defer provider.Close()
+	db = dbContainer.GetConn()
+	defer dbContainer.Close()
 
 	code := m.Run()
 	os.Exit(code)

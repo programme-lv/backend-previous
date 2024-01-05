@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/programme-lv/backend/internal/database/testdb"
+	"github.com/programme-lv/backend/internal/testing/testdb"
 	"github.com/stretchr/testify/assert"
 )
 

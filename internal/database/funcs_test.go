@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/programme-lv/backend/internal/database/testdb"
+	"github.com/programme-lv/backend/internal/testing/testdb"
 	"github.com/stretchr/testify/assert"
 )
 

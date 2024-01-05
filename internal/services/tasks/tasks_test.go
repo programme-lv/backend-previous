@@ -10,20 +10,20 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/database/testdb"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/testing/testdb"
 	"github.com/stretchr/testify/assert"
 )
 
 var db *sqlx.DB
 
 func TestMain(m *testing.M) {
-	provider, err := testdb.NewPostgresTestcontainer()
+	dbContainer, err := testdb.NewPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}
-	db = provider.GetConn()
-	defer provider.Close()
+	db = dbContainer.GetConn()
+	defer dbContainer.Close()
 
 	code := m.Run()
 	os.Exit(code)
