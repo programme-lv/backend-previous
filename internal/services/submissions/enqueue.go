@@ -11,6 +11,9 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const EvalQueueName = "eval_q"
+const ResponseQueueName = "res_q"
+
 func EnqueueEvaluationIntoRMQ(evalutionRMQ *amqp.Connection,
 	submission objects.RawSubmission, eval objects.EvaluationJob) error {
 
@@ -48,7 +51,7 @@ func EnqueueEvaluationIntoRMQ(evalutionRMQ *amqp.Connection,
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare("eval_q", true, false, false, false, nil)
+	q, err := ch.QueueDeclare(EvalQueueName, true, false, false, false, nil)
 	if err != nil {
 		return err
 	}
@@ -56,9 +59,10 @@ func EnqueueEvaluationIntoRMQ(evalutionRMQ *amqp.Connection,
 	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
 		ContentType:   "application/json",
 		Body:          bodyJson,
-		ReplyTo:       "res_q",
+		ReplyTo:       ResponseQueueName,
 		CorrelationId: string(correlationJson),
 	})
+
 	if err != nil {
 		return err
 	}
