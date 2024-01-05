@@ -6,17 +6,13 @@ package graphql
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/tester/pkg/messaging"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
@@ -108,54 +104,6 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	// publish submission
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	body := messaging.EvaluationRequest{
-		TaskVersionId: int64(*task.PublishedVersionID),
-		Submission: messaging.Submission{
-			SourceCode: submissionCode,
-			LanguageId: languageID,
-		},
-	}
-
-	correlation := messaging.Correlation{
-		HasEvaluationId: true,
-		EvaluationId:    evaluation.ID,
-		UnixMillis:      time.Now().UnixMilli(),
-		RandomInt63:     rand.Int63(),
-	}
-
-	bodyJson, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-
-	correlationJson, err := json.Marshal(correlation)
-	if err != nil {
-		return nil, err
-	}
-
-	ch, err := r.SubmissionRMQ.Channel()
-	if err != nil {
-		return nil, err
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare("eval_q", true, false, false, false, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType:   "application/json",
-		Body:          bodyJson,
-		ReplyTo:       "res_q",
-		CorrelationId: string(correlationJson),
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	return &Submission{
 		ID:   strconv.FormatInt(submission.ID, 10),
