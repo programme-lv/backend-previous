@@ -13,11 +13,11 @@ import (
 var db *sqlx.DB
 
 func TestMain(m *testing.M) {
-	provider, err := testdb.NewPostgresTestcontainerProvider()
+	provider, err := testdb.NewPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}
-	db = provider.GetTestDB()
+	db = provider.GetConn()
 	defer provider.Close()
 
 	code := m.Run()

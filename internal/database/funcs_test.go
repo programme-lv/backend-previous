@@ -12,12 +12,12 @@ import (
 
 var (
 	once       sync.Once
-	dbProvider testdb.DbProvider
+	dbProvider testdb.DBTestcontainer
 )
 
 func TestMain(m *testing.M) {
 	var err error
-	dbProvider, err = testdb.NewPostgresTestcontainerProvider()
+	dbProvider, err = testdb.NewPostgresTestcontainer()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateUser(t *testing.T) {
-	db := dbProvider.GetTestDB()
+	db := dbProvider.GetConn()
 	assert.NotNil(t, db)
 
 	username := "username"
