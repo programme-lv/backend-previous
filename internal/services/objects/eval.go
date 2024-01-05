@@ -2,24 +2,30 @@ package objects
 
 import "time"
 
+type EvaluationJob struct {
+	ID            int64
+	TaskVersionID int64
+}
+
 type Evaluation struct {
-	ID             int64
+	ID            int64
+	TaskVersionID int64
+
 	StatusID       string
 	TotalScore     int64
 	PossibleScore  int64
 	RuntimeStatsID int64
 	CompileDataID  int64
 	CreatedAt      time.Time
-	TaskVersionID  int64
 }
 
-type Submission struct {
+type RawSubmission struct {
 	Content    string
 	LanguageID string
 }
 
-type SubmissionData struct {
-	Submission
+type TaskSubmission struct {
+	RawSubmission
 	ID            int64
 	UserID        int64
 	TaskID        int64
