@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/testcontainers/testcontainers-go"
@@ -21,7 +22,7 @@ type rmqTestcontainer struct {
 }
 
 func (r *rmqTestcontainer) GetConn() *amqp.Connection {
-	return nil
+	return r.conn
 }
 
 func (r *rmqTestcontainer) Close() {
@@ -48,9 +49,13 @@ func NewRMQTestcontainer() (RMQTestcontainer, error) {
 
 	amqpConnStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
 	log.Println("amqpConnStr: ", amqpConnStr)
-	conn, err := amqp.Dial(amqpConnStr)
-	if err != nil {
-		return nil, err
+	var conn *amqp.Connection
+	for i := 0; i < 10; i++ {
+		conn, err = amqp.Dial(amqpConnStr)
+		if err != nil {
+			return nil, err
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	return &rmqTestcontainer{

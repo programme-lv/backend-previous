@@ -11,9 +11,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-const EvalQueueName = "eval_q"
-const ResponseQueueName = "res_q"
-
 func EnqueueEvaluationIntoRMQ(rmq *amqp.Connection,
 	submission objects.RawSubmission, eval objects.EvaluationJob) error {
 
@@ -21,7 +18,7 @@ func EnqueueEvaluationIntoRMQ(rmq *amqp.Connection,
 	defer cancel()
 
 	body := messaging.EvaluationRequest{
-		TaskVersionId: int64(eval.TaskVersionID),
+		TaskVersionId: eval.TaskVersionID,
 		Submission: messaging.Submission{
 			SourceCode: submission.Content,
 			LanguageId: submission.LanguageID,
@@ -51,7 +48,8 @@ func EnqueueEvaluationIntoRMQ(rmq *amqp.Connection,
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare(EvalQueueName, true, false, false, false, nil)
+	q, err := ch.QueueDeclare(EvalQueueName, true, false, false, false,
+		amqp.Table{})
 	if err != nil {
 		return err
 	}
