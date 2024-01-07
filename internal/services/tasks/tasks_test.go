@@ -18,7 +18,7 @@ import (
 var db *sqlx.DB
 
 func TestMain(m *testing.M) {
-	dbContainer, err := testdb.NewPostgresTestcontainer()
+	dbContainer, err := testdb.NewMigratedPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}

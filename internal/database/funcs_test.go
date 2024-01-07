@@ -17,7 +17,7 @@ var (
 
 func TestMain(m *testing.M) {
 	var err error
-	dbProvider, err = testdb.NewPostgresTestcontainer()
+	dbProvider, err = testdb.NewMigratedPostgresTestcontainer()
 	if err != nil {
 		log.Fatal(err)
 	}

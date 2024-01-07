@@ -8,7 +8,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/network"
 )
 
-func extractTestcontainerHostAndPort(container testcontainers.Container) (host string, port string, err error) {
+func extractTestcontainerExternalHostAndPort(container testcontainers.Container) (host string, port string, err error) {
 	host, err = container.Host(context.Background())
 	if err != nil {
 		return

@@ -17,19 +17,18 @@ type DBTestcontainer interface {
 }
 
 const (
-	networkName   = "proglv-test-network"
 	defaultUser   = "proglv"
 	defaultPass   = "proglv"
 	defaultDBName = "proglv"
 )
 
-func NewPostgresTestcontainer() (DBTestcontainer, error) {
+func NewMigratedPostgresTestcontainer() (DBTestcontainer, error) {
 	return initPostgresContainerTestDB()
 }
 
 type migratedPostgresTestcontainer struct {
 	postgres *postgresContainer
-	network  testcontainers.Network
+	network  *testcontainers.DockerNetwork
 	sqlxDb   *sqlx.DB
 }
 
@@ -41,16 +40,21 @@ func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error)
 		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
+	log.Println("testcontainer networkName: ", x.network.Name)
+
 	postgresAlias := randomLowercaseLetterString(10)
-	x.postgres, err = startPostgresContainer(networkName, postgresAlias, defaultUser, defaultPass, defaultDBName)
+	x.postgres, err = startPostgresContainer(x.network.Name, postgresAlias, defaultUser, defaultPass, defaultDBName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start postgres container: %w", err)
 	}
 
-	pgHost, pgPort, err := extractTestcontainerHostAndPort(x.postgres.container)
+	pgHost, pgPort, err := extractTestcontainerExternalHostAndPort(x.postgres.container)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract testcontainer host and port: %w", err)
 	}
+
+	log.Println("testcontainer pgHost: ", pgHost)
+	log.Println("testcontainer pgPort: ", pgPort)
 
 	sqlxConnString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		pgHost, pgPort, x.postgres.user, x.postgres.password, x.postgres.database)
@@ -72,7 +76,7 @@ func initPostgresContainerTestDB() (x *migratedPostgresTestcontainer, err error)
 	defer migrations.erase()
 
 	flywayAlias := randomLowercaseLetterString(10)
-	err = execFlywayContainer(networkName, flywayAlias,
+	err = execFlywayContainer(x.network.Name, flywayAlias,
 		migrations.getFlywayMigrationsDir(),
 		postgresAlias, "5432", x.postgres.database, x.postgres.user, x.postgres.password)
 	if err != nil {

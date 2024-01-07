@@ -13,7 +13,7 @@ import (
 var db *sqlx.DB
 
 func TestMain(m *testing.M) {
-	provider, err := testdb.NewPostgresTestcontainer()
+	provider, err := testdb.NewMigratedPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}
