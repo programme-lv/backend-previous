@@ -3,6 +3,7 @@ package testrmq
 import (
 	"context"
 	"fmt"
+	"log"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/testcontainers/testcontainers-go"
@@ -42,7 +43,11 @@ func NewRMQTestcontainer() (RMQTestcontainer, error) {
 		return nil, err
 	}
 
+	log.Println("rmq host: ", host)
+	log.Println("rmq port: ", port)
+
 	amqpConnStr := fmt.Sprintf("amqp://%s:%s@%s:%s/", username, password, host, port)
+	log.Println("amqpConnStr: ", amqpConnStr)
 	conn, err := amqp.Dial(amqpConnStr)
 	if err != nil {
 		return nil, err
@@ -63,7 +68,6 @@ func startRMQContainer(defaultUser, defaultPass string) (testcontainers.Containe
 		},
 		WaitingFor: wait.ForAll(
 			wait.ForLog("Server startup complete"),
-			wait.ForExposedPort(),
 		),
 		Env: map[string]string{
 			"RABBITMQ_DEFAULT_USER": "guest",
