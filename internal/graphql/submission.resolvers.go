@@ -13,6 +13,8 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/services/submissions"
 )
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
@@ -65,8 +67,8 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		return nil, err
 	}
 
-	// create a new submission
-	submission := model.TaskSubmissions{
+	// create a new subm
+	subm := model.TaskSubmissions{
 		UserID:            user.ID,
 		TaskID:            task.ID,
 		ProgrammingLangID: language.ID,
@@ -82,15 +84,15 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.TaskSubmissions.Submission,
 		table.TaskSubmissions.Hidden,
 		table.TaskSubmissions.VisibleEvalID,
-	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
-	err = insertStmt.Query(r.PostgresDB, &submission)
+	).MODEL(subm).RETURNING(table.TaskSubmissions.ID)
+	err = insertStmt.Query(r.PostgresDB, &subm)
 	if err != nil {
 		return nil, err
 	}
 
 	// link the evaluation to the submission
 	submissionEvaluation := model.SubmissionEvaluations{
-		SubmissionID: submission.ID,
+		SubmissionID: subm.ID,
 		EvaluationID: evaluation.ID,
 	}
 
@@ -104,9 +106,19 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	// publish submission
+	err = submissions.EnqueueEvaluationIntoRMQ(r.SubmissionRMQ, objects.RawSubmission{
+		Content:    submissionCode,
+		LanguageID: language.ID,
+	}, objects.EvaluationJob{
+		ID:            evaluation.ID,
+		TaskVersionID: int64(*task.PublishedVersionID),
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &Submission{
-		ID:   strconv.FormatInt(submission.ID, 10),
+		ID:   strconv.FormatInt(subm.ID, 10),
 		Task: nil,
 		Language: &ProgrammingLanguage{
 			ID:       language.ID,
