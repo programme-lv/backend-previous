@@ -5,9 +5,10 @@ import (
 	"math/rand"
 
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/network"
 )
 
-func extractTestcontainerHostAndPort(container testcontainers.Container) (host string, port string, err error) {
+func extractTestcontainerExternalHostAndPort(container testcontainers.Container) (host string, port string, err error) {
 	host, err = container.Host(context.Background())
 	if err != nil {
 		return
@@ -28,15 +29,8 @@ func extractTestcontainerHostAndPort(container testcontainers.Container) (host s
 	return
 }
 
-func createNetwork(networkName string) (testcontainers.Network, error) {
-	network, err := testcontainers.GenericNetwork(context.Background(),
-		testcontainers.GenericNetworkRequest{
-			NetworkRequest: testcontainers.NetworkRequest{
-				Name:           networkName,
-				CheckDuplicate: true,
-			},
-		})
-	return network, err
+func createNewNetwork() (*testcontainers.DockerNetwork, error) {
+	return network.New(context.Background(), network.WithCheckDuplicate())
 }
 
 func randomLowercaseLetterString(length int) string {

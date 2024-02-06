@@ -6,17 +6,15 @@ package graphql
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/tester/pkg/messaging"
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/services/submissions"
 )
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
@@ -69,8 +67,8 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		return nil, err
 	}
 
-	// create a new submission
-	submission := model.TaskSubmissions{
+	// create a new subm
+	subm := model.TaskSubmissions{
 		UserID:            user.ID,
 		TaskID:            task.ID,
 		ProgrammingLangID: language.ID,
@@ -86,15 +84,15 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.TaskSubmissions.Submission,
 		table.TaskSubmissions.Hidden,
 		table.TaskSubmissions.VisibleEvalID,
-	).MODEL(submission).RETURNING(table.TaskSubmissions.ID)
-	err = insertStmt.Query(r.PostgresDB, &submission)
+	).MODEL(subm).RETURNING(table.TaskSubmissions.ID)
+	err = insertStmt.Query(r.PostgresDB, &subm)
 	if err != nil {
 		return nil, err
 	}
 
 	// link the evaluation to the submission
 	submissionEvaluation := model.SubmissionEvaluations{
-		SubmissionID: submission.ID,
+		SubmissionID: subm.ID,
 		EvaluationID: evaluation.ID,
 	}
 
@@ -108,57 +106,19 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	// publish submission
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	body := messaging.EvaluationRequest{
-		TaskVersionId: int64(*task.PublishedVersionID),
-		Submission: messaging.Submission{
-			SourceCode: submissionCode,
-			LanguageId: languageID,
-		},
-	}
-
-	correlation := messaging.Correlation{
-		HasEvaluationId: true,
-		EvaluationId:    evaluation.ID,
-		UnixMillis:      time.Now().UnixMilli(),
-		RandomInt63:     rand.Int63(),
-	}
-
-	bodyJson, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-
-	correlationJson, err := json.Marshal(correlation)
-	if err != nil {
-		return nil, err
-	}
-
-	ch, err := r.SubmissionRMQ.Channel()
-	if err != nil {
-		return nil, err
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare("eval_q", true, false, false, false, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = ch.PublishWithContext(ctx, "", q.Name, false, false, amqp.Publishing{
-		ContentType:   "application/json",
-		Body:          bodyJson,
-		ReplyTo:       "res_q",
-		CorrelationId: string(correlationJson),
+	err = submissions.EnqueueEvaluationIntoRMQ(r.SubmissionRMQ, objects.RawSubmission{
+		Content:    submissionCode,
+		LanguageID: language.ID,
+	}, objects.EvaluationJob{
+		ID:            evaluation.ID,
+		TaskVersionID: int64(*task.PublishedVersionID),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Submission{
-		ID:   strconv.FormatInt(submission.ID, 10),
+		ID:   strconv.FormatInt(subm.ID, 10),
 		Task: nil,
 		Language: &ProgrammingLanguage{
 			ID:       language.ID,

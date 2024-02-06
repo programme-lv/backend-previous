@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/alexedwards/scs/redisstore"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/alexedwards/scs/redisstore"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jmoiron/sqlx"
