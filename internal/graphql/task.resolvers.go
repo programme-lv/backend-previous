@@ -335,5 +335,15 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 
 // GetCurrentTaskVersionByID is the resolver for the getCurrentTaskVersionById field.
 func (r *queryResolver) GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: GetCurrentTaskVersionByID - getCurrentTaskVersionById"))
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err2 := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
+	if err2 != nil {
+		return nil, err2
+	}
+
+	return internalTaskVersionToGraphQLTask(*task), nil
 }
