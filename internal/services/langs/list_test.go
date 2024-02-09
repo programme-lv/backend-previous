@@ -6,18 +6,18 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/programme-lv/backend/internal/database/testdb"
+	"github.com/programme-lv/backend/internal/testing/testdb"
 	"github.com/stretchr/testify/assert"
 )
 
 var db *sqlx.DB
 
 func TestMain(m *testing.M) {
-	provider, err := testdb.NewPostgresTestcontainerProvider()
+	provider, err := testdb.NewMigratedPostgresTestcontainer()
 	if err != nil {
 		panic(err)
 	}
-	db = provider.GetTestDB()
+	db = provider.GetConn()
 	defer provider.Close()
 
 	code := m.Run()

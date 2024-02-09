@@ -31,6 +31,7 @@ func startPostgresContainer(networkName string, networkAlias string, user string
 		NetworkAliases: map[string][]string{
 			networkName: {networkAlias},
 		},
+		Name: networkAlias,
 	}
 
 	container, err := testcontainers.GenericContainer(context.Background(),

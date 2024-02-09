@@ -10,31 +10,24 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-type flywayLogConsumer struct{}
-
-func (consumer *flywayLogConsumer) Accept(l testcontainers.Log) {
-	fmt.Print(string(l.Content))
-}
-
-// exectues flyway:21 on host network with migrationsDir mounted to /flyway/flyway-migrations
+// exectues flyway with migrationsDir mounted to /flyway/flyway-migrations
 func execFlywayContainer(networkName string, networkAlias string, migrationDir string, dbHost string, dbPort string, dbName string, dbUser string, dbPassword string) error {
 	args := []string{
 		fmt.Sprintf("-url=jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName),
 		fmt.Sprintf("-user=%s", dbUser),
 		fmt.Sprintf("-password=%s", dbPassword),
-		"-connectRetries=5",
+		"-connectRetries=3",
 		"-locations=filesystem:/flyway/flyway-migrations",
 		"migrate",
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image: "flyway/flyway:9.21",
-		Mounts: testcontainers.ContainerMounts{
-			testcontainers.ContainerMount{
-				Source: testcontainers.GenericBindMountSource{
-					HostPath: migrationDir,
-				},
-				Target: "/flyway/flyway-migrations",
+		Image: "flyway/flyway:10.4.1",
+		Files: []testcontainers.ContainerFile{
+			{
+				HostFilePath:      migrationDir,
+				ContainerFilePath: "/flyway/flyway-migrations",
+				FileMode:          0777,
 			},
 		},
 		WaitingFor: wait.ForAll(wait.ForExit()),
