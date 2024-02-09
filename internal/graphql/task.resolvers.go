@@ -313,7 +313,24 @@ func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListEditableTasks - listEditableTasks"))
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	editableTaskVersions, err := tasks.ListEditableTaskVersions(r.PostgresDB, user.ID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	var result []*Task
+	for _, task := range editableTaskVersions {
+		result = append(result, internalTaskVersionToGraphQLTask(task))
+	}
+
+	return result, nil
+
 }
 
 // GetCurrentTaskVersionByID is the resolver for the getCurrentTaskVersionById field.
