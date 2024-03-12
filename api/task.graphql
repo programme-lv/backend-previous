@@ -22,6 +22,12 @@ extend type Query {
     Used for task preparation / development / editing.
     """
     getCurrentTaskVersionById(id: ID!): Task!
+
+    """
+    Returns the latest version of a task.
+    Used for task preparation / development / editing.
+    """
+    getCurrentTaskVersionByCode(code: String!): Task!
 }
 
 extend type Mutation {

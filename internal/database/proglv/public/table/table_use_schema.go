@@ -19,6 +19,7 @@ func UseSchema(schema string) {
 	ProgrammingLanguages = ProgrammingLanguages.FromSchema(schema)
 	RuntimeData = RuntimeData.FromSchema(schema)
 	RuntimeStatistics = RuntimeStatistics.FromSchema(schema)
+	SolutionEvaluations = SolutionEvaluations.FromSchema(schema)
 	StatementExamples = StatementExamples.FromSchema(schema)
 	SubmissionEvaluations = SubmissionEvaluations.FromSchema(schema)
 	TaskOrigins = TaskOrigins.FromSchema(schema)
@@ -32,4 +33,5 @@ func UseSchema(schema string) {
 	TextFiles = TextFiles.FromSchema(schema)
 	Users = Users.FromSchema(schema)
 	VersionAuthors = VersionAuthors.FromSchema(schema)
+	VersionSolution = VersionSolution.FromSchema(schema)
 }

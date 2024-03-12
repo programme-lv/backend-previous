@@ -57,11 +57,17 @@ type Metadata struct {
 	Origin  *string  `json:"origin,omitempty"`
 }
 
+type Mutation struct {
+}
+
 type ProgrammingLanguage struct {
 	ID       string  `json:"id"`
 	FullName string  `json:"fullName"`
 	MonacoID *string `json:"monacoID,omitempty"`
 	Enabled  bool    `json:"enabled"`
+}
+
+type Query struct {
 }
 
 type RuntimeStatistics struct {
