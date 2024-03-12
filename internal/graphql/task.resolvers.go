@@ -245,7 +245,7 @@ func (r *mutationResolver) UpdateTaskMetadata(ctx context.Context, id string, au
 	requestLogger.Info("updated task relevant version successfully")
 
 	// Update metadata
-	stmt = `INSERT INTO version_authors (task_version_id, user_id) VALUES ($1, $2)`
+	stmt = `INSERT INTO version_authors (task_version_id, author) VALUES ($1, $2)`
 	for _, author := range authors {
 		_, err = t.Exec(stmt, versionId, author)
 		if err != nil {
@@ -312,9 +312,9 @@ func (r *mutationResolver) UpdateTaskMetadata(ctx context.Context, id string, au
 
 // UpdateTaskDescription is the resolver for the updateTaskDescription field.
 func (r *mutationResolver) UpdateTaskDescription(ctx context.Context, id string, code *string, name *string, story *string, input *string, output *string, notes *string) (*Task, error) {
-	requestLogger := r.Logger.With(slog.String("request_type", "update_task_constraints"), slog.String("id", id))
+	requestLogger := r.Logger.With(slog.String("request_type", "update_task_description"), slog.String("id", id))
 
-	requestLogger.Info("received update task metadata request")
+	requestLogger.Info("received update task description request")
 
 	t, err := r.PostgresDB.Beginx()
 	if err != nil {
