@@ -12,8 +12,9 @@ import (
 )
 
 type TextFiles struct {
-	ID        int64 `sql:"primary_key"`
-	Sha256    string
-	Content   string
-	CreatedAt *time.Time
+	ID          int64 `sql:"primary_key"`
+	Sha256      string
+	Content     *string
+	CreatedAt   *time.Time
+	Compression string
 }

@@ -17,10 +17,11 @@ type textFilesTable struct {
 	postgres.Table
 
 	// Columns
-	ID        postgres.ColumnInteger
-	Sha256    postgres.ColumnString
-	Content   postgres.ColumnString
-	CreatedAt postgres.ColumnTimestampz
+	ID          postgres.ColumnInteger
+	Sha256      postgres.ColumnString
+	Content     postgres.ColumnString
+	CreatedAt   postgres.ColumnTimestampz
+	Compression postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -61,22 +62,24 @@ func newTextFilesTable(schemaName, tableName, alias string) *TextFilesTable {
 
 func newTextFilesTableImpl(schemaName, tableName, alias string) textFilesTable {
 	var (
-		IDColumn        = postgres.IntegerColumn("id")
-		Sha256Column    = postgres.StringColumn("sha256")
-		ContentColumn   = postgres.StringColumn("content")
-		CreatedAtColumn = postgres.TimestampzColumn("created_at")
-		allColumns      = postgres.ColumnList{IDColumn, Sha256Column, ContentColumn, CreatedAtColumn}
-		mutableColumns  = postgres.ColumnList{Sha256Column, ContentColumn, CreatedAtColumn}
+		IDColumn          = postgres.IntegerColumn("id")
+		Sha256Column      = postgres.StringColumn("sha256")
+		ContentColumn     = postgres.StringColumn("content")
+		CreatedAtColumn   = postgres.TimestampzColumn("created_at")
+		CompressionColumn = postgres.StringColumn("compression")
+		allColumns        = postgres.ColumnList{IDColumn, Sha256Column, ContentColumn, CreatedAtColumn, CompressionColumn}
+		mutableColumns    = postgres.ColumnList{Sha256Column, ContentColumn, CreatedAtColumn, CompressionColumn}
 	)
 
 	return textFilesTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:        IDColumn,
-		Sha256:    Sha256Column,
-		Content:   ContentColumn,
-		CreatedAt: CreatedAtColumn,
+		ID:          IDColumn,
+		Sha256:      Sha256Column,
+		Content:     ContentColumn,
+		CreatedAt:   CreatedAtColumn,
+		Compression: CompressionColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
