@@ -11,6 +11,11 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+const EvalQueueName = "eval_q"
+const ResponseQueueName = "res_q"
+
+// Deprecated: EnqueueEvaluationIntoRMQ is deprecated.
+// Backend doesn't directly use RabbitMQ anymore.
 func EnqueueEvaluationIntoRMQ(rmq *amqp.Connection,
 	submission objects.RawSubmission, eval objects.EvaluationJob) error {
 

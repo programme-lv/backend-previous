@@ -1,0 +1,297 @@
+package submissions
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"sort"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	set "github.com/deckarep/golang-set/v2"
+	"github.com/go-jet/jet/qrm"
+	"github.com/go-jet/jet/v2/postgres"
+	"github.com/programme-lv/backend/internal/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/director/msg"
+)
+
+type S3TestURLGetter interface {
+	GetURL(testSHA256 string) (string, error)
+}
+
+type S3TestURLGetterImpl struct {
+	PresignClient *s3.PresignClient
+	bucketName    string
+}
+
+var _ S3TestURLGetter = &S3TestURLGetterImpl{}
+
+func (s *S3TestURLGetterImpl) GetURL(testSHA256 string) (string, error) {
+	objectKey := fmt.Sprintf("tests/%s", testSHA256)
+	request, err := s.PresignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(s.bucketName),
+		Key:    aws.String(objectKey),
+	}, func(opts *s3.PresignOptions) {
+		opts.Expires = time.Duration(24 * time.Hour) // 24 hours
+	})
+	if err != nil {
+		return "",
+			fmt.Errorf("failed to presign object: %v", err)
+	}
+	return request.URL, nil
+}
+
+func NewS3TestURLGetter(accessKey, secretKey, region, endpoint, bucket string) S3TestURLGetter {
+	res := &S3TestURLGetterImpl{
+		PresignClient: nil,
+		bucketName:    bucket,
+	}
+
+	// cfg, err := config.LoadDefaultConfig(context.TODO(),
+	// 	config.WithCredentialsProvider(aws.NewCredentialsCache(aws.NewStaticCredentialsProvider(accessKey, secretKey, ""))),
+	// 	config.WithRegion(region),
+	// 	// Uncomment the following line if you are using a custom endpoint
+	// 	//config.WithEndpointResolver(aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+	// 	//	return aws.Endpoint{URL: endpoint}, nil
+	// 	//})),
+	// )
+
+	return res
+}
+
+func EvaluateSubmission(db qrm.DB, submID int64, evalID int64,
+	urlGet S3TestURLGetter) error {
+
+	req := msg.EvaluationRequest{
+		Submission: "",
+		Language: &msg.ProgrammingLanguage{
+			Id:               "",
+			Name:             "",
+			CodeFilename:     "",
+			CompileCmd:       new(string),
+			CompiledFilename: new(string),
+			ExecuteCmd:       "",
+		},
+		Limits: &msg.RuntimeLimits{
+			CPUTimeMillis: 0,
+			MemKibiBytes:  0,
+		},
+		EvalType:       "",
+		Tests:          []*msg.Test{},
+		TestlibChecker: "",
+	}
+
+	stmtSelSubm := postgres.SELECT(
+		table.TaskSubmissions.ProgrammingLangID,
+		table.TaskSubmissions.Submission,
+	).FROM(table.TaskSubmissions).
+		WHERE(table.TaskSubmissions.ID.EQ(
+			postgres.Int64(submID)))
+
+	var subm model.TaskSubmissions
+	err := stmtSelSubm.Query(db, &subm)
+	if err != nil {
+		return err
+	}
+
+	req.Submission = subm.Submission
+	req.Language.Id = subm.ProgrammingLangID
+
+	stmtSelLang := postgres.SELECT(
+		table.ProgrammingLanguages.AllColumns,
+	).FROM(table.ProgrammingLanguages).
+		WHERE(table.ProgrammingLanguages.ID.EQ(
+			postgres.String(subm.ProgrammingLangID)))
+
+	var lang model.ProgrammingLanguages
+	err = stmtSelLang.Query(db, &lang)
+	if err != nil {
+		return err
+	}
+
+	req.Language.Name = lang.FullName
+	req.Language.CodeFilename = lang.CodeFilename
+	req.Language.CompileCmd = lang.CompileCmd
+	req.Language.CompiledFilename = lang.CompiledFilename
+	req.Language.ExecuteCmd = lang.ExecuteCmd
+
+	// get task version id
+	stmtSelectTaskVersionID := postgres.SELECT(
+		table.Evaluations.TaskVersionID,
+	).FROM(table.Evaluations).
+		WHERE(table.Evaluations.ID.EQ(
+			postgres.Int64(evalID)))
+
+	var evaluation model.Evaluations
+	err = stmtSelectTaskVersionID.Query(db, &evaluation)
+	if err != nil {
+		return err
+	}
+
+	taskVersionID := evaluation.TaskVersionID
+	if taskVersionID == 0 {
+		return fmt.Errorf("task version id is 0")
+	}
+
+	stmtSelTaskVersion := postgres.SELECT(
+		table.TaskVersions.AllColumns,
+	).FROM(table.TaskVersions).
+		WHERE(table.TaskVersions.ID.EQ(
+			postgres.Int64(taskVersionID)))
+
+	var taskVersion model.TaskVersions
+	err = stmtSelTaskVersion.Query(db, &taskVersion)
+	if err != nil {
+		return err
+	}
+
+	req.EvalType = taskVersion.TestingTypeID
+	req.Limits.CPUTimeMillis = taskVersion.TimeLimMs
+	req.Limits.MemKibiBytes = taskVersion.MemLimKibibytes
+
+	var checkerID int64 = 1
+	if taskVersion.CheckerID != nil {
+		checkerID = *taskVersion.CheckerID
+	}
+
+	stmtSelChecker := postgres.SELECT(
+		table.TestlibCheckers.AllColumns,
+	).FROM(table.TestlibCheckers).
+		WHERE(table.TestlibCheckers.ID.EQ(
+			postgres.Int64(checkerID)))
+
+	var checker model.TestlibCheckers
+	err = stmtSelChecker.Query(db, &checker)
+	if err != nil {
+		return err
+	}
+	req.TestlibChecker = checker.Code
+
+	/*
+			SELECT task_version_tests.id as "test_id", sha256, content, compression FROM public.task_version_tests
+			left join text_files on input_text_file_id = text_files.id
+		where task_version_id = 30;
+
+		SELECT task_version_tests.id as "test_id", sha256, content, compression FROM public.task_version_tests
+			left join text_files on answer_text_file_id = text_files.id
+		where task_version_id = 30;
+	*/
+	stmtSelectTestInputs := postgres.SELECT(
+		table.TaskVersionTests.ID,
+		table.TextFiles.Sha256,
+		table.TextFiles.Content,
+		table.TextFiles.Compression,
+	).FROM(table.TaskVersionTests.
+		LEFT_JOIN(table.TextFiles, table.TaskVersionTests.InputTextFileID.EQ(table.TextFiles.ID))).
+		WHERE(table.TaskVersionTests.TaskVersionID.EQ(
+			postgres.Int64(taskVersionID)))
+
+	var inputs []struct {
+		model.TaskVersionTests
+		model.TextFiles
+	}
+	err = stmtSelectTestInputs.Query(db, &inputs)
+	if err != nil {
+		return err
+	}
+
+	stmtSelectTestAnswers := postgres.SELECT(
+		table.TaskVersionTests.ID,
+		table.TextFiles.Sha256,
+		table.TextFiles.Content,
+		table.TextFiles.Compression,
+	).FROM(table.TaskVersionTests.
+		LEFT_JOIN(table.TextFiles, table.TaskVersionTests.AnswerTextFileID.EQ(table.TextFiles.ID))).
+		WHERE(table.TaskVersionTests.TaskVersionID.EQ(
+			postgres.Int64(taskVersionID)))
+	var answers []struct {
+		model.TaskVersionTests
+		model.TextFiles
+	}
+	err = stmtSelectTestAnswers.Query(db, &answers)
+	if err != nil {
+		return err
+	}
+
+	type testPart struct {
+		id          int64
+		sha256      string
+		content     *string
+		compression string
+	}
+
+	testIdSet := set.NewSet[int64]()
+	idInputMap := make(map[int64]testPart)
+	idAnswerMap := make(map[int64]testPart)
+
+	for _, input := range inputs {
+		idInputMap[input.TaskVersionTests.ID] = testPart{
+			id:          input.TaskVersionTests.ID,
+			sha256:      input.Sha256,
+			content:     input.TextFiles.Content,
+			compression: input.Compression,
+		}
+		testIdSet.Add(input.TaskVersionTests.ID)
+	}
+
+	for _, answer := range answers {
+		idAnswerMap[answer.TaskVersionTests.ID] = testPart{
+			id:          answer.TaskVersionTests.ID,
+			sha256:      answer.Sha256,
+			content:     answer.TextFiles.Content,
+			compression: answer.Compression,
+		}
+		testIdSet.Add(answer.TaskVersionTests.ID)
+	}
+
+	for _, testID := range testIdSet.ToSlice() {
+		input, okInp := idInputMap[testID]
+		if !okInp {
+			return fmt.Errorf("input test not found")
+		}
+		answer, okAns := idAnswerMap[testID]
+		if !okAns {
+			return fmt.Errorf("answer test not found")
+		}
+
+		test := &msg.Test{
+			Id:             testID,
+			InSha256:       input.sha256,
+			InDownloadUrl:  nil,
+			InContent:      input.content,
+			AnsSha256:      answer.sha256,
+			AnsDownloadUrl: nil,
+			AnsContent:     answer.content,
+		}
+		if test.InContent == nil {
+			url, err := urlGet.GetURL(input.sha256)
+			if err != nil {
+				return err
+			}
+			test.InDownloadUrl = &url
+		}
+		if test.AnsContent == nil {
+			url, err := urlGet.GetURL(answer.sha256)
+			if err != nil {
+				return err
+			}
+			test.AnsDownloadUrl = &url
+		}
+		req.Tests = append(req.Tests, test)
+	}
+
+	sort.Slice(req.Tests, func(i, j int) bool {
+		return req.Tests[i].Id < req.Tests[j].Id
+	})
+
+	hello, err := json.MarshalIndent(req, "", "  ")
+	if err != nil {
+		return err
+	}
+	log.Println(string(hello))
+	// todo: get urls for the tests that don't have content
+	return nil
+}

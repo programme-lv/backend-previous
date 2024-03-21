@@ -13,8 +13,6 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
-	"github.com/programme-lv/backend/internal/services/submissions"
 )
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
@@ -115,16 +113,23 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	// publish submission
-	err = submissions.EnqueueEvaluationIntoRMQ(r.SubmissionRMQ, objects.RawSubmission{
-		Content:    submissionCode,
-		LanguageID: language.ID,
-	}, objects.EvaluationJob{
-		ID:            evaluation.ID,
-		TaskVersionID: int64(*task.PublishedVersionID),
-	})
-	if err != nil {
-		return nil, err
-	}
+	// err = submissions.EnqueueEvaluationIntoRMQ(r.SubmissionRMQ, objects.RawSubmission{
+	// 	Content:    submissionCode,
+	// 	LanguageID: language.ID,
+	// }, objects.EvaluationJob{
+	// 	ID:            evaluation.ID,
+	// 	TaskVersionID: int64(*task.PublishedVersionID),
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// go func() {
+	// 	err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, evaluation.ID)
+	// 	tracerr.Print(err)
+	// 	log.Printf("error evaluating submission: %v", err)
+	// }()
+
+	// here we would like just run a goroutine that will test the submission
 
 	return &Submission{
 		ID:   strconv.FormatInt(subm.ID, 10),
