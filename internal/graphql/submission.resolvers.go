@@ -50,7 +50,11 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		return nil, err
 	}
 
-	// TODO: do all inserts in one transaction
+	t, err := r.PostgresDB.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	defer t.Rollback()
 
 	// create a new evaluation
 	evaluation := model.Evaluations{
@@ -62,7 +66,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.Evaluations.EvalStatusID,
 		table.Evaluations.TaskVersionID,
 	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
-	err = insertStmt.Query(r.PostgresDB, &evaluation)
+	err = insertStmt.Query(t, &evaluation)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +89,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.TaskSubmissions.Hidden,
 		table.TaskSubmissions.VisibleEvalID,
 	).MODEL(subm).RETURNING(table.TaskSubmissions.ID)
-	err = insertStmt.Query(r.PostgresDB, &subm)
+	err = insertStmt.Query(t, &subm)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +104,12 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.SubmissionEvaluations.SubmissionID,
 		table.SubmissionEvaluations.EvaluationID,
 	).MODEL(submissionEvaluation).RETURNING(table.SubmissionEvaluations.ID)
-	err = insertStmt.Query(r.PostgresDB, &submissionEvaluation)
+	err = insertStmt.Query(t, &submissionEvaluation)
+	if err != nil {
+		return nil, err
+	}
+
+	err = t.Commit()
 	if err != nil {
 		return nil, err
 	}
