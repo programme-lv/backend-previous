@@ -51,10 +51,10 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, err
 	}
 
-	// if !user.IsAdmin {
-	// 	requestLogger.Error("only admins can create tasks")
-	// 	return nil, fmt.Errorf("only admins can create tasks")
-	// }
+	if !user.IsAdmin {
+		requestLogger.Error("only admins can create tasks")
+		return nil, fmt.Errorf("only admins can create tasks")
+	}
 
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
 	requestLogger.Info("got user from context")
@@ -104,7 +104,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	DefaultMemoryLimitKb := 256000
 
 	stmt = `INSERT INTO task_versions
-    (task_id, short_code, full_name, time_lim_ms, mem_lim_kb, testing_type_id)
+    (task_id, short_code, full_name, time_lim_ms, mem_lim_kibibytes, testing_type_id)
     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
 
 	var versionId int64
@@ -137,10 +137,10 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger.Info("updated task relevant version successfully")
 
 	stmt = `INSERT INTO public.markdown_statements(
-	story, input, output, notes, scoring, task_version_id)
-	VALUES ($1, $2, $3, $4, $5, $6)`
+	story, input, output, notes, scoring, task_version_id, lang_iso639_1)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err = t.Exec(stmt, "", "", "", "", "", versionId)
+	_, err = t.Exec(stmt, "", "", "", "", "", versionId, "")
 	if err != nil {
 		t.Rollback()
 		requestLogger.Error("failed to insert markdown statement", slog.String("error", err.Error()))
@@ -403,12 +403,12 @@ func (r *mutationResolver) UpdateTaskDescription(ctx context.Context, id string,
 	requestLogger.Info("duplicated task version tests successfully")
 
 	// Duplicate statement examples
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.Description.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate statement examples", slog.String("error", err.Error()))
-		return nil, err
-	}
+	// _, err = t.Exec(stmt, versionId, prevTaskVersion.Description.ID)
+	// if err != nil {
+	// 	t.Rollback()
+	// 	requestLogger.Error("failed to duplicate statement examples", slog.String("error", err.Error()))
+	// 	return nil, err
+	// }
 
 	requestLogger.Info("duplicated statement examples successfully")
 
@@ -636,12 +636,12 @@ func (r *mutationResolver) UpdateTaskConstraints(ctx context.Context, id string,
 	requestLogger.Info("duplicated task version tests successfully")
 
 	// Duplicate statement examples
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.Description.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate statement examples", slog.String("error", err.Error()))
-		return nil, err
-	}
+	// _, err = t.Exec(stmt, versionId, prevTaskVersion.Description.ID)
+	// if err != nil {
+	// 	t.Rollback()
+	// 	requestLogger.Error("failed to duplicate statement examples", slog.String("error", err.Error()))
+	// 	return nil, err
+	// }
 
 	requestLogger.Info("duplicated statement examples successfully")
 

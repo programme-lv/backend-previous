@@ -40,7 +40,7 @@ type TaskVersion struct {
 	ShortCode     string     `db:"short_code"`
 	FullName      string     `db:"full_name"`
 	TimeLimMs     int        `db:"time_lim_ms"`
-	MemLimKb      int        `db:"mem_lim_kb"`
+	MemLimKb      int        `db:"mem_lim_kibibytes"`
 	TestingTypeID string     `db:"testing_type_id"`
 	Origin        *string    `db:"origin"`
 	CreatedAt     time.Time  `db:"created_at"`
@@ -72,6 +72,7 @@ type MarkdownStatement struct {
 	Notes         *string `db:"notes"`
 	Scoring       *string `db:"scoring"`
 	TaskVersionID int64   `db:"task_version_id"`
+	LangISO639 string  `db:"lang_iso639_1"`
 }
 
 type SubmissionEvaluation struct {

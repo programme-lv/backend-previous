@@ -36,10 +36,8 @@ func ListEditableTaskVersions(db qrm.Queryable, userID int64) ([]objects.TaskVer
 			LEFT_JOIN(table.MarkdownStatements,
 				table.MarkdownStatements.TaskVersionID.EQ(
 					table.Tasks.RelevantVersionID))).
-		WHERE(table.MarkdownStatements.LangIso6391.EQ(
-			postgres.String("lv")).AND(
-			table.Tasks.CreatedByID.EQ(
-				postgres.Int64(userID)))).
+		WHERE(table.Tasks.CreatedByID.EQ(
+				postgres.Int64(userID))).
 		ORDER_BY(table.TaskVersions.CreatedAt.DESC());
 
 	var editableTaskVersions []struct {
