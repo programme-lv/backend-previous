@@ -4,6 +4,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/programme-lv/backend/internal/services/submissions"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"golang.org/x/exp/slog"
 )
@@ -17,4 +18,5 @@ type Resolver struct {
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	SubmissionRMQ  *amqp.Connection
+	TestURLs       *submissions.S3TestURLs
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
+	"github.com/programme-lv/backend/internal/services/submissions"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/gomodule/redigo/redis"
@@ -53,11 +54,17 @@ func main() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
+	urls, err := submissions.NewS3TestURLs(conf.DOSpacesKey, conf.DOSpacesSecret, "fra1", conf.S3Endpoint, conf.S3Bucket)
+	if err != nil {
+		panic(err)
+	}
+
 	resolver := &graphql.Resolver{
 		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
 		Logger:         logger,
 		SubmissionRMQ:  rmqConn,
+		TestURLs:       urls,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))

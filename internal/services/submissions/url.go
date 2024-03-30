@@ -36,7 +36,7 @@ func (s *S3TestURLs) GetTestDownloadURL(testSHA256 string) (string, error) {
 	return request.URL, nil
 }
 
-func NewS3TestURLs(accessKey, secretKey, region, endpoint, bucket string) (DownlURLGetter, error) {
+func NewS3TestURLs(accessKey, secretKey, region, endpoint, bucket string) (*S3TestURLs, error) {
 	res := &S3TestURLs{
 		presignClient: nil,
 		bucketName:    bucket,

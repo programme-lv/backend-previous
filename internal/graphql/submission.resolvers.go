@@ -67,7 +67,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		VisibleEvalID:     nil,
 	}
 
-	insertStmt = table.TaskSubmissions.INSERT(
+	insertStmt := table.TaskSubmissions.INSERT(
 		table.TaskSubmissions.UserID,
 		table.TaskSubmissions.TaskID,
 		table.TaskSubmissions.ProgrammingLangID,
@@ -76,21 +76,6 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		table.TaskSubmissions.VisibleEvalID,
 	).MODEL(subm).RETURNING(table.TaskSubmissions.ID)
 	err = insertStmt.Query(t, &subm)
-	if err != nil {
-		return nil, err
-	}
-
-	// link the evaluation to the submission
-	submissionEvaluation := model.SubmissionEvaluations{
-		SubmissionID: subm.ID,
-		EvaluationID: evaluation.ID,
-	}
-
-	insertStmt = table.SubmissionEvaluations.INSERT(
-		table.SubmissionEvaluations.SubmissionID,
-		table.SubmissionEvaluations.EvaluationID,
-	).MODEL(submissionEvaluation).RETURNING(table.SubmissionEvaluations.ID)
-	err = insertStmt.Query(t, &submissionEvaluation)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +97,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	// 	return nil, err
 	// }
 	go func() {
-		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID)
+		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, int64(*task.PublishedVersionID), r.TestURLs)
 		tracerr.Print(err)
 		log.Printf("error evaluating submission: %v", err)
 	}()

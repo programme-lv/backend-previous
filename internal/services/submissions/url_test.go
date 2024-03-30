@@ -9,7 +9,7 @@ import (
 func TestGetPresignedURL(t *testing.T) {
 	config := environment.ReadEnvConfig()
 
-	urls, err := NewS3TestURLs(config.DOSpacesKey, config.DOSpacesSecret, "fra1", "https://fra1.digitaloceanspaces.com", config.S3Bucket)
+	urls, err := NewS3TestURLs(config.DOSpacesKey, config.DOSpacesSecret, "fra1", config.S3Endpoint, config.S3Bucket)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
