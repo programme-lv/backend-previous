@@ -1,15 +1,11 @@
 package submissions
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
-	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	set "github.com/deckarep/golang-set/v2"
 	"github.com/go-jet/jet/qrm"
 	"github.com/go-jet/jet/v2/postgres"
@@ -18,52 +14,22 @@ import (
 	"github.com/programme-lv/director/msg"
 )
 
-type S3TestURLGetter interface {
-	GetURL(testSHA256 string) (string, error)
-}
+func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet DownlURLGetter) error {
 
-type S3TestURLGetterImpl struct {
-	PresignClient *s3.PresignClient
-	bucketName    string
-}
+	// create a new evaluation
+	// evaluation := model.Evaluations{
+	// 	EvalStatusID:  "IQ",
+	// 	TaskVersionID: int64(*task.PublishedVersionID),
+	// }
 
-var _ S3TestURLGetter = &S3TestURLGetterImpl{}
-
-func (s *S3TestURLGetterImpl) GetURL(testSHA256 string) (string, error) {
-	objectKey := fmt.Sprintf("tests/%s", testSHA256)
-	request, err := s.PresignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(objectKey),
-	}, func(opts *s3.PresignOptions) {
-		opts.Expires = time.Duration(24 * time.Hour) // 24 hours
-	})
-	if err != nil {
-		return "",
-			fmt.Errorf("failed to presign object: %v", err)
-	}
-	return request.URL, nil
-}
-
-func NewS3TestURLGetter(accessKey, secretKey, region, endpoint, bucket string) S3TestURLGetter {
-	res := &S3TestURLGetterImpl{
-		PresignClient: nil,
-		bucketName:    bucket,
-	}
-
-	// cfg, err := config.LoadDefaultConfig(context.TODO(),
-	// 	config.WithCredentialsProvider(aws.NewCredentialsCache(aws.NewStaticCredentialsProvider(accessKey, secretKey, ""))),
-	// 	config.WithRegion(region),
-	// 	// Uncomment the following line if you are using a custom endpoint
-	// 	//config.WithEndpointResolver(aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
-	// 	//	return aws.Endpoint{URL: endpoint}, nil
-	// 	//})),
-	// )
-
-	return res
-}
-
-func EvaluateSubmission(db qrm.DB, submID int64, evalID int64,
-	urlGet S3TestURLGetter) error {
+	// insertStmt := table.Evaluations.INSERT(
+	// 	table.Evaluations.EvalStatusID,
+	// 	table.Evaluations.TaskVersionID,
+	// ).MODEL(evaluation).RETURNING(table.Evaluations.ID)
+	// err := insertStmt.Query(t, &evaluation)
+	// if err != nil {
+	// 	return err
+	// }
 
 	req := msg.EvaluationRequest{
 		Submission: "",
@@ -117,24 +83,6 @@ func EvaluateSubmission(db qrm.DB, submID int64, evalID int64,
 	req.Language.CompileCmd = lang.CompileCmd
 	req.Language.CompiledFilename = lang.CompiledFilename
 	req.Language.ExecuteCmd = lang.ExecuteCmd
-
-	// get task version id
-	stmtSelectTaskVersionID := postgres.SELECT(
-		table.Evaluations.TaskVersionID,
-	).FROM(table.Evaluations).
-		WHERE(table.Evaluations.ID.EQ(
-			postgres.Int64(evalID)))
-
-	var evaluation model.Evaluations
-	err = stmtSelectTaskVersionID.Query(db, &evaluation)
-	if err != nil {
-		return err
-	}
-
-	taskVersionID := evaluation.TaskVersionID
-	if taskVersionID == 0 {
-		return fmt.Errorf("task version id is 0")
-	}
 
 	stmtSelTaskVersion := postgres.SELECT(
 		table.TaskVersions.AllColumns,
@@ -267,14 +215,14 @@ func EvaluateSubmission(db qrm.DB, submID int64, evalID int64,
 			AnsContent:     answer.content,
 		}
 		if test.InContent == nil {
-			url, err := urlGet.GetURL(input.sha256)
+			url, err := urlGet.GetTestDownloadURL(input.sha256)
 			if err != nil {
 				return err
 			}
 			test.InDownloadUrl = &url
 		}
 		if test.AnsContent == nil {
-			url, err := urlGet.GetURL(answer.sha256)
+			url, err := urlGet.GetTestDownloadURL(answer.sha256)
 			if err != nil {
 				return err
 			}

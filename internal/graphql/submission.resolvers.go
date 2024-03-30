@@ -7,12 +7,15 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/services/submissions"
+	"github.com/ztrue/tracerr"
 )
 
 // EnqueueSubmissionForPublishedTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskVersion field.
@@ -54,21 +57,6 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 	defer t.Rollback()
 
-	// create a new evaluation
-	evaluation := model.Evaluations{
-		EvalStatusID:  "IQ",
-		TaskVersionID: int64(*task.PublishedVersionID),
-	}
-
-	insertStmt := table.Evaluations.INSERT(
-		table.Evaluations.EvalStatusID,
-		table.Evaluations.TaskVersionID,
-	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
-	err = insertStmt.Query(t, &evaluation)
-	if err != nil {
-		return nil, err
-	}
-
 	// create a new subm
 	subm := model.TaskSubmissions{
 		UserID:            user.ID,
@@ -76,7 +64,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		ProgrammingLangID: language.ID,
 		Submission:        submissionCode,
 		Hidden:            false,
-		VisibleEvalID:     &evaluation.ID,
+		VisibleEvalID:     nil,
 	}
 
 	insertStmt = table.TaskSubmissions.INSERT(
@@ -123,11 +111,11 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	// if err != nil {
 	// 	return nil, err
 	// }
-	// go func() {
-	// 	err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, evaluation.ID)
-	// 	tracerr.Print(err)
-	// 	log.Printf("error evaluating submission: %v", err)
-	// }()
+	go func() {
+		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID)
+		tracerr.Print(err)
+		log.Printf("error evaluating submission: %v", err)
+	}()
 
 	// here we would like just run a goroutine that will test the submission
 
