@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/alexedwards/scs/redisstore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/jmoiron/sqlx"
@@ -17,6 +21,7 @@ import (
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/services/submissions"
+	"github.com/programme-lv/director/msg"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/gomodule/redigo/redis"
@@ -57,6 +62,29 @@ func main() {
 	urls, err := submissions.NewS3TestURLs(conf.DOSpacesKey, conf.DOSpacesSecret, "fra1", conf.S3Endpoint, conf.S3Bucket)
 	if err != nil {
 		panic(err)
+	}
+
+	conn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	c := msg.NewDirectorClient(conn)
+	md := metadata.New(map[string]string{"authorization": "latviathebest"})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	for {
+		res, err := cc.Recv()
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+
+		log.Println(res)
 	}
 
 	resolver := &graphql.Resolver{

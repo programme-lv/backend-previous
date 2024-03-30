@@ -11,13 +11,14 @@ import (
 )
 
 type EnvConfig struct {
-	SqlxConnString  string `mapstructure:"SQLX_CONN_STRING"`
-	AMQPConnString  string `mapstructure:"AMQP_CONN_STRING"`
-	RedisConnString string `mapstructure:"REDIS_CONN_STRING"`
-	S3Endpoint      string `mapstructure:"S3_ENDPOINT"`
-	S3Bucket        string `mapstructure:"S3_BUCKET"`
-	DOSpacesKey     string `mapstructure:"DO_SPACES_KEY"`
-	DOSpacesSecret  string `mapstructure:"DO_SPACES_SECRET"`
+	SqlxConnString   string `mapstructure:"SQLX_CONN_STRING"`
+	AMQPConnString   string `mapstructure:"AMQP_CONN_STRING"`
+	RedisConnString  string `mapstructure:"REDIS_CONN_STRING"`
+	S3Endpoint       string `mapstructure:"S3_ENDPOINT"`
+	S3Bucket         string `mapstructure:"S3_BUCKET"`
+	DOSpacesKey      string `mapstructure:"DO_SPACES_KEY"`
+	DOSpacesSecret   string `mapstructure:"DO_SPACES_SECRET"`
+	DirectorEndpoint string `mapstructure:"DIRECTOR_ENDPOINT"`
 }
 
 func ReadEnvConfig() *EnvConfig {
@@ -43,6 +44,7 @@ func ReadEnvConfig() *EnvConfig {
 	viper.BindEnv("S3_BUCKET")
 	viper.BindEnv("DO_SPACES_KEY")
 	viper.BindEnv("DO_SPACES_SECRET")
+	viper.BindEnv("DIRECTOR_ENDPOINT")
 
 	err := viper.Unmarshal(&config)
 	if err != nil {
