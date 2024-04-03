@@ -85,24 +85,11 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 		return nil, err
 	}
 
-	// publish submission
-	// err = submissions.EnqueueEvaluationIntoRMQ(r.SubmissionRMQ, objects.RawSubmission{
-	// 	Content:    submissionCode,
-	// 	LanguageID: language.ID,
-	// }, objects.EvaluationJob{
-	// 	ID:            evaluation.ID,
-	// 	TaskVersionID: int64(*task.PublishedVersionID),
-	// })
-	// if err != nil {
-	// 	return nil, err
-	// }
 	go func() {
-		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, int64(*task.PublishedVersionID), r.TestURLs)
+		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, int64(*task.PublishedVersionID), r.TestURLs, r.DirectorClient)
 		tracerr.Print(err)
 		log.Printf("error evaluating submission: %v", err)
 	}()
-
-	// here we would like just run a goroutine that will test the submission
 
 	return &Submission{
 		ID:   strconv.FormatInt(subm.ID, 10),

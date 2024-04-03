@@ -14,22 +14,12 @@ import (
 	"github.com/programme-lv/director/msg"
 )
 
-func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet DownlURLGetter) error {
-
-	// create a new evaluation
-	// evaluation := model.Evaluations{
-	// 	EvalStatusID:  "IQ",
-	// 	TaskVersionID: int64(*task.PublishedVersionID),
-	// }
-
-	// insertStmt := table.Evaluations.INSERT(
-	// 	table.Evaluations.EvalStatusID,
-	// 	table.Evaluations.TaskVersionID,
-	// ).MODEL(evaluation).RETURNING(table.Evaluations.ID)
-	// err := insertStmt.Query(t, &evaluation)
-	// if err != nil {
-	// 	return err
-	// }
+func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
+	urlGet DownlURLGetter, dc msg.DirectorClient) error {
+	err := insertNewEvaluation(db, taskVersionID)
+	if err != nil {
+		return err
+	}
 
 	req := msg.EvaluationRequest{
 		Submission: "",
@@ -50,6 +40,65 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 		TestlibChecker: "",
 	}
 
+	err = populateSubmissionAndLangID(db, submID, &req)
+	if err != nil {
+		return err
+	}
+
+	err = populateProgrammingLanguage(db, req.Language.Id, &req)
+	if err != nil {
+		return err
+	}
+
+	taskVersion, err := getTaskVersion(db, taskVersionID)
+	if err != nil {
+		return err
+	}
+
+	req.EvalType = taskVersion.TestingTypeID
+	req.Limits.CPUTimeMillis = taskVersion.TimeLimMs
+	req.Limits.MemKibiBytes = taskVersion.MemLimKibibytes
+
+	if taskVersion.CheckerID != nil {
+		checkerID := *taskVersion.CheckerID
+		err = populateTestlibChecker(db, checkerID, &req)
+		if err != nil {
+			return nil
+		}
+	}
+
+	err = populateTests(db, taskVersionID, urlGet, &req)
+	if err != nil {
+		return err
+	}
+
+	hello, err := json.MarshalIndent(req, "", "  ")
+	if err != nil {
+		return err
+	}
+	log.Println(string(hello))
+	// todo: get urls for the tests that don't have content
+	return nil
+}
+
+func insertNewEvaluation(db qrm.DB, taskVersionID int64) error {
+	evaluation := model.Evaluations{
+		EvalStatusID:  "IQ",
+		TaskVersionID: taskVersionID,
+	}
+
+	insertStmt := table.Evaluations.INSERT(
+		table.Evaluations.EvalStatusID,
+		table.Evaluations.TaskVersionID,
+	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
+	err := insertStmt.Query(db, &evaluation)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func populateSubmissionAndLangID(db qrm.DB, submID int64, req *msg.EvaluationRequest) error {
 	stmtSelSubm := postgres.SELECT(
 		table.TaskSubmissions.ProgrammingLangID,
 		table.TaskSubmissions.Submission,
@@ -65,15 +114,18 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 
 	req.Submission = subm.Submission
 	req.Language.Id = subm.ProgrammingLangID
+	return nil
+}
 
+func populateProgrammingLanguage(db qrm.DB, programmingLangID string, req *msg.EvaluationRequest) error {
 	stmtSelLang := postgres.SELECT(
 		table.ProgrammingLanguages.AllColumns,
 	).FROM(table.ProgrammingLanguages).
 		WHERE(table.ProgrammingLanguages.ID.EQ(
-			postgres.String(subm.ProgrammingLangID)))
+			postgres.String(programmingLangID)))
 
 	var lang model.ProgrammingLanguages
-	err = stmtSelLang.Query(db, &lang)
+	err := stmtSelLang.Query(db, &lang)
 	if err != nil {
 		return err
 	}
@@ -83,7 +135,10 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 	req.Language.CompileCmd = lang.CompileCmd
 	req.Language.CompiledFilename = lang.CompiledFilename
 	req.Language.ExecuteCmd = lang.ExecuteCmd
+	return nil
+}
 
+func getTaskVersion(db qrm.DB, taskVersionID int64) (*model.TaskVersions, error) {
 	stmtSelTaskVersion := postgres.SELECT(
 		table.TaskVersions.AllColumns,
 	).FROM(table.TaskVersions).
@@ -91,20 +146,14 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 			postgres.Int64(taskVersionID)))
 
 	var taskVersion model.TaskVersions
-	err = stmtSelTaskVersion.Query(db, &taskVersion)
+	err := stmtSelTaskVersion.Query(db, &taskVersion)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return &taskVersion, nil
+}
 
-	req.EvalType = taskVersion.TestingTypeID
-	req.Limits.CPUTimeMillis = taskVersion.TimeLimMs
-	req.Limits.MemKibiBytes = taskVersion.MemLimKibibytes
-
-	var checkerID int64 = 1
-	if taskVersion.CheckerID != nil {
-		checkerID = *taskVersion.CheckerID
-	}
-
+func populateTestlibChecker(db qrm.DB, checkerID int64, req *msg.EvaluationRequest) error {
 	stmtSelChecker := postgres.SELECT(
 		table.TestlibCheckers.AllColumns,
 	).FROM(table.TestlibCheckers).
@@ -112,21 +161,15 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 			postgres.Int64(checkerID)))
 
 	var checker model.TestlibCheckers
-	err = stmtSelChecker.Query(db, &checker)
+	err := stmtSelChecker.Query(db, &checker)
 	if err != nil {
 		return err
 	}
 	req.TestlibChecker = checker.Code
+	return nil
+}
 
-	/*
-			SELECT task_version_tests.id as "test_id", sha256, content, compression FROM public.task_version_tests
-			left join text_files on input_text_file_id = text_files.id
-		where task_version_id = 30;
-
-		SELECT task_version_tests.id as "test_id", sha256, content, compression FROM public.task_version_tests
-			left join text_files on answer_text_file_id = text_files.id
-		where task_version_id = 30;
-	*/
+func populateTests(db qrm.DB, taskVersionID int64, urls DownlURLGetter, req *msg.EvaluationRequest) error {
 	stmtSelectTestInputs := postgres.SELECT(
 		table.TaskVersionTests.ID,
 		table.TextFiles.Sha256,
@@ -141,7 +184,7 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 		model.TaskVersionTests
 		model.TextFiles
 	}
-	err = stmtSelectTestInputs.Query(db, &inputs)
+	err := stmtSelectTestInputs.Query(db, &inputs)
 	if err != nil {
 		return err
 	}
@@ -215,14 +258,14 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 			AnsContent:     answer.content,
 		}
 		if test.InContent == nil {
-			url, err := urlGet.GetTestDownloadURL(input.sha256)
+			url, err := urls.GetTestDownloadURL(input.sha256)
 			if err != nil {
 				return err
 			}
 			test.InDownloadUrl = &url
 		}
 		if test.AnsContent == nil {
-			url, err := urlGet.GetTestDownloadURL(answer.sha256)
+			url, err := urls.GetTestDownloadURL(answer.sha256)
 			if err != nil {
 				return err
 			}
@@ -235,11 +278,5 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64, urlGet Dow
 		return req.Tests[i].Id < req.Tests[j].Id
 	})
 
-	hello, err := json.MarshalIndent(req, "", "  ")
-	if err != nil {
-		return err
-	}
-	log.Println(string(hello))
-	// todo: get urls for the tests that don't have content
 	return nil
 }

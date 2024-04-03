@@ -21,5 +21,5 @@ type Resolver struct {
 	Logger         *slog.Logger
 	SubmissionRMQ  *amqp.Connection
 	TestURLs       *submissions.S3TestURLs
-	DirectorGRPC   msg.DirectorClient
+	DirectorClient msg.DirectorClient
 }

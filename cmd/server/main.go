@@ -97,6 +97,7 @@ func main() {
 		Logger:         log,
 		SubmissionRMQ:  rmqConn,
 		TestURLs:       urls,
+		DirectorClient: nil, // TODO: asdflajsdfkl
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
