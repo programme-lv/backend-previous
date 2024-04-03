@@ -92,8 +92,13 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		return err
 	case *pb.EvaluationFeedback_StartTesting:
 		slog.Debug("received \"StartTesting\" feedback", "body", res.GetStartTesting())
-		stmt := table.Evaluations.UPDATE(table.Evaluations.EvalStatusID).
-			SET(postgres.String("T")).
+		body := res.GetStartTesting()
+		maxScore := body.GetMaxScore()
+		stmt := table.Evaluations.UPDATE(
+			table.Evaluations.EvalStatusID,
+			table.Evaluations.EvalPossibleScore,
+		).
+			SET(postgres.String("T"), postgres.Int64(maxScore)).
 			WHERE(table.Evaluations.ID.EQ(postgres.Int64(fb.evalID)))
 		_, err := stmt.Exec(fb.db)
 		return err
