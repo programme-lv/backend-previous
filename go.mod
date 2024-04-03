@@ -17,6 +17,7 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
+	github.com/lmittmann/tint v1.0.4
 	github.com/programme-lv/director v0.1.4
 	github.com/programme-lv/tester v0.2.0
 	github.com/rabbitmq/amqp091-go v1.9.0
@@ -27,6 +28,7 @@ require (
 	github.com/ztrue/tracerr v0.4.0
 	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
+	google.golang.org/grpc v1.62.1
 )
 
 require (
@@ -124,7 +126,6 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.19.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
-	google.golang.org/grpc v1.62.1 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

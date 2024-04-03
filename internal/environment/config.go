@@ -2,7 +2,7 @@ package environment
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"reflect"
 
@@ -21,7 +21,7 @@ type EnvConfig struct {
 	DirectorEndpoint string `mapstructure:"DIRECTOR_ENDPOINT"`
 }
 
-func ReadEnvConfig() *EnvConfig {
+func ReadEnvConfig(log *slog.Logger) *EnvConfig {
 	config := getDefaultConfig()
 
 	viper.SetConfigName(".env")
@@ -30,9 +30,9 @@ func ReadEnvConfig() *EnvConfig {
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("No config file found")
+			log.Warn("No config file found")
 		} else {
-			log.Fatalf("Fatal error config file: %s \n", err)
+			log.Error("Error reading config file", err)
 		}
 	}
 
@@ -70,7 +70,7 @@ func (c *EnvConfig) Print() {
 	typeOfS := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		strRepresentation := fmt.Sprintf("%v", v.Field(i).Interface())
-		LENGTH_LIMIT := 30
+		LENGTH_LIMIT := 50
 		if len(strRepresentation) > LENGTH_LIMIT {
 			strRepresentation = strRepresentation[:LENGTH_LIMIT] + "..."
 		}

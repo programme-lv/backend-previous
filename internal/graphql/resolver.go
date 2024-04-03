@@ -1,12 +1,14 @@
 package graphql
 
 import (
+	"log/slog"
+
 	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/programme-lv/backend/internal/services/submissions"
+	"github.com/programme-lv/director/msg"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"golang.org/x/exp/slog"
 )
 
 // This file will not be regenerated automatically.
@@ -19,4 +21,5 @@ type Resolver struct {
 	Logger         *slog.Logger
 	SubmissionRMQ  *amqp.Connection
 	TestURLs       *submissions.S3TestURLs
+	DirectorGRPC   msg.DirectorClient
 }
