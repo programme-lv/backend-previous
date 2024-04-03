@@ -32,7 +32,10 @@ import (
 const defaultPort = "3001"
 
 func main() {
-	log := slog.New(tint.NewHandler(os.Stdout, nil))
+	opts := &tint.Options{
+		Level: slog.LevelDebug,
+	}
+	log := slog.New(tint.NewHandler(os.Stdout, opts))
 	slog.SetDefault(log)
 
 	conf := environment.ReadEnvConfig(log)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"sort"
 
 	set "github.com/deckarep/golang-set/v2"
@@ -19,7 +18,7 @@ import (
 
 func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 	urlGet DownlURLGetter, dc msg.DirectorClient, dPass string) error {
-	err := insertNewEvaluation(db, taskVersionID)
+	evalID, err := insertNewEvaluation(db, taskVersionID)
 	if err != nil {
 		return err
 	}
@@ -88,6 +87,7 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 		return err
 	}
 
+	fbProc := NewEvalFeedbackProcessor(db, evalID)
 	for {
 		res, err := evaluationClient.Recv()
 		if err != nil {
@@ -97,13 +97,16 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 			return err
 		}
 
-		slog.Info(fmt.Sprintf("%+v", res))
+		err = fbProc.Process(res)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func insertNewEvaluation(db qrm.DB, taskVersionID int64) error {
+func insertNewEvaluation(db qrm.DB, taskVersionID int64) (int64, error) {
 	evaluation := model.Evaluations{
 		EvalStatusID:  "IQ",
 		TaskVersionID: taskVersionID,
@@ -115,9 +118,9 @@ func insertNewEvaluation(db qrm.DB, taskVersionID int64) error {
 	).MODEL(evaluation).RETURNING(table.Evaluations.ID)
 	err := insertStmt.Query(db, &evaluation)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return evaluation.ID, nil
 }
 
 func populateSubmissionAndLangID(db qrm.DB, submID int64, req *msg.EvaluationRequest) error {
