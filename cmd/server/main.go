@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -32,6 +33,7 @@ const defaultPort = "3001"
 
 func main() {
 	log := slog.New(tint.NewHandler(os.Stdout, nil))
+	slog.SetDefault(log)
 
 	conf := environment.ReadEnvConfig(log)
 	conf.Print()
@@ -66,7 +68,7 @@ func main() {
 		panic(err)
 	}
 	if err := testTestURLs(urls); err != nil {
-		log.Error("could not download test file", err)
+		log.Error("could not download test file", "error", err)
 		panic(err)
 	}
 	log.Info("successfully connected to DO Spaces")
@@ -74,31 +76,20 @@ func main() {
 	log.Info("connecting to \"director\" gRPC service...")
 	conn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Error("could not connect to director", err)
+		log.Error("could not connect to director", "error", err)
 		panic(err)
 		// log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 	log.Info("successfully connected to \"director\" gRPC service")
 
-	c := msg.NewDirectorClient(conn)
-	md := metadata.New(map[string]string{"authorization": "...asdf"})
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
+	log.Info("testing connection to \"director\" service...")
+	err = testConnToDirector(conn, conf.DirectorAuthKey)
 	if err != nil {
-		log.Error("could not greet", err)
+		log.Error("could not test connection to director", "error", err)
 		panic(err)
 	}
-
-	for {
-		res, err := cc.Recv()
-		if err != nil {
-			log.Error("could not greet", err)
-			panic(err)
-		}
-
-		log.Info(fmt.Sprintf("%+v", res))
-	}
+	log.Info("successfully tested connection to \"director\" service")
 
 	resolver := &graphql.Resolver{
 		PostgresDB:     sqlxDb,
@@ -115,7 +106,7 @@ func main() {
 	})
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
-	log.Info("Listening on port", defaultPort)
+	log.Info("Listening on", "port", defaultPort)
 	log.Error(http.ListenAndServe(":"+defaultPort, nil).Error())
 }
 
@@ -141,6 +132,30 @@ func testTestURLs(urls *submissions.S3TestURLs) error {
 
 	if string(buf) != "test" {
 		return fmt.Errorf("expected 'test', got '%s'", string(buf))
+	}
+
+	return nil
+}
+
+func testConnToDirector(conn *grpc.ClientConn, directorAuthKey string) error {
+	c := msg.NewDirectorClient(conn)
+	md := metadata.New(map[string]string{"authorization": directorAuthKey})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
+	if err != nil {
+		return err
+	}
+
+	for {
+		res, err := cc.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		slog.Debug(fmt.Sprintf("%+v", res))
 	}
 
 	return nil

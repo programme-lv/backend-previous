@@ -1,13 +1,14 @@
 package submissions
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/programme-lv/backend/internal/environment"
 )
 
 func TestGetPresignedURL(t *testing.T) {
-	config := environment.ReadEnvConfig()
+	config := environment.ReadEnvConfig(slog.Default())
 
 	urls, err := NewS3TestURLs(config.DOSpacesKey, config.DOSpacesSecret, "fra1", config.S3Endpoint, config.S3Bucket)
 	if err != nil {

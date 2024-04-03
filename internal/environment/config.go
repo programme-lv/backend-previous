@@ -19,6 +19,7 @@ type EnvConfig struct {
 	DOSpacesKey      string `mapstructure:"DO_SPACES_KEY"`
 	DOSpacesSecret   string `mapstructure:"DO_SPACES_SECRET"`
 	DirectorEndpoint string `mapstructure:"DIRECTOR_ENDPOINT"`
+	DirectorAuthKey  string `mapstructure:"DIRECTOR_AUTH_KEY"`
 }
 
 func ReadEnvConfig(log *slog.Logger) *EnvConfig {
@@ -45,6 +46,7 @@ func ReadEnvConfig(log *slog.Logger) *EnvConfig {
 	viper.BindEnv("DO_SPACES_KEY")
 	viper.BindEnv("DO_SPACES_SECRET")
 	viper.BindEnv("DIRECTOR_ENDPOINT")
+	viper.BindEnv("DIRECTOR_AUTH_KEY")
 
 	err := viper.Unmarshal(&config)
 	if err != nil {
