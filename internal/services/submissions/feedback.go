@@ -122,21 +122,143 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		).VALUES(postgres.Int64(fb.evalID), postgres.String("T"), postgres.Int64(testID))
 		_, err := stmt.Exec(fb.db)
 		return err
-		// s.infoLog.Printf("StartTest: %+v", re,s.GetStartTest())
 	case *pb.EvaluationFeedback_ReportTestSubmissionRuntimeData:
-		// s.infoLog.Printf("ReportTestSubmissionRuntimeData: %+v", res.GetReportTestSubmissionRuntimeData())
+		slog.Debug("received \"ReportTestSubmissionRuntimeData\" feedback", "body", res.GetReportTestSubmissionRuntimeData())
+		data := res.GetReportTestSubmissionRuntimeData().GetRData()
+		stmt := table.RuntimeData.INSERT(
+			table.RuntimeData.Stdout,
+			table.RuntimeData.Stderr,
+			table.RuntimeData.TimeMillis,
+			table.RuntimeData.MemoryKibibytes,
+			table.RuntimeData.TimeWallMillis,
+			table.RuntimeData.ExitCode,
+		).VALUES(
+			data.Stdout,
+			data.Stderr,
+			data.CpuTimeMillis,
+			data.MemKibiBytes,
+			data.WallTimeMillis,
+			data.ExitCode,
+		).RETURNING(table.RuntimeData.ID)
+		var rRunData model.RuntimeData
+		err := stmt.Query(fb.db, &rRunData)
+		if err != nil {
+			return err
+		}
+		stmt2 := table.EvaluationTestResults.UPDATE(table.EvaluationTestResults.ExecRDataID).
+			SET(postgres.Int64(rRunData.ID)).
+			WHERE(table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(res.GetReportTestSubmissionRuntimeData().TestId))))
+		_, err = stmt2.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_FinishTestWithLimitExceeded:
-		// s.infoLog.Printf("FinishTestWithLimitExceeded: %+v", res.GetFinishTestWithLimitExceeded())
+		slog.Debug("received \"FinishTestWithLimitExceeded\" feedback", "body", res.GetFinishTestWithLimitExceeded())
+		body := res.GetFinishTestWithLimitExceeded()
+		idlenessLimExc := body.GetIdlenessLimitExceeded()
+		memoryLimExc := body.GetMemoryLimitExceeded()
+		timeLimExc := body.GetIsCPUTimeExceeded()
+		testID := res.GetFinishTestWithLimitExceeded().TestId
+
+		var status string
+		if idlenessLimExc {
+			status = "ILE"
+		} else if memoryLimExc {
+			status = "MLE"
+		} else if timeLimExc {
+			status = "TLE"
+		}
+
+		stmt := table.EvaluationTestResults.UPDATE(
+			table.EvaluationTestResults.EvalStatusID,
+		).SET(
+			postgres.String(status),
+		).WHERE(
+			table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(testID))),
+		)
+		_, err := stmt.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_FinishTestWithRuntimeError:
-		// s.infoLog.Printf("FinishTestWithRuntimeError: %+v", res.GetFinishTestWithRuntimeError())
+		slog.Debug("received \"FinishTestWithRuntimeError\" feedback", "body", res.GetFinishTestWithRuntimeError())
+		testID := res.GetFinishTestWithRuntimeError().TestId
+		stmt := table.EvaluationTestResults.UPDATE(
+			table.EvaluationTestResults.EvalStatusID,
+		).SET(
+			postgres.String("RE"),
+		).WHERE(
+			table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(testID))),
+		)
+		_, err := stmt.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_ReportTestCheckerRuntimeData:
-		// s.infoLog.Printf("ReportTestCheckerRuntimeData: %+v", res.GetReportTestCheckerRuntimeData())
+		slog.Debug("received \"ReportTestCheckerRuntimeData\" feedback", "body", res.GetReportTestCheckerRuntimeData())
+		body := res.GetReportTestCheckerRuntimeData()
+		data := body.GetRData()
+		stmt := table.RuntimeData.INSERT(
+			table.RuntimeData.Stdout,
+			table.RuntimeData.Stderr,
+			table.RuntimeData.TimeMillis,
+			table.RuntimeData.MemoryKibibytes,
+			table.RuntimeData.TimeWallMillis,
+			table.RuntimeData.ExitCode,
+		).VALUES(
+			data.Stdout,
+			data.Stderr,
+			data.CpuTimeMillis,
+			data.MemKibiBytes,
+			data.WallTimeMillis,
+			data.ExitCode,
+		).RETURNING(table.RuntimeData.ID)
+		var cRunData model.RuntimeData
+		err := stmt.Query(fb.db, &cRunData)
+		if err != nil {
+			return err
+		}
+		stmt2 := table.EvaluationTestResults.UPDATE(table.EvaluationTestResults.CheckerRDataID).
+			SET(postgres.Int64(cRunData.ID)).
+			WHERE(table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(body.TestId))))
+		_, err = stmt2.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_FinishTestWithVerdictAccepted:
-		// s.infoLog.Printf("FinishTestWithVerdictAccepted: %+v", res.GetFinishTestWithVerdictAccepted())
+		slog.Debug("received \"FinishTestWithVerdictAccepted\" feedback", "body", res.GetFinishTestWithVerdictAccepted())
+		testID := res.GetFinishTestWithVerdictAccepted().TestId
+		stmt := table.EvaluationTestResults.UPDATE(
+			table.EvaluationTestResults.EvalStatusID,
+		).SET(
+			postgres.String("AC"),
+		).WHERE(
+			table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(testID))),
+		)
+		_, err := stmt.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_FinishTestWithVerdictWrongAnswer:
-		// s.infoLog.Printf("FinishTestWithVerdictWrongAnswer: %+v", res.GetFinishTestWithVerdictWrongAnswer())
+		slog.Debug("received \"FinishTestWithVerdictWrongAnswer\" feedback", "body", res.GetFinishTestWithVerdictWrongAnswer())
+		testID := res.GetFinishTestWithVerdictWrongAnswer().TestId
+		stmt := table.EvaluationTestResults.UPDATE(
+			table.EvaluationTestResults.EvalStatusID,
+		).SET(
+			postgres.String("WA"),
+		).WHERE(
+			table.EvaluationTestResults.EvaluationID.EQ(postgres.Int64(fb.evalID)).
+				AND(table.EvaluationTestResults.TaskVTestID.EQ(postgres.Int64(testID))),
+		)
+		_, err := stmt.Exec(fb.db)
+		return err
 	case *pb.EvaluationFeedback_IncrementScore:
-		// s.infoLog.Printf("IncrementScore: %+v", res.GetIncrementScore())
+		slog.Debug("received \"IncrementScore\" feedback", "body", res.GetIncrementScore())
+		score := res.GetIncrementScore().GetDelta()
+		stmt := table.Evaluations.UPDATE(
+			table.Evaluations.EvalTotalScore,
+		).SET(
+			table.Evaluations.EvalTotalScore.ADD(postgres.Int64(score)),
+		).WHERE(
+			table.Evaluations.ID.EQ(postgres.Int64(fb.evalID)),
+		)
+		_, err := stmt.Exec(fb.db)
+		return err
 	}
 	return nil
 }
