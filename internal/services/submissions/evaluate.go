@@ -2,7 +2,6 @@ package submissions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -73,12 +72,6 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 	if err != nil {
 		return err
 	}
-
-	hello, err := json.MarshalIndent(req, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(hello))
 
 	md := metadata.New(map[string]string{"authorization": dPass})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
