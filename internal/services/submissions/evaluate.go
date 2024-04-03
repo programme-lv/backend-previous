@@ -1,9 +1,11 @@
 package submissions
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"sort"
 
 	set "github.com/deckarep/golang-set/v2"
@@ -12,10 +14,11 @@ import (
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/director/msg"
+	"google.golang.org/grpc/metadata"
 )
 
 func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
-	urlGet DownlURLGetter, dc msg.DirectorClient) error {
+	urlGet DownlURLGetter, dc msg.DirectorClient, dPass string) error {
 	err := insertNewEvaluation(db, taskVersionID)
 	if err != nil {
 		return err
@@ -76,8 +79,27 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 	if err != nil {
 		return err
 	}
-	log.Println(string(hello))
-	// todo: get urls for the tests that don't have content
+	fmt.Println(string(hello))
+
+	md := metadata.New(map[string]string{"authorization": dPass})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	evaluationClient, err := dc.EvaluateSubmission(ctx, &req)
+	if err != nil {
+		return err
+	}
+
+	for {
+		res, err := evaluationClient.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		slog.Info(fmt.Sprintf("%+v", res))
+	}
+
 	return nil
 }
 

@@ -74,17 +74,17 @@ func main() {
 	log.Info("successfully connected to DO Spaces")
 
 	log.Info("connecting to \"director\" gRPC service...")
-	conn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	gConn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Error("could not connect to director", "error", err)
 		panic(err)
 		// log.Fatalf("did not connect: %v", err)
 	}
-	defer conn.Close()
+	defer gConn.Close()
 	log.Info("successfully connected to \"director\" gRPC service")
 
 	log.Info("testing connection to \"director\" service...")
-	err = testConnToDirector(conn, conf.DirectorAuthKey)
+	err = testConnToDirector(gConn, conf.DirectorAuthKey)
 	if err != nil {
 		log.Error("could not test connection to director", "error", err)
 		panic(err)
@@ -97,7 +97,8 @@ func main() {
 		Logger:         log,
 		SubmissionRMQ:  rmqConn,
 		TestURLs:       urls,
-		DirectorClient: nil, // TODO: asdflajsdfkl
+		DirectorClient: msg.NewDirectorClient(gConn),
+		DirectorPasswd: conf.DirectorAuthKey,
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))

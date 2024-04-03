@@ -22,4 +22,5 @@ type Resolver struct {
 	SubmissionRMQ  *amqp.Connection
 	TestURLs       *submissions.S3TestURLs
 	DirectorClient msg.DirectorClient
+	DirectorPasswd string
 }

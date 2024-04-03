@@ -86,7 +86,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskVersion(ctx context.
 	}
 
 	go func() {
-		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, int64(*task.PublishedVersionID), r.TestURLs, r.DirectorClient)
+		err := submissions.EvaluateSubmission(r.PostgresDB, subm.ID, int64(*task.PublishedVersionID), r.TestURLs, r.DirectorClient, r.DirectorPasswd)
 		tracerr.Print(err)
 		log.Printf("error evaluating submission: %v", err)
 	}()
