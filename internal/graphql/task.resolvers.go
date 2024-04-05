@@ -156,7 +156,6 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	requestLogger.Info("committed transaction successfully")
 
 	description := Description{
-		ID:       "0",
 		Story:    "",
 		Input:    "",
 		Output:   "",
@@ -182,7 +181,6 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	// TODO: add default author
 
 	return &Task{
-		ID:          fmt.Sprintf("%d", task.ID),
 		Code:        version.ShortCode,
 		Name:        version.FullName,
 		Description: &description,
@@ -797,11 +795,9 @@ func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
 	}
 
 	return &Task{
-		ID:   strconv.FormatInt(task.TaskID, 10),
 		Code: task.Code,
 		Name: task.Name,
 		Description: &Description{
-			ID:       strconv.FormatInt(task.Description.ID, 10),
 			Story:    task.Description.Story,
 			Input:    task.Description.Input,
 			Output:   task.Description.Output,

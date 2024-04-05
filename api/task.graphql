@@ -48,11 +48,8 @@ extend type Mutation {
     deleteTask(id: ID!): Task!
 }
 
+
 type Task {
-    """
-    The id of the task. Not the task version.
-    """
-    id: ID!
     code: String!
     name: String!
 
@@ -69,8 +66,6 @@ type Task {
 }
 
 type Description {
-    id: ID!
-
     story: String!
     input: String!
     output: String!

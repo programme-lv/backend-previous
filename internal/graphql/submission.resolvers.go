@@ -148,7 +148,7 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		submission.Submission = submissionRow.TaskSubmissions.Submission
 
 		// fill task field
-		task := Task{ID: strconv.FormatInt(submissionRow.Tasks.ID, 10)}
+		task := Task{}
 		task.Code = submissionRow.TaskVersions.ShortCode
 		task.Name = submissionRow.TaskVersions.FullName
 		submission.Task = &task
@@ -256,7 +256,7 @@ func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submissi
 	submission.Submission = submissionRow.TaskSubmissions.Submission
 
 	// fill task field
-	task := Task{ID: strconv.FormatInt(submissionRow.Tasks.ID, 10)}
+	task := Task{}
 	task.Code = submissionRow.TaskVersions.ShortCode
 	task.Name = submissionRow.TaskVersions.FullName
 	submission.Task = &task
