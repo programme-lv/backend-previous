@@ -22,6 +22,7 @@ type Constraints struct {
 }
 
 type Description struct {
+	ID       string     `json:"id"`
 	Story    string     `json:"story"`
 	Input    string     `json:"input"`
 	Output   string     `json:"output"`
@@ -87,6 +88,8 @@ type Submission struct {
 }
 
 type Task struct {
+	// The id of the task. Not the task version.
+	ID          string       `json:"id"`
 	Code        string       `json:"code"`
 	Name        string       `json:"name"`
 	Description *Description `json:"description"`
