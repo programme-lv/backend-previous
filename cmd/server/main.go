@@ -86,13 +86,13 @@ func main() {
 	defer gConn.Close()
 	log.Info("successfully connected to \"director\" gRPC service")
 
-	log.Info("testing connection to \"director\" service...")
+	log.Info("testing connection to tester")
 	err = testConnToDirector(gConn, conf.DirectorAuthKey)
 	if err != nil {
-		log.Error("could not test connection to director", "error", err)
+		log.Error("could not test connection to tester", "error", err)
 		panic(err)
 	}
-	log.Info("successfully tested connection to \"director\" service")
+	log.Info("successfully tested connection to tester")
 
 	resolver := &graphql.Resolver{
 		PostgresDB:     sqlxDb,
@@ -145,7 +145,8 @@ func testTestURLs(urls *submissions.S3TestURLs) error {
 func testConnToDirector(conn *grpc.ClientConn, directorAuthKey string) error {
 	c := msg.NewDirectorClient(conn)
 	md := metadata.New(map[string]string{"authorization": directorAuthKey})
-	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	ctx2, _ := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+	ctx := metadata.NewOutgoingContext(ctx2, md)
 	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
 	if err != nil {
 		return err

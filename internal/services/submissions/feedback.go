@@ -38,6 +38,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 			WHERE(table.Evaluations.ID.EQ(postgres.Int64(fb.evalID)))
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_FinishWithInernalServerError:
 		slog.Debug("received \"FinishWithInernalServerError\" feedback", "body", res.GetFinishWithInernalServerError())
 		slog.Error("evaluation finished with internal server error", "evaluation_id", fb.evalID, "error", res.GetFinishWithInernalServerError().ErrorMsg)
@@ -46,6 +47,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 			WHERE(table.Evaluations.ID.EQ(postgres.Int64(fb.evalID)))
 		_, err := stmt.Exec(fb.db)
 		return err
+		//FINISH
 	case *pb.EvaluationFeedback_StartCompilation:
 		slog.Debug("received \"StartCompilation\" feedback", "body", res.GetStartCompilation())
 		stmt := table.Evaluations.UPDATE(table.Evaluations.EvalStatusID).
@@ -90,6 +92,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 			WHERE(table.Evaluations.ID.EQ(postgres.Int64(fb.evalID)))
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_StartTesting:
 		slog.Debug("received \"StartTesting\" feedback", "body", res.GetStartTesting())
 		body := res.GetStartTesting()
@@ -178,6 +181,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		)
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_FinishTestWithRuntimeError:
 		slog.Debug("received \"FinishTestWithRuntimeError\" feedback", "body", res.GetFinishTestWithRuntimeError())
 		testID := res.GetFinishTestWithRuntimeError().TestId
@@ -191,6 +195,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		)
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_ReportTestCheckerRuntimeData:
 		slog.Debug("received \"ReportTestCheckerRuntimeData\" feedback", "body", res.GetReportTestCheckerRuntimeData())
 		body := res.GetReportTestCheckerRuntimeData()
@@ -234,6 +239,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		)
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_FinishTestWithVerdictWrongAnswer:
 		slog.Debug("received \"FinishTestWithVerdictWrongAnswer\" feedback", "body", res.GetFinishTestWithVerdictWrongAnswer())
 		testID := res.GetFinishTestWithVerdictWrongAnswer().TestId
@@ -247,6 +253,7 @@ func (fb *EvalFeedbackProcessor) Process(res *pb.EvaluationFeedback) error {
 		)
 		_, err := stmt.Exec(fb.db)
 		return err
+		// FINISH
 	case *pb.EvaluationFeedback_IncrementScore:
 		slog.Debug("received \"IncrementScore\" feedback", "body", res.GetIncrementScore())
 		score := res.GetIncrementScore().GetDelta()
