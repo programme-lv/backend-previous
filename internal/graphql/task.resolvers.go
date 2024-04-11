@@ -13,6 +13,7 @@ import (
 	"github.com/programme-lv/backend/internal/database"
 	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
+	"github.com/testcontainers/testcontainers-go/internal"
 	"golang.org/x/exp/slog"
 )
 
@@ -65,12 +66,25 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	var count int
 	err = r.PostgresDB.Get(&count, stmt, code, name)
 	if err != nil {
-		requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
+		requestLogger.Error("failed to check if task with the same name or code already exists (is published)", slog.String("error", err.Error()))
 		return nil, err
 	}
 
 	if count > 0 {
 		return nil, fmt.Errorf("task with the same name or code is already published")
+	}
+
+	relevantVersionIdsStmt := "SELECT DISTINCT relevant_version_id FROM tasks"
+	stmt = "SELECT COUNT(*) from task_versions WHERE short_code = $1 AND task_versions.id IN (%s);"
+	stmt = fmt.Sprintf(stmt, relevantVersionIdsStmt)
+	err = r.PostgresDB.Get(&count, stmt, code)
+	if err != nil {
+		requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	if count > 0 {
+		return nil, fmt.Errorf("task with the same name or code already exists")
 	}
 
 	t, err := r.PostgresDB.Beginx()
@@ -334,6 +348,22 @@ func (r *mutationResolver) UpdateTaskDescription(ctx context.Context, id string,
 		return nil, err
 	}
 
+	// Chekc if code is taken
+	if  prevTaskVersion.Code != *code {
+		relevantVersionIdsStmt := "SELECT DISTINCT relevant_version_id FROM tasks"
+		stmt := "SELECT COUNT(*) from task_versions WHERE short_code = $1 AND task_versions.id IN (%s);"
+		stmt = fmt.Sprintf(stmt, relevantVersionIdsStmt)
+		var count int
+		err = r.PostgresDB.Get(&count, stmt, code)
+		if err != nil {
+			requestLogger.Error("failed to check if task with the same name or code already exists", slog.String("error", err.Error()))
+			return nil, err
+		}	
+
+		if count > 0 {
+			return nil, fmt.Errorf("task with the same name or code already exists")
+		}
+	}
 	// New task version
 
 	stmt := `INSERT INTO task_versions 
@@ -372,7 +402,9 @@ func (r *mutationResolver) UpdateTaskDescription(ctx context.Context, id string,
 
 	requestLogger.Info("duplicated version authors successfully")
 
-	// Duplicate markdown statement
+	
+
+	// Update markdown statement
 	stmt = `INSERT INTO public.markdown_statements(
 	story, input, output, notes, scoring, lang_iso639_1, task_version_id)
 	SELECT $2, $3, $4, $5, scoring, lang_iso639_1, $1 FROM markdown_statements WHERE task_version_id = $6`

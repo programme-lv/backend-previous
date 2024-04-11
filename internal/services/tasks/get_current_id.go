@@ -40,7 +40,7 @@ func GetCurrentTaskVersionByID(db qrm.Queryable, id string, userID int64) (*obje
 			LEFT_JOIN(table.MarkdownStatements,
 				table.MarkdownStatements.TaskVersionID.EQ(
 					table.Tasks.RelevantVersionID))).
-		WHERE(table.MarkdownStatements.LangIso6391.EQ(postgres.String("lv")).AND(table.Tasks.ID.EQ(postgres.Int64(idInt))).AND(table.Tasks.CreatedByID.EQ(postgres.Int64(userID))))
+		WHERE(table.Tasks.ID.EQ(postgres.Int64(idInt)).AND(table.Tasks.CreatedByID.EQ(postgres.Int64(userID))))
 		
 
 	var currentTaskVersion []struct {
