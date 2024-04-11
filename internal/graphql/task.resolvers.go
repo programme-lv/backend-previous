@@ -7,11 +7,10 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"log"
+	"strconv"
 
 	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
-	"golang.org/x/exp/slog"
 )
 
 // CreateTask is the resolver for the createTask field.
@@ -31,44 +30,7 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (*Task
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	publishedTaskVersions, err := tasks.ListPublishedTaskVersions(r.PostgresDB)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	solvedTaskSet := make(map[int64]bool)
-	// isLoggedIn := false
-
-	// check if user logged in
-	user, err := r.GetUserFromContext(ctx)
-	if err == nil {
-		// isLoggedIn = true
-
-		solvedTasks, err := tasks.ListSolvedTasksByUserID(r.PostgresDB, user.ID)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-
-		for _, solvedTask := range solvedTasks {
-			solvedTaskSet[solvedTask] = true
-		}
-	}
-
-	var result []*Task
-	for _, task := range publishedTaskVersions {
-		result = append(result, internalTaskVersionToGraphQLTask(task))
-		// if isLoggedIn {
-		// 	isSolved := false
-		// 	if val, ok := solvedTaskSet[task.TaskID]; ok {
-		// 		isSolved = val
-		// 	}
-		// 	result[len(result)-1].Solved = &isSolved
-		// }
-	}
-
-	return result, nil
+	panic(fmt.Errorf("not implemented: ListPublishedTasks - listPublishedTasks"))
 }
 
 // GetStableTaskVersionByPublishedTaskCode is the resolver for the getStableTaskVersionByPublishedTaskCode field.
@@ -78,305 +40,61 @@ func (r *queryResolver) GetStableTaskVersionByPublishedTaskCode(ctx context.Cont
 
 // GetCurrentTaskVersionByTaskID is the resolver for the getCurrentTaskVersionByTaskID field.
 func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskID string) (*TaskVersion, error) {
-	panic(fmt.Errorf("not implemented: GetCurrentTaskVersionByTaskID - getCurrentTaskVersionByTaskID"))
+	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDint64)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := internalTaskVToGQLTaskV(taskVObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	// log.Println("list editable tasks received")
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		// log.Println("logedin user not found")
-		return nil, err
-	}
-
-	editableTaskVersions, err := tasks.ListEditableTaskVersions(r.PostgresDB, user.ID)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	var result []*Task
-	for _, task := range editableTaskVersions {
-		result = append(result, internalTaskVersionToGraphQLTask(task))
-	}
-
-	return result, nil
+	panic(fmt.Errorf("not implemented: ListEditableTasks - listEditableTasks"))
 }
 
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) UpdateTaskExamples(ctx context.Context, id string, inputs []string, outputs []string) (*Task, error) {
-	requestLogger := r.Logger.With(slog.String("request_type", "update_task_examples"), slog.String("id", id))
-
-	requestLogger.Info("received update task metadata request")
-
-	t, err := r.PostgresDB.Beginx()
-	if err != nil {
-		requestLogger.Error("failed to begin transaction", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		requestLogger.Error("failed to get user from context", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	prevTaskVersion, err := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
-	if err != nil {
-		requestLogger.Error("failed to get task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	// New task version
-
-	stmt := `INSERT INTO task_versions 
-	(task_id, short_code, full_name, time_lim_ms, mem_lim_kibibytes, testing_type_id, origin, created_at, checker_id, interactor_id)
-	SELECT $1, short_code, full_name, time_lim_ms, mem_lim_kibibytes, testing_type_id, origin, NOW(), checker_id, interactor_id FROM task_versions WHERE id = $3 RETURNING id`
-
-	var versionId int64
-	err = t.QueryRow(stmt, id, prevTaskVersion.ID).Scan(&versionId)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to insert task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger = requestLogger.With(slog.Int64("version_id", versionId))
-
-	requestLogger.Info("inserted task version successfully")
-
-	_, err = t.Exec("UPDATE tasks SET relevant_version_id = $1 WHERE id = $2", versionId, id)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("updated task relevant version successfully")
-
-	// Duplicate metadata
-	stmt = `INSERT INTO version_authors (task_version_id, author) SELECT $1, author FROM version_authors WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate version authors", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated version authors successfully")
-
-	// Duplicate markdown statement
-	stmt = `INSERT INTO public.markdown_statements(
-	story, input, output, notes, scoring, lang_iso639_1, task_version_id)
-	SELECT story, input, output, notes, scoring, lang_iso639_1, $1 FROM markdown_statements WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate markdown statement", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated markdown statement successfully")
-
-	// Duplicate task version tests
-	stmt = `INSERT INTO task_version_tests (test_filename, task_version_id, input_text_file_id, answer_text_file_id) SELECT test_filename, $1, input_text_file_id, answer_text_file_id FROM task_version_tests WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate task version tests", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated task version tests successfully")
-
-	// Update statement examples
-	for i, input := range inputs {
-		stmt = `INSERT INTO statement_examples (input, answer, task_version_id) VALUES ($1, $2, $3)`
-		_, err = t.Exec(stmt, input, outputs[i], versionId)
-		if err != nil {
-			t.Rollback()
-			requestLogger.Error("failed to insert statement example", slog.String("error", err.Error()))
-			return nil, err
-		}
-	}
-
-	requestLogger.Info("inserted statement examples successfully")
-
-	// Commit transaction
-	err = t.Commit()
-	if err != nil {
-		requestLogger.Error("failed to commit transaction", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("committed transaction successfully")
-
-	// Return updated task
-	task, err := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
-	if err != nil {
-		requestLogger.Error("failed to get task", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	return internalTaskVersionToGraphQLTask(*task), nil
-}
-func (r *mutationResolver) UpdateTaskConstraints(ctx context.Context, id string, timeLimitMs *int, memoryLimitKb *int) (*Task, error) {
-	requestLogger := r.Logger.With(slog.String("request_type", "update_task_constraints"), slog.String("id", id))
-
-	requestLogger.Info("received update task metadata request")
-
-	t, err := r.PostgresDB.Beginx()
-	if err != nil {
-		requestLogger.Error("failed to begin transaction", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		requestLogger.Error("failed to get user from context", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	prevTaskVersion, err := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
-	if err != nil {
-		requestLogger.Error("failed to get task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	// New task version
-
-	stmt := `INSERT INTO task_versions 
-	(task_id, short_code, full_name, time_lim_ms, mem_lim_kibibytes, testing_type_id, origin, created_at, checker_id, interactor_id)
-	SELECT $1, short_code, full_name, $2, $3, testing_type_id, origin, NOW(), checker_id, interactor_id FROM task_versions WHERE id = $4 RETURNING id`
-
-	var versionId int64
-	err = t.QueryRow(stmt, id, timeLimitMs, memoryLimitKb, prevTaskVersion.ID).Scan(&versionId)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to insert task version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger = requestLogger.With(slog.Int64("version_id", versionId))
-
-	requestLogger.Info("inserted task version successfully")
-
-	_, err = t.Exec("UPDATE tasks SET relevant_version_id = $1 WHERE id = $2", versionId, id)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to update task relevant version", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("updated task relevant version successfully")
-
-	// Duplicate metadata
-	stmt = `INSERT INTO version_authors (task_version_id, author) SELECT $1, author FROM version_authors WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate version authors", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated version authors successfully")
-
-	// Duplicate markdown statement
-	stmt = `INSERT INTO public.markdown_statements(
-	story, input, output, notes, scoring, lang_iso639_1, task_version_id)
-	SELECT story, input, output, notes, scoring, lang_iso639_1, $1 FROM markdown_statements WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate markdown statement", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated markdown statement successfully")
-
-	// Duplicate task version tests
-	stmt = `INSERT INTO task_version_tests (test_filename, task_version_id, input_text_file_id, answer_text_file_id) SELECT test_filename, $1, input_text_file_id, answer_text_file_id FROM task_version_tests WHERE task_version_id = $2`
-	_, err = t.Exec(stmt, versionId, prevTaskVersion.ID)
-	if err != nil {
-		t.Rollback()
-		requestLogger.Error("failed to duplicate task version tests", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("duplicated task version tests successfully")
-
-	// Duplicate statement examples
-	// _, err = t.Exec(stmt, versionId, prevTaskVersion.Description.ID)
-	// if err != nil {
-	// 	t.Rollback()
-	// 	requestLogger.Error("failed to duplicate statement examples", slog.String("error", err.Error()))
-	// 	return nil, err
-	// }
-
-	requestLogger.Info("duplicated statement examples successfully")
-
-	// Commit transaction
-	err = t.Commit()
-	if err != nil {
-		requestLogger.Error("failed to commit transaction", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	requestLogger.Info("committed transaction successfully")
-
-	// Return updated task
-	task, err := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
-	if err != nil {
-		requestLogger.Error("failed to get task", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	return internalTaskVersionToGraphQLTask(*task), nil
-}
-func (r *mutationResolver) PublishTask(ctx context.Context, id string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: PublishTask - publishTask"))
-}
-func (r *queryResolver) GetPublishedTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
-	task, err := tasks.GetPublishedTaskVersionByCode(r.PostgresDB, code)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-
-	return internalTaskVersionToGraphQLTask(*task), nil
-}
-func (r *queryResolver) GetCurrentTaskVersionByID(ctx context.Context, id string) (*Task, error) {
-	user, err := r.GetUserFromContext(ctx)
+func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, error) {
+	marshalledCreatedAt, err := taskVersion.CreatedAt.MarshalText()
 	if err != nil {
 		return nil, err
 	}
 
-	task, err2 := tasks.GetCurrentTaskVersionByID(r.PostgresDB, id, user.ID)
-	if err2 != nil {
-		return nil, err2
+	var examples []*Example
+	for _, example := range taskVersion.Description.Examples {
+		examples = append(examples, &Example{
+			Input:  example.Input,
+			Answer: example.Answer,
+		})
 	}
 
-	return internalTaskVersionToGraphQLTask(*task), nil
-}
-func (r *queryResolver) GetCurrentTaskVersionByCode(ctx context.Context, code string) (*Task, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
+	res := TaskVersion{
+		VersionID: fmt.Sprint(taskVersion.ID),
+		Code:      taskVersion.Code,
+		Name:      taskVersion.Name,
+		Description: &Description{
+			Story:    taskVersion.Description.Story,
+			Input:    taskVersion.Description.Input,
+			Output:   taskVersion.Description.Output,
+			Examples: examples,
+			Notes:    taskVersion.Description.Notes,
+		},
+		Constraints: &Constraints{
+			TimeLimitMs:   int(taskVersion.TimeLimitMs),
+			MemoryLimitKb: int(taskVersion.MemoryLimitKb),
+		},
+		Metadata:  &Metadata{},
+		CreatedAt: string(marshalledCreatedAt),
 	}
 
-	task, err2 := tasks.GetCurrentTaskVersionByCode(r.PostgresDB, code, user.ID)
-	if err2 != nil {
-		return nil, err2
-	}
-
-	return internalTaskVersionToGraphQLTask(*task), nil
-}
-func internalTaskVersionToGraphQLTask(task objects.TaskVersion) *Task {
-	return &Task{}
+	return &res, nil
 }

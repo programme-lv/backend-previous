@@ -17,6 +17,7 @@ func UseSchema(schema string) {
 	MarkdownStatements = MarkdownStatements.FromSchema(schema)
 	ProblemTags = ProblemTags.FromSchema(schema)
 	ProgrammingLanguages = ProgrammingLanguages.FromSchema(schema)
+	PublishedTaskCodes = PublishedTaskCodes.FromSchema(schema)
 	RuntimeData = RuntimeData.FromSchema(schema)
 	RuntimeStatistics = RuntimeStatistics.FromSchema(schema)
 	StatementExamples = StatementExamples.FromSchema(schema)

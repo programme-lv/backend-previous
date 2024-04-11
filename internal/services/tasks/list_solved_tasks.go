@@ -24,13 +24,3 @@ func ListSolvedTasksByUserID(db qrm.Queryable, userID int64) ([]int64, error) {
 
 	return taskIDs, nil
 }
-
-/*
-select task_id from task_submissions
-	inner join public.evaluations e on task_submissions.visible_eval_id = e.id
-	where task_submissions.user_id = 2
-		and task_submissions.hidden = false
-		and eval_possible_score is not null
-		and eval_total_score = eval_possible_score
-	group by task_id
-*/

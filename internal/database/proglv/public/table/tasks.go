@@ -17,11 +17,11 @@ type tasksTable struct {
 	postgres.Table
 
 	// Columns
-	ID                 postgres.ColumnInteger
-	CreatedAt          postgres.ColumnTimestampz
-	CreatedByID        postgres.ColumnInteger
-	RelevantVersionID  postgres.ColumnInteger
-	PublishedVersionID postgres.ColumnInteger
+	ID               postgres.ColumnInteger
+	CreatedAt        postgres.ColumnTimestampz
+	CreatedByID      postgres.ColumnInteger
+	CurrentVersionID postgres.ColumnInteger
+	StableVersionID  postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -62,24 +62,24 @@ func newTasksTable(schemaName, tableName, alias string) *TasksTable {
 
 func newTasksTableImpl(schemaName, tableName, alias string) tasksTable {
 	var (
-		IDColumn                 = postgres.IntegerColumn("id")
-		CreatedAtColumn          = postgres.TimestampzColumn("created_at")
-		CreatedByIDColumn        = postgres.IntegerColumn("created_by_id")
-		RelevantVersionIDColumn  = postgres.IntegerColumn("relevant_version_id")
-		PublishedVersionIDColumn = postgres.IntegerColumn("published_version_id")
-		allColumns               = postgres.ColumnList{IDColumn, CreatedAtColumn, CreatedByIDColumn, RelevantVersionIDColumn, PublishedVersionIDColumn}
-		mutableColumns           = postgres.ColumnList{CreatedAtColumn, CreatedByIDColumn, RelevantVersionIDColumn, PublishedVersionIDColumn}
+		IDColumn               = postgres.IntegerColumn("id")
+		CreatedAtColumn        = postgres.TimestampzColumn("created_at")
+		CreatedByIDColumn      = postgres.IntegerColumn("created_by_id")
+		CurrentVersionIDColumn = postgres.IntegerColumn("current_version_id")
+		StableVersionIDColumn  = postgres.IntegerColumn("stable_version_id")
+		allColumns             = postgres.ColumnList{IDColumn, CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn}
+		mutableColumns         = postgres.ColumnList{CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn}
 	)
 
 	return tasksTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:                 IDColumn,
-		CreatedAt:          CreatedAtColumn,
-		CreatedByID:        CreatedByIDColumn,
-		RelevantVersionID:  RelevantVersionIDColumn,
-		PublishedVersionID: PublishedVersionIDColumn,
+		ID:               IDColumn,
+		CreatedAt:        CreatedAtColumn,
+		CreatedByID:      CreatedByIDColumn,
+		CurrentVersionID: CurrentVersionIDColumn,
+		StableVersionID:  StableVersionIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

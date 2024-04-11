@@ -12,9 +12,9 @@ import (
 )
 
 type Tasks struct {
-	ID                 int64 `sql:"primary_key"`
-	CreatedAt          time.Time
-	CreatedByID        int64
-	RelevantVersionID  *int64
-	PublishedVersionID *int32
+	ID               int64 `sql:"primary_key"`
+	CreatedAt        time.Time
+	CreatedByID      int64
+	CurrentVersionID *int64
+	StableVersionID  *int32
 }
