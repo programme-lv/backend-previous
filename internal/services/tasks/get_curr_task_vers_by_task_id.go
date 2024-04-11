@@ -26,7 +26,7 @@ func GetCurrentTaskVersionByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersio
 
 	taskVersionObj := objects.TaskVersion{
 		ID:            taskVersion.ID,
-		TaskID:        taskID,
+		TaskID:        taskVersion.TaskID,
 		Code:          taskVersion.ShortCode,
 		Name:          taskVersion.FullName,
 		Description:   descriptionObj,

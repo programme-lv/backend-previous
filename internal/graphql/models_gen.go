@@ -101,7 +101,7 @@ type Submission struct {
 type Task struct {
 	TaskID    string       `json:"taskID"`
 	Current   *TaskVersion `json:"current"`
-	Stable    *TaskVersion `json:"stable"`
+	Stable    *TaskVersion `json:"stable,omitempty"`
 	CreatedAt string       `json:"createdAt"`
 	UpdatedAt string       `json:"updatedAt"`
 }

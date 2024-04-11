@@ -43,7 +43,7 @@ type Task {
     taskID: ID!
 
     current: TaskVersion! # only for authorized users
-    stable: TaskVersion!
+    stable: TaskVersion
 
     createdAt: String!
     updatedAt: String!

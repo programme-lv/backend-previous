@@ -60,9 +60,32 @@ func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskI
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListEditableTasks - listEditableTasks"))
+	userID, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, userID.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []*Task
+	for _, taskID := range taskIds {
+		taskObj, err := tasks.GetTaskByID(r.PostgresDB, taskID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 }
 
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, error) {
 	marshalledCreatedAt, err := taskVersion.CreatedAt.MarshalText()
 	if err != nil {

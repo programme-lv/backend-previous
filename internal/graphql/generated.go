@@ -1021,7 +1021,7 @@ type Task {
     taskID: ID!
 
     current: TaskVersion! # only for authorized users
-    stable: TaskVersion!
+    stable: TaskVersion
 
     createdAt: String!
     updatedAt: String!
@@ -4588,14 +4588,11 @@ func (ec *executionContext) _Task_stable(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*TaskVersion)
 	fc.Result = res
-	return ec.marshalNTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
+	return ec.marshalOTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Task_stable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8349,9 +8346,6 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "stable":
 			out.Values[i] = ec._Task_stable(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "createdAt":
 			out.Values[i] = ec._Task_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9787,6 +9781,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx context.Context, sel ast.SelectionSet, v *TaskVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TaskVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐUser(ctx context.Context, sel ast.SelectionSet, v *User) graphql.Marshaler {

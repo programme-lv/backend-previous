@@ -26,7 +26,7 @@ func GetStableTaskVersionByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion
 
 	taskVersionObj := objects.TaskVersion{
 		ID:            stableTaskVersion.ID,
-		TaskID:        taskID,
+		TaskID:        stableTaskVersion.TaskID,
 		Code:          stableTaskVersion.ShortCode,
 		Name:          stableTaskVersion.FullName,
 		Description:   descriptionObj,

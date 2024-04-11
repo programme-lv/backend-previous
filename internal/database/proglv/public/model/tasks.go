@@ -16,5 +16,5 @@ type Tasks struct {
 	CreatedAt        time.Time
 	CreatedByID      int64
 	CurrentVersionID *int64
-	StableVersionID  *int32
+	StableVersionID  *int64
 }
