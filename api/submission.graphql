@@ -1,6 +1,6 @@
 extend type Query {
   """
-  Returns all visible (not hidden) submissions for tasks that have a published version.
+  Returns all visible (not hidden) submissions for tasks that have a published task code.
   An example of a hidden submission is a submission made by an admin for testing purposes.
   """
   listPublicSubmissions: [Submission!]!
@@ -9,7 +9,11 @@ extend type Query {
 }
 
 extend type Mutation {
-  enqueueSubmissionForPublishedTaskVersion(taskID: ID!, languageID: ID!, submissionCode: String!): Submission!
+  enqueueSubmissionForPublishedTaskCodeStableTaskVersion(
+    taskCode: String!
+    languageID: ID!
+    submissionCode: String!
+  ): Submission!
 }
 
 # submission must be somehow linked to an evaluation
@@ -32,7 +36,9 @@ type Evaluation {
 
   runtimeStatistics: RuntimeStatistics
 
-  """Some programming languages do not support compilation, so this field may be null."""
+  """
+  Some programming languages do not support compilation, so this field may be null.
+  """
   compilation: CompilationDetails
   testResults: [TestResult!]!
 }
@@ -59,15 +65,15 @@ type TestResult {
 }
 
 enum TestResultType {
-  AC,
-  PT,
-  WA,
-  PE,
-  TLE,
-  MLE,
-  ILE,
-  IG,
-  RE,
-  SV,
+  AC
+  PT
+  WA
+  PE
+  TLE
+  MLE
+  ILE
+  IG
+  RE
+  SV
   ISE
 }

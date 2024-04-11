@@ -22,12 +22,19 @@ type Constraints struct {
 }
 
 type Description struct {
-	ID       string     `json:"id"`
 	Story    string     `json:"story"`
 	Input    string     `json:"input"`
 	Output   string     `json:"output"`
 	Examples []*Example `json:"examples,omitempty"`
 	Notes    *string    `json:"notes,omitempty"`
+}
+
+type DescriptionInput struct {
+	Story    *string         `json:"story,omitempty"`
+	Input    *string         `json:"input,omitempty"`
+	Output   *string         `json:"output,omitempty"`
+	Examples []*ExampleInput `json:"examples,omitempty"`
+	Notes    *string         `json:"notes,omitempty"`
 }
 
 type Evaluation struct {
@@ -42,7 +49,11 @@ type Evaluation struct {
 }
 
 type Example struct {
-	ID     string `json:"id"`
+	Input  string `json:"input"`
+	Answer string `json:"answer"`
+}
+
+type ExampleInput struct {
 	Input  string `json:"input"`
 	Answer string `json:"answer"`
 }
@@ -88,21 +99,25 @@ type Submission struct {
 }
 
 type Task struct {
-	// The id of the task. Not the task version.
-	ID          string       `json:"id"`
+	TaskID    string       `json:"taskID"`
+	Current   *TaskVersion `json:"current"`
+	Stable    *TaskVersion `json:"stable"`
+	CreatedAt string       `json:"createdAt"`
+	UpdatedAt string       `json:"updatedAt"`
+}
+
+type TaskVersion struct {
+	VersionID   string       `json:"versionID"`
 	Code        string       `json:"code"`
 	Name        string       `json:"name"`
 	Description *Description `json:"description"`
 	Constraints *Constraints `json:"constraints"`
 	Metadata    *Metadata    `json:"metadata"`
-	Solved      *bool        `json:"solved,omitempty"`
-	Tests       []*Test      `json:"tests"`
 	CreatedAt   string       `json:"createdAt"`
-	UpdatedAt   string       `json:"updatedAt"`
 }
 
 type Test struct {
-	ID     string `json:"id"`
+	TestID string `json:"testID"`
 	Name   string `json:"name"`
 	Input  string `json:"input"`
 	Answer string `json:"answer"`

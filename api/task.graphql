@@ -6,53 +6,52 @@ extend type Query {
     listPublishedTasks: [Task!]!
 
     """
-    Returns the latest published version / snapshot of a task.
-    Used when accessing url like /task/:code.
+    Finds the task id associated with the published task code.
+    Returns the stable version of that task.
     """
-    getPublishedTaskVersionByCode(code: String!): Task!
+    getStableTaskVersionByPublishedTaskCode(taskCode: String!): TaskVersion!
+
+    """
+    Returns the latest version of a task.
+    Used for task preparation / development / editing.
+    """
+    getCurrentTaskVersionByTaskID(taskID: ID!): TaskVersion!
 
     """
     Returns a list of all tasks that are editable by the current user.
-    Used for rendering the editable task list in user profile.
+    Used for rendering the editable task list in task constructor.
     """
     listEditableTasks: [Task!]!
-
-    """
-    Returns the latest version of a task.
-    Used for task preparation / development / editing.
-    """
-    getCurrentTaskVersionById(id: ID!): Task!
-
-    """
-    Returns the latest version of a task.
-    Used for task preparation / development / editing.
-    """
-    getCurrentTaskVersionByCode(code: String!): Task!
 }
 
 extend type Mutation {
     """
     Creates a new task with the given name and code.
-    The code is used to access the task via url like /task/:code.
-    Currently only admins can create tasks.
-    A default task version is assigned to the task.
+    Only admins can create tasks.
+    The default task version is assigned to the task.
     """
     createTask(name: String!, code: String!): Task!
 
-    updateTaskMetadata(id: ID!, authors: [String!], origin: String): Task!
-    updateTaskDescription(id: ID!, code: String, name: String, story: String, input: String, output: String, notes: String): Task!
-    updateTaskExamples(id: ID!, inputs: [String!], outputs: [String!]): Task!
-    updateTaskConstraints(id: ID!, timeLimitMs: Int, memoryLimitKB: Int): Task!
+    updateTaskVersionDescription(taskVersionID: ID!, description: DescriptionInput!): TaskVersion!
 
-    publishTask(id: ID!): Task!
-    deleteTask(id: ID!): Task!
+    deleteTask(taskID: ID!): Task!
 }
 
+# time is marshalled as RFC3339
+
 type Task {
-    """
-    The id of the task. Not the task version.
-    """
-    id: ID!
+    taskID: ID!
+
+    current: TaskVersion! # only for authorized users
+    stable: TaskVersion!
+
+    createdAt: String!
+    updatedAt: String!
+}
+
+type TaskVersion {
+    versionID: ID!
+
     code: String!
     name: String!
 
@@ -60,20 +59,14 @@ type Task {
     constraints: Constraints!
     metadata: Metadata!
 
-    solved: Boolean
-
-    tests: [Test!]!
-
     createdAt: String!
-    updatedAt: String!
 }
 
 type Description {
-    id: ID!
-
     story: String!
     input: String!
     output: String!
+
     examples: [Example!]
     notes: String
 }
@@ -89,14 +82,28 @@ type Metadata {
 }
 
 type Example {
-    id: ID!
     input: String!
     answer: String!
 }
 
 type Test {
-    id: ID!
+    testID: ID!
+
     name: String!
+    input: String!
+    answer: String!
+}
+
+input DescriptionInput {
+    story: String
+    input: String
+    output: String
+
+    examples: [ExampleInput!]
+    notes: String
+}
+
+input ExampleInput {
     input: String!
     answer: String!
 }
