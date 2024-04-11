@@ -16,7 +16,43 @@ import (
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, name string, code string) (*Task, error) {
-	return nil, fmt.Errorf("not implemented: CreateTask - createTask")
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// name must be between 1 and 100 characters
+	if len(name) < 1 || len(name) > 100 {
+		return nil, fmt.Errorf("name must be between 1 and 100 characters")
+	}
+
+	if len(code) < 1 || len(code) > 50 {
+		return nil, fmt.Errorf("code must be between 1 and 50 characters")
+	}
+
+	// code can only contain lowercase letters and digits
+	for _, c := range code {
+		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+			return nil, fmt.Errorf("code can only contain lowercase letters and digits")
+		}
+	}
+
+	taskID, err := tasks.CreateTask(r.PostgresDB, name, code, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := internalTaskToGQLTask(taskObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }
 
 // UpdateTaskVersionDescription is the resolver for the updateTaskVersionDescription field.
