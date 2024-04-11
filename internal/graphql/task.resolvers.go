@@ -7,10 +7,11 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 
-	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
+	"github.com/ztrue/tracerr"
 )
 
 // CreateTask is the resolver for the createTask field.
@@ -60,64 +61,36 @@ func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskI
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	userID, err := r.GetUserFromContext(ctx)
+	user, err := r.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, userID.ID)
+	taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []*Task
+	var res []*Task = make([]*Task, 0)
 	for _, taskID := range taskIds {
-		taskObj, err := tasks.GetTaskByID(r.PostgresDB, taskID)
+		taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+		if err != nil {
+			tracerr.PrintSourceColor(err)
+			return nil, err
+		}
+
+		if taskObj.Current == nil {
+			continue
+		}
+
+		task, err := internalTaskToGQLTask(taskObj)
 		if err != nil {
 			return nil, err
 		}
+
+		log.Println(task)
+		res = append(res, task)
 	}
 
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, error) {
-	marshalledCreatedAt, err := taskVersion.CreatedAt.MarshalText()
-	if err != nil {
-		return nil, err
-	}
-
-	var examples []*Example
-	for _, example := range taskVersion.Description.Examples {
-		examples = append(examples, &Example{
-			Input:  example.Input,
-			Answer: example.Answer,
-		})
-	}
-
-	res := TaskVersion{
-		VersionID: fmt.Sprint(taskVersion.ID),
-		Code:      taskVersion.Code,
-		Name:      taskVersion.Name,
-		Description: &Description{
-			Story:    taskVersion.Description.Story,
-			Input:    taskVersion.Description.Input,
-			Output:   taskVersion.Description.Output,
-			Examples: examples,
-			Notes:    taskVersion.Description.Notes,
-		},
-		Constraints: &Constraints{
-			TimeLimitMs:   int(taskVersion.TimeLimitMs),
-			MemoryLimitKb: int(taskVersion.MemoryLimitKb),
-		},
-		Metadata:  &Metadata{},
-		CreatedAt: string(marshalledCreatedAt),
-	}
-
-	return &res, nil
+	return res, nil
 }

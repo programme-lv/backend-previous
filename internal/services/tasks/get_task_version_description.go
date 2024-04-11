@@ -1,11 +1,14 @@
 package tasks
 
 import (
+	"errors"
+
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/ztrue/tracerr"
 )
 
 func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Description, error) {
@@ -16,7 +19,10 @@ func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Descr
 	var description model.MarkdownStatements
 	err := stmt.Query(db, &description)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, qrm.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, tracerr.Wrap(err)
 	}
 
 	examplesStmt := postgres.SELECT(table.StatementExamples.AllColumns).
@@ -26,7 +32,7 @@ func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Descr
 	var examples []model.StatementExamples
 	err = examplesStmt.Query(db, &examples)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	var examplesObj []objects.Example

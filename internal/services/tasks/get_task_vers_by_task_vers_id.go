@@ -6,6 +6,7 @@ import (
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/ztrue/tracerr"
 )
 
 func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.TaskVersion, error) {
@@ -16,12 +17,12 @@ func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.Tas
 	var tv model.TaskVersions
 	err := stmt.Query(db, &tv)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	descriptionObj, err := GetLVTaskVersionDescription(db, tv.ID)
 	if err != nil {
-		return nil, err
+		return nil, tracerr.Wrap(err)
 	}
 
 	taskVersionObj := objects.TaskVersion{
