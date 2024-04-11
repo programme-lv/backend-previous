@@ -17,6 +17,16 @@ type TaskVersion struct {
 	UpdatedAt *time.Time
 }
 
+type Task struct {
+	ID          int64
+	CreatedByID int64
+
+	Current *TaskVersion
+	Stable  *TaskVersion
+
+	CreatedAt time.Time
+}
+
 type Description struct {
 	ID       int64
 	Story    string
