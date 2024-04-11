@@ -10,7 +10,7 @@ import (
 
 func GetCurrentTaskVersionByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion, error) {
 	stmt := postgres.SELECT(table.TaskVersions.AllColumns).FROM(
-		table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersionTests.ID.EQ(table.Tasks.CurrentVersionID)),
+		table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersions.ID.EQ(table.Tasks.CurrentVersionID)),
 	).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 
 	var taskVersion model.TaskVersions
