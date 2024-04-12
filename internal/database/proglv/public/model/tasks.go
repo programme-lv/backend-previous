@@ -17,4 +17,5 @@ type Tasks struct {
 	CreatedByID      int64
 	CurrentVersionID *int64
 	StableVersionID  *int64
+	DeletedAt        *time.Time
 }

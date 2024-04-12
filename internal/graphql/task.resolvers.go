@@ -7,7 +7,6 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/programme-lv/backend/internal/services/tasks"
@@ -61,8 +60,32 @@ func (r *mutationResolver) UpdateTaskVersionDescription(ctx context.Context, tas
 }
 
 // DeleteTask is the resolver for the deleteTask field.
-func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (*Task, error) {
-	panic(fmt.Errorf("not implemented: DeleteTask - deleteTask"))
+func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool, error) {
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return false, err
+	}
+
+	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDint64)
+	if err != nil {
+		return false, err
+	}
+
+	if !canEdit {
+		return false, fmt.Errorf("user does not have permission to delete this task")
+	}
+
+	err = tasks.DeleteTask(r.PostgresDB, taskIDint64)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
@@ -124,7 +147,6 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 			return nil, err
 		}
 
-		log.Println(task)
 		res = append(res, task)
 	}
 

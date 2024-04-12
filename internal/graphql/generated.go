@@ -184,7 +184,7 @@ type MutationResolver interface {
 	Logout(ctx context.Context) (bool, error)
 	CreateTask(ctx context.Context, name string, code string) (*Task, error)
 	UpdateTaskVersionDescription(ctx context.Context, taskVersionID string, description DescriptionInput) (*TaskVersion, error)
-	DeleteTask(ctx context.Context, taskID string) (*Task, error)
+	DeleteTask(ctx context.Context, taskID string) (bool, error)
 	EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
 }
@@ -1012,7 +1012,7 @@ extend type Mutation {
 
     updateTaskVersionDescription(taskVersionID: ID!, description: DescriptionInput!): TaskVersion!
 
-    deleteTask(taskID: ID!): Task!
+    deleteTask(taskID: ID!): Boolean!
 }
 
 # time is marshalled as RFC3339
@@ -2961,9 +2961,9 @@ func (ec *executionContext) _Mutation_deleteTask(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*Task)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTask(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2973,19 +2973,7 @@ func (ec *executionContext) fieldContext_Mutation_deleteTask(ctx context.Context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "taskID":
-				return ec.fieldContext_Task_taskID(ctx, field)
-			case "current":
-				return ec.fieldContext_Task_current(ctx, field)
-			case "stable":
-				return ec.fieldContext_Task_stable(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Task_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Task_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {

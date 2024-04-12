@@ -9,7 +9,7 @@ import (
 
 func ListEditableTaskIDs(db qrm.DB, userID int64) ([]int64, error) {
 	stmt := postgres.SELECT(table.Tasks.ID).FROM(table.Tasks).
-		WHERE(table.Tasks.CreatedByID.EQ(postgres.Int64(userID)))
+		WHERE(table.Tasks.CreatedByID.EQ(postgres.Int64(userID)).AND(table.Tasks.DeletedAt.IS_NULL()))
 
 	var tasks []model.Tasks
 	err := stmt.Query(db, &tasks)

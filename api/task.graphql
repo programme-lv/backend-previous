@@ -34,7 +34,7 @@ extend type Mutation {
 
     updateTaskVersionDescription(taskVersionID: ID!, description: DescriptionInput!): TaskVersion!
 
-    deleteTask(taskID: ID!): Task!
+    deleteTask(taskID: ID!): Boolean!
 }
 
 # time is marshalled as RFC3339

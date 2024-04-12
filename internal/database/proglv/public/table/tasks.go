@@ -22,6 +22,7 @@ type tasksTable struct {
 	CreatedByID      postgres.ColumnInteger
 	CurrentVersionID postgres.ColumnInteger
 	StableVersionID  postgres.ColumnInteger
+	DeletedAt        postgres.ColumnTimestamp
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -67,8 +68,9 @@ func newTasksTableImpl(schemaName, tableName, alias string) tasksTable {
 		CreatedByIDColumn      = postgres.IntegerColumn("created_by_id")
 		CurrentVersionIDColumn = postgres.IntegerColumn("current_version_id")
 		StableVersionIDColumn  = postgres.IntegerColumn("stable_version_id")
-		allColumns             = postgres.ColumnList{IDColumn, CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn}
-		mutableColumns         = postgres.ColumnList{CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn}
+		DeletedAtColumn        = postgres.TimestampColumn("deleted_at")
+		allColumns             = postgres.ColumnList{IDColumn, CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn, DeletedAtColumn}
+		mutableColumns         = postgres.ColumnList{CreatedAtColumn, CreatedByIDColumn, CurrentVersionIDColumn, StableVersionIDColumn, DeletedAtColumn}
 	)
 
 	return tasksTable{
@@ -80,6 +82,7 @@ func newTasksTableImpl(schemaName, tableName, alias string) tasksTable {
 		CreatedByID:      CreatedByIDColumn,
 		CurrentVersionID: CurrentVersionIDColumn,
 		StableVersionID:  StableVersionIDColumn,
+		DeletedAt:        DeletedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
