@@ -58,6 +58,19 @@ func CreateTask(db *sqlx.DB, name string, code string, userID int64) (int64, err
 		return 0, err
 	}
 
+	createMarkdownStmt := table.MarkdownStatements.INSERT(
+		table.MarkdownStatements.Story,
+		table.MarkdownStatements.Input,
+		table.MarkdownStatements.Output,
+		table.MarkdownStatements.TaskVersionID,
+		table.MarkdownStatements.LangIso6391,
+	).VALUES("", "", "", taskVersion.ID, "lv")
+
+	_, err = createMarkdownStmt.Exec(t)
+	if err != nil {
+		return 0, err
+	}
+
 	err = t.Commit()
 	if err != nil {
 		return 0, err
