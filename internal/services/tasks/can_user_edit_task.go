@@ -5,6 +5,7 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/ztrue/tracerr"
 )
 
 func CanUserEditTask(db qrm.DB, userID int64, taskID int64) (bool, error) {
@@ -15,7 +16,7 @@ func CanUserEditTask(db qrm.DB, userID int64, taskID int64) (bool, error) {
 	var user model.Users
 	err := stmtAdmin.Query(db, &user)
 	if err != nil {
-		return false, err
+		return false, tracerr.Wrap(err)
 	}
 
 	if user.IsAdmin {
@@ -27,7 +28,7 @@ func CanUserEditTask(db qrm.DB, userID int64, taskID int64) (bool, error) {
 	var task model.Tasks
 	err = stmtTask.Query(db, &task)
 	if err != nil {
-		return false, err
+		return false, tracerr.Wrap(err)
 	}
 
 	if task.CreatedByID == userID {

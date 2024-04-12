@@ -56,7 +56,48 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 // UpdateTaskVersionDescription is the resolver for the updateTaskVersionDescription field.
 func (r *mutationResolver) UpdateTaskVersionDescription(ctx context.Context, taskVersionID string, description DescriptionInput) (*TaskVersion, error) {
-	panic(fmt.Errorf("not implemented: UpdateTaskVersionDescription - updateTaskVersionDescription"))
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	taskVersionIDint64, err := strconv.ParseInt(taskVersionID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	taskID, err := tasks.GetTaskIDByTaskVersionID(r.PostgresDB, taskVersionIDint64)
+	if err != nil {
+		return nil, err
+	}
+
+	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canEdit {
+		return nil, fmt.Errorf("user does not have permission to edit this task version")
+	}
+
+	return nil, nil
+
+	// err = tasks.UpdateTaskVersionDescription(r.PostgresDB, taskVersionIDint64, description)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// taskVObj, err := tasks.GetTaskVersionByTaskVersionID(r.PostgresDB, taskVersionIDint64)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// res, err := internalTaskVToGQLTaskV(taskVObj)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return res, nil
 }
 
 // DeleteTask is the resolver for the deleteTask field.
