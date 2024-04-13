@@ -13,7 +13,7 @@ import (
 	"github.com/programme-lv/backend/internal/database"
 	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
-	"github.com/testcontainers/testcontainers-go/internal"
+	// "github.com/testcontainers/testcontainers-go/internal"
 	"golang.org/x/exp/slog"
 )
 
