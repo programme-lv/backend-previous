@@ -32,7 +32,7 @@ extend type Mutation {
     """
     createTask(name: String!, code: String!): Task!
 
-    updateTaskVersionDescription(taskVersionID: ID!, description: DescriptionInput!): TaskVersion!
+    updateTaskVersionStatement(taskVersionID: ID!, statement: StatementInput!): TaskVersion!
 
     deleteTask(taskID: ID!): Boolean!
 }
@@ -94,16 +94,9 @@ type Test {
     answer: String!
 }
 
-input DescriptionInput {
+input StatementInput {
     story: String
     input: String
     output: String
-
-    examples: [ExampleInput!]
     notes: String
-}
-
-input ExampleInput {
-    input: String!
-    answer: String!
 }

@@ -29,14 +29,6 @@ type Description struct {
 	Notes    *string    `json:"notes,omitempty"`
 }
 
-type DescriptionInput struct {
-	Story    *string         `json:"story,omitempty"`
-	Input    *string         `json:"input,omitempty"`
-	Output   *string         `json:"output,omitempty"`
-	Examples []*ExampleInput `json:"examples,omitempty"`
-	Notes    *string         `json:"notes,omitempty"`
-}
-
 type Evaluation struct {
 	ID                string             `json:"id"`
 	Status            string             `json:"status"`
@@ -49,11 +41,6 @@ type Evaluation struct {
 }
 
 type Example struct {
-	Input  string `json:"input"`
-	Answer string `json:"answer"`
-}
-
-type ExampleInput struct {
 	Input  string `json:"input"`
 	Answer string `json:"answer"`
 }
@@ -86,6 +73,13 @@ type RuntimeStatistics struct {
 	MaxTimeMs   int `json:"maxTimeMs"`
 	AvgMemoryKb int `json:"avgMemoryKb"`
 	MaxMemoryKb int `json:"maxMemoryKb"`
+}
+
+type StatementInput struct {
+	Story  *string `json:"story,omitempty"`
+	Input  *string `json:"input,omitempty"`
+	Output *string `json:"output,omitempty"`
+	Notes  *string `json:"notes,omitempty"`
 }
 
 type Submission struct {

@@ -99,7 +99,7 @@ type ComplexityRoot struct {
 		Login                                                  func(childComplexity int, username string, password string) int
 		Logout                                                 func(childComplexity int) int
 		Register                                               func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
-		UpdateTaskVersionDescription                           func(childComplexity int, taskVersionID string, description DescriptionInput) int
+		UpdateTaskVersionStatement                             func(childComplexity int, taskVersionID string, statement StatementInput) int
 	}
 
 	ProgrammingLanguage struct {
@@ -183,7 +183,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error)
 	Logout(ctx context.Context) (bool, error)
 	CreateTask(ctx context.Context, name string, code string) (*Task, error)
-	UpdateTaskVersionDescription(ctx context.Context, taskVersionID string, description DescriptionInput) (*TaskVersion, error)
+	UpdateTaskVersionStatement(ctx context.Context, taskVersionID string, statement StatementInput) (*TaskVersion, error)
 	DeleteTask(ctx context.Context, taskID string) (bool, error)
 	EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
@@ -472,17 +472,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Register(childComplexity, args["username"].(string), args["password"].(string), args["email"].(string), args["firstName"].(string), args["lastName"].(string)), true
 
-	case "Mutation.updateTaskVersionDescription":
-		if e.complexity.Mutation.UpdateTaskVersionDescription == nil {
+	case "Mutation.updateTaskVersionStatement":
+		if e.complexity.Mutation.UpdateTaskVersionStatement == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateTaskVersionDescription_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateTaskVersionStatement_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTaskVersionDescription(childComplexity, args["taskVersionID"].(string), args["description"].(DescriptionInput)), true
+		return e.complexity.Mutation.UpdateTaskVersionStatement(childComplexity, args["taskVersionID"].(string), args["statement"].(StatementInput)), true
 
 	case "ProgrammingLanguage.enabled":
 		if e.complexity.ProgrammingLanguage.Enabled == nil {
@@ -848,8 +848,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
-		ec.unmarshalInputDescriptionInput,
-		ec.unmarshalInputExampleInput,
+		ec.unmarshalInputStatementInput,
 	)
 	first := true
 
@@ -1010,7 +1009,7 @@ extend type Mutation {
     """
     createTask(name: String!, code: String!): Task!
 
-    updateTaskVersionDescription(taskVersionID: ID!, description: DescriptionInput!): TaskVersion!
+    updateTaskVersionStatement(taskVersionID: ID!, statement: StatementInput!): TaskVersion!
 
     deleteTask(taskID: ID!): Boolean!
 }
@@ -1072,19 +1071,13 @@ type Test {
     answer: String!
 }
 
-input DescriptionInput {
+input StatementInput {
     story: String
     input: String
     output: String
-
-    examples: [ExampleInput!]
     notes: String
 }
-
-input ExampleInput {
-    input: String!
-    answer: String!
-}`, BuiltIn: false},
+`, BuiltIn: false},
 	{Name: "../../api/language.graphql", Input: `extend type Query {
     listLanguages(enabled: Boolean): [ProgrammingLanguage!]!
 }
@@ -1363,7 +1356,7 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateTaskVersionDescription_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateTaskVersionStatement_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1375,15 +1368,15 @@ func (ec *executionContext) field_Mutation_updateTaskVersionDescription_args(ctx
 		}
 	}
 	args["taskVersionID"] = arg0
-	var arg1 DescriptionInput
-	if tmp, ok := rawArgs["description"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-		arg1, err = ec.unmarshalNDescriptionInput2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescriptionInput(ctx, tmp)
+	var arg1 StatementInput
+	if tmp, ok := rawArgs["statement"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statement"))
+		arg1, err = ec.unmarshalNStatementInput2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐStatementInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["description"] = arg1
+	args["statement"] = arg1
 	return args, nil
 }
 
@@ -2864,8 +2857,8 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updateTaskVersionDescription(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updateTaskVersionDescription(ctx, field)
+func (ec *executionContext) _Mutation_updateTaskVersionStatement(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateTaskVersionStatement(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2878,7 +2871,7 @@ func (ec *executionContext) _Mutation_updateTaskVersionDescription(ctx context.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTaskVersionDescription(rctx, fc.Args["taskVersionID"].(string), fc.Args["description"].(DescriptionInput))
+		return ec.resolvers.Mutation().UpdateTaskVersionStatement(rctx, fc.Args["taskVersionID"].(string), fc.Args["statement"].(StatementInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2895,7 +2888,7 @@ func (ec *executionContext) _Mutation_updateTaskVersionDescription(ctx context.C
 	return ec.marshalNTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_updateTaskVersionDescription(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_updateTaskVersionStatement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -2928,7 +2921,7 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskVersionDescription(c
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateTaskVersionDescription_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_updateTaskVersionStatement_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7377,14 +7370,14 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputDescriptionInput(ctx context.Context, obj interface{}) (DescriptionInput, error) {
-	var it DescriptionInput
+func (ec *executionContext) unmarshalInputStatementInput(ctx context.Context, obj interface{}) (StatementInput, error) {
+	var it StatementInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"story", "input", "output", "examples", "notes"}
+	fieldsInOrder := [...]string{"story", "input", "output", "notes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7412,13 +7405,6 @@ func (ec *executionContext) unmarshalInputDescriptionInput(ctx context.Context, 
 				return it, err
 			}
 			it.Output = data
-		case "examples":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("examples"))
-			data, err := ec.unmarshalOExampleInput2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Examples = data
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -7426,40 +7412,6 @@ func (ec *executionContext) unmarshalInputDescriptionInput(ctx context.Context, 
 				return it, err
 			}
 			it.Notes = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputExampleInput(ctx context.Context, obj interface{}) (ExampleInput, error) {
-	var it ExampleInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"input", "answer"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "input":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Input = data
-		case "answer":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answer"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Answer = data
 		}
 	}
 
@@ -7863,9 +7815,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "updateTaskVersionDescription":
+		case "updateTaskVersionStatement":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateTaskVersionDescription(ctx, field)
+				return ec._Mutation_updateTaskVersionStatement(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8964,11 +8916,6 @@ func (ec *executionContext) marshalNDescription2ᚖgithubᚗcomᚋprogrammeᚑlv
 	return ec._Description(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDescriptionInput2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescriptionInput(ctx context.Context, v interface{}) (DescriptionInput, error) {
-	res, err := ec.unmarshalInputDescriptionInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNEvaluation2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐEvaluation(ctx context.Context, sel ast.SelectionSet, v *Evaluation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -8987,11 +8934,6 @@ func (ec *executionContext) marshalNExample2ᚖgithubᚗcomᚋprogrammeᚑlvᚋb
 		return graphql.Null
 	}
 	return ec._Example(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNExampleInput2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleInput(ctx context.Context, v interface{}) (*ExampleInput, error) {
-	res, err := ec.unmarshalInputExampleInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNExecutionResult2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExecutionResult(ctx context.Context, sel ast.SelectionSet, v ExecutionResult) graphql.Marshaler {
@@ -9100,6 +9042,11 @@ func (ec *executionContext) marshalNProgrammingLanguage2ᚖgithubᚗcomᚋprogra
 		return graphql.Null
 	}
 	return ec._ProgrammingLanguage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNStatementInput2githubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐStatementInput(ctx context.Context, v interface{}) (StatementInput, error) {
+	res, err := ec.unmarshalInputStatementInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -9656,26 +9603,6 @@ func (ec *executionContext) marshalOExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlv�
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalOExampleInput2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleInputᚄ(ctx context.Context, v interface{}) ([]*ExampleInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]*ExampleInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNExampleInput2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

@@ -54,8 +54,8 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	return task, nil
 }
 
-// UpdateTaskVersionDescription is the resolver for the updateTaskVersionDescription field.
-func (r *mutationResolver) UpdateTaskVersionDescription(ctx context.Context, taskVersionID string, description DescriptionInput) (*TaskVersion, error) {
+// UpdateTaskVersionStatement is the resolver for the updateTaskVersionStatement field.
+func (r *mutationResolver) UpdateTaskVersionStatement(ctx context.Context, taskVersionID string, statement StatementInput) (*TaskVersion, error) {
 	user, err := r.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -80,24 +80,35 @@ func (r *mutationResolver) UpdateTaskVersionDescription(ctx context.Context, tas
 		return nil, fmt.Errorf("user does not have permission to edit this task version")
 	}
 
-	return nil, nil
+	input := tasks.UpdateTaskVStatementInput{
+		Story:  statement.Story,
+		Input:  statement.Input,
+		Output: statement.Output,
+		Notes:  statement.Notes,
+	}
 
-	// err = tasks.UpdateTaskVersionDescription(r.PostgresDB, taskVersionIDint64, description)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	newTaskVersID, err := tasks.UpdateTaskVersionStatement(r.PostgresDB, taskVersionIDint64, input)
+	if err != nil {
+		tracerr.PrintSourceColor(err)
+		return nil, err
+	}
 
-	// taskVObj, err := tasks.GetTaskVersionByTaskVersionID(r.PostgresDB, taskVersionIDint64)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	err = tasks.UpdateCurrentTaskVersionID(r.PostgresDB, taskID, newTaskVersID)
+	if err != nil {
+		return nil, err
+	}
 
-	// res, err := internalTaskVToGQLTaskV(taskVObj)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	taskVObj, err := tasks.GetTaskVersionByTaskVersionID(r.PostgresDB, newTaskVersID)
+	if err != nil {
+		return nil, err
+	}
 
-	// return res, nil
+	res, err := internalTaskVToGQLTaskV(taskVObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // DeleteTask is the resolver for the deleteTask field.
