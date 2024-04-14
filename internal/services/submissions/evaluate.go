@@ -188,36 +188,54 @@ func populateTestlibChecker(db qrm.DB, checkerID int64, req *msg.EvaluationReque
 }
 
 func populateTests(db qrm.DB, taskVersionID int64, urls DownlURLGetter, req *msg.EvaluationRequest) error {
+	selectTestSetIDStmt := postgres.SELECT(
+		table.TaskVersions.TestSetID,
+	).FROM(table.TaskVersions).
+		WHERE(table.TaskVersions.ID.EQ(
+			postgres.Int64(taskVersionID)))
+
+	var taskVersionRecord model.TaskVersions
+	err := selectTestSetIDStmt.Query(db, &taskVersionRecord)
+	if err != nil {
+		return err
+	}
+
+	if taskVersionRecord.TestSetID == nil {
+		return nil
+	}
+
+	testSetID := *taskVersionRecord.TestSetID
+
 	stmtSelectTestInputs := postgres.SELECT(
-		table.TaskVersionTests.ID,
+		table.TestSetTests.ID,
 		table.TextFiles.Sha256,
 		table.TextFiles.Content,
 		table.TextFiles.Compression,
-	).FROM(table.TaskVersionTests.
-		LEFT_JOIN(table.TextFiles, table.TaskVersionTests.InputTextFileID.EQ(table.TextFiles.ID))).
-		WHERE(table.TaskVersionTests.TaskVersionID.EQ(
-			postgres.Int64(taskVersionID)))
+	).FROM(table.TestSetTests.
+		LEFT_JOIN(table.TextFiles, table.TestSetTests.InputTextFileID.EQ(table.TextFiles.ID))).
+		WHERE(table.TestSetTests.TestSetID.EQ(
+			postgres.Int64(testSetID)))
 
 	var inputs []struct {
-		model.TaskVersionTests
+		model.TestSetTests
 		model.TextFiles
 	}
-	err := stmtSelectTestInputs.Query(db, &inputs)
+	err = stmtSelectTestInputs.Query(db, &inputs)
 	if err != nil {
 		return err
 	}
 
 	stmtSelectTestAnswers := postgres.SELECT(
-		table.TaskVersionTests.ID,
+		table.TestSetTests.ID,
 		table.TextFiles.Sha256,
 		table.TextFiles.Content,
 		table.TextFiles.Compression,
-	).FROM(table.TaskVersionTests.
-		LEFT_JOIN(table.TextFiles, table.TaskVersionTests.AnswerTextFileID.EQ(table.TextFiles.ID))).
-		WHERE(table.TaskVersionTests.TaskVersionID.EQ(
-			postgres.Int64(taskVersionID)))
+	).FROM(table.TestSetTests.
+		LEFT_JOIN(table.TextFiles, table.TestSetTests.AnswerTextFileID.EQ(table.TextFiles.ID))).
+		WHERE(table.TestSetTests.TestSetID.EQ(
+			postgres.Int64(testSetID)))
 	var answers []struct {
-		model.TaskVersionTests
+		model.TestSetTests
 		model.TextFiles
 	}
 	err = stmtSelectTestAnswers.Query(db, &answers)
@@ -237,23 +255,23 @@ func populateTests(db qrm.DB, taskVersionID int64, urls DownlURLGetter, req *msg
 	idAnswerMap := make(map[int64]testPart)
 
 	for _, input := range inputs {
-		idInputMap[input.TaskVersionTests.ID] = testPart{
-			id:          input.TaskVersionTests.ID,
+		idInputMap[input.TestSetTests.ID] = testPart{
+			id:          input.TestSetTests.ID,
 			sha256:      input.Sha256,
 			content:     input.TextFiles.Content,
 			compression: input.Compression,
 		}
-		testIdSet.Add(input.TaskVersionTests.ID)
+		testIdSet.Add(input.TestSetTests.ID)
 	}
 
 	for _, answer := range answers {
-		idAnswerMap[answer.TaskVersionTests.ID] = testPart{
-			id:          answer.TaskVersionTests.ID,
+		idAnswerMap[answer.TestSetTests.ID] = testPart{
+			id:          answer.TestSetTests.ID,
 			sha256:      answer.Sha256,
 			content:     answer.TextFiles.Content,
 			compression: answer.Compression,
 		}
-		testIdSet.Add(answer.TaskVersionTests.ID)
+		testIdSet.Add(answer.TestSetTests.ID)
 	}
 
 	for _, testID := range testIdSet.ToSlice() {

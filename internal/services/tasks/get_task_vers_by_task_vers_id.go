@@ -20,7 +20,7 @@ func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.Tas
 		return nil, tracerr.Wrap(err)
 	}
 
-	descriptionObj, err := GetLVTaskVersionDescription(db, tv.ID)
+	descriptionObj, err := GetTaskVersionDescription(db, tv.ID)
 	if err != nil {
 		return nil, tracerr.Wrap(err)
 	}

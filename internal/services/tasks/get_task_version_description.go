@@ -11,13 +11,13 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Description, error) {
-	stmt := postgres.SELECT(table.MarkdownStatements.AllColumns).
-		FROM(table.MarkdownStatements).
-		WHERE(table.MarkdownStatements.TaskVersionID.EQ(postgres.Int64(taskVersionID))).LIMIT(1)
+func GetTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Description, error) {
+	selectDescriptionStmt := postgres.SELECT(table.MarkdownStatements.AllColumns).
+		FROM(table.TaskVersions.INNER_JOIN(table.MarkdownStatements, table.TaskVersions.MdStatementID.EQ(table.MarkdownStatements.ID))).
+		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID)))
 
 	var description model.MarkdownStatements
-	err := stmt.Query(db, &description)
+	err := selectDescriptionStmt.Query(db, &description)
 	if err != nil {
 		if errors.Is(err, qrm.ErrNoRows) {
 			return nil, nil
@@ -25,24 +25,39 @@ func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Descr
 		return nil, tracerr.Wrap(err)
 	}
 
-	examplesStmt := postgres.SELECT(table.StatementExamples.AllColumns).
-		FROM(table.StatementExamples).
-		WHERE(table.StatementExamples.TaskVersionID.EQ(postgres.Int64(taskVersionID)))
+	selectExampleSetIDStmt := postgres.SELECT(table.TaskVersions.ExampleSetID).
+		FROM(table.TaskVersions).
+		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID)))
 
-	var examples []model.StatementExamples
-	err = examplesStmt.Query(db, &examples)
+	var taskVersionRecord model.TaskVersions
+	err = selectExampleSetIDStmt.Query(db, &taskVersionRecord)
 	if err != nil {
 		return nil, tracerr.Wrap(err)
 	}
 
-	var examplesObj []objects.Example
-	for _, example := range examples {
-		exampleObj := objects.Example{
-			ID:     taskVersionID,
-			Input:  example.Input,
-			Answer: example.Answer,
+	var examplesObjList []objects.Example
+	if taskVersionRecord.ExampleSetID != nil {
+
+		exampleSetID := *taskVersionRecord.ExampleSetID
+
+		examplesStmt := postgres.SELECT(table.StatementExamples.AllColumns).
+			FROM(table.StatementExamples).
+			WHERE(table.StatementExamples.ExampleSetID.EQ(postgres.Int64(exampleSetID)))
+
+		var examples []model.StatementExamples
+		err = examplesStmt.Query(db, &examples)
+		if err != nil {
+			return nil, tracerr.Wrap(err)
 		}
-		examplesObj = append(examplesObj, exampleObj)
+
+		for _, example := range examples {
+			exampleObj := objects.Example{
+				ID:     example.ID,
+				Input:  example.Input,
+				Answer: example.Answer,
+			}
+			examplesObjList = append(examplesObjList, exampleObj)
+		}
 	}
 
 	descriptionObj := objects.Description{
@@ -50,7 +65,7 @@ func GetLVTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Descr
 		Story:    description.Story,
 		Input:    description.Input,
 		Output:   description.Output,
-		Examples: examplesObj,
+		Examples: examplesObjList,
 		Notes:    description.Notes,
 	}
 
