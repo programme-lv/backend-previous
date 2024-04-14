@@ -29,6 +29,9 @@ type taskVersionsTable struct {
 	UpdatedAt       postgres.ColumnTimestampz
 	CheckerID       postgres.ColumnInteger
 	InteractorID    postgres.ColumnInteger
+	MdStatementID   postgres.ColumnInteger
+	ExampleSetID    postgres.ColumnInteger
+	TestSetID       postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -81,8 +84,11 @@ func newTaskVersionsTableImpl(schemaName, tableName, alias string) taskVersionsT
 		UpdatedAtColumn       = postgres.TimestampzColumn("updated_at")
 		CheckerIDColumn       = postgres.IntegerColumn("checker_id")
 		InteractorIDColumn    = postgres.IntegerColumn("interactor_id")
-		allColumns            = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
-		mutableColumns        = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn}
+		MdStatementIDColumn   = postgres.IntegerColumn("md_statement_id")
+		ExampleSetIDColumn    = postgres.IntegerColumn("example_set_id")
+		TestSetIDColumn       = postgres.IntegerColumn("test_set_id")
+		allColumns            = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
+		mutableColumns        = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
 	)
 
 	return taskVersionsTable{
@@ -101,6 +107,9 @@ func newTaskVersionsTableImpl(schemaName, tableName, alias string) taskVersionsT
 		UpdatedAt:       UpdatedAtColumn,
 		CheckerID:       CheckerIDColumn,
 		InteractorID:    InteractorIDColumn,
+		MdStatementID:   MdStatementIDColumn,
+		ExampleSetID:    ExampleSetIDColumn,
+		TestSetID:       TestSetIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

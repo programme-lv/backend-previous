@@ -8,8 +8,8 @@
 package model
 
 type StatementExamples struct {
-	ID            int64
-	Input         string
-	Answer        string
-	TaskVersionID int64
+	ID           int64
+	Input        string
+	Answer       string
+	ExampleSetID int64
 }

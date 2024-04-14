@@ -7,10 +7,10 @@
 
 package model
 
-type TaskVersionTests struct {
+type TestSetTests struct {
 	ID               int64 `sql:"primary_key"`
 	TestFilename     string
-	TaskVersionID    int64
+	TestSetID        int64
 	InputTextFileID  int64
 	AnswerTextFileID int64
 }

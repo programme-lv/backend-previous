@@ -55,7 +55,7 @@ type TaskVersion {
     code: String!
     name: String!
 
-    description: Description!
+    description: Description
     constraints: Constraints!
     metadata: Metadata!
 

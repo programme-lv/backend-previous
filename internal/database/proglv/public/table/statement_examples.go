@@ -17,10 +17,10 @@ type statementExamplesTable struct {
 	postgres.Table
 
 	// Columns
-	ID            postgres.ColumnInteger
-	Input         postgres.ColumnString
-	Answer        postgres.ColumnString
-	TaskVersionID postgres.ColumnInteger
+	ID           postgres.ColumnInteger
+	Input        postgres.ColumnString
+	Answer       postgres.ColumnString
+	ExampleSetID postgres.ColumnInteger
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -61,22 +61,22 @@ func newStatementExamplesTable(schemaName, tableName, alias string) *StatementEx
 
 func newStatementExamplesTableImpl(schemaName, tableName, alias string) statementExamplesTable {
 	var (
-		IDColumn            = postgres.IntegerColumn("id")
-		InputColumn         = postgres.StringColumn("input")
-		AnswerColumn        = postgres.StringColumn("answer")
-		TaskVersionIDColumn = postgres.IntegerColumn("task_version_id")
-		allColumns          = postgres.ColumnList{IDColumn, InputColumn, AnswerColumn, TaskVersionIDColumn}
-		mutableColumns      = postgres.ColumnList{IDColumn, InputColumn, AnswerColumn, TaskVersionIDColumn}
+		IDColumn           = postgres.IntegerColumn("id")
+		InputColumn        = postgres.StringColumn("input")
+		AnswerColumn       = postgres.StringColumn("answer")
+		ExampleSetIDColumn = postgres.IntegerColumn("example_set_id")
+		allColumns         = postgres.ColumnList{IDColumn, InputColumn, AnswerColumn, ExampleSetIDColumn}
+		mutableColumns     = postgres.ColumnList{IDColumn, InputColumn, AnswerColumn, ExampleSetIDColumn}
 	)
 
 	return statementExamplesTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:            IDColumn,
-		Input:         InputColumn,
-		Answer:        AnswerColumn,
-		TaskVersionID: TaskVersionIDColumn,
+		ID:           IDColumn,
+		Input:        InputColumn,
+		Answer:       AnswerColumn,
+		ExampleSetID: ExampleSetIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

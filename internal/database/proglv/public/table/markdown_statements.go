@@ -17,14 +17,13 @@ type markdownStatementsTable struct {
 	postgres.Table
 
 	// Columns
-	ID            postgres.ColumnInteger
-	Story         postgres.ColumnString
-	Input         postgres.ColumnString
-	Output        postgres.ColumnString
-	Notes         postgres.ColumnString
-	Scoring       postgres.ColumnString
-	TaskVersionID postgres.ColumnInteger
-	LangIso6391   postgres.ColumnString
+	ID          postgres.ColumnInteger
+	Story       postgres.ColumnString
+	Input       postgres.ColumnString
+	Output      postgres.ColumnString
+	Notes       postgres.ColumnString
+	Scoring     postgres.ColumnString
+	LangIso6391 postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -65,30 +64,28 @@ func newMarkdownStatementsTable(schemaName, tableName, alias string) *MarkdownSt
 
 func newMarkdownStatementsTableImpl(schemaName, tableName, alias string) markdownStatementsTable {
 	var (
-		IDColumn            = postgres.IntegerColumn("id")
-		StoryColumn         = postgres.StringColumn("story")
-		InputColumn         = postgres.StringColumn("input")
-		OutputColumn        = postgres.StringColumn("output")
-		NotesColumn         = postgres.StringColumn("notes")
-		ScoringColumn       = postgres.StringColumn("scoring")
-		TaskVersionIDColumn = postgres.IntegerColumn("task_version_id")
-		LangIso6391Column   = postgres.StringColumn("lang_iso639_1")
-		allColumns          = postgres.ColumnList{IDColumn, StoryColumn, InputColumn, OutputColumn, NotesColumn, ScoringColumn, TaskVersionIDColumn, LangIso6391Column}
-		mutableColumns      = postgres.ColumnList{StoryColumn, InputColumn, OutputColumn, NotesColumn, ScoringColumn, TaskVersionIDColumn, LangIso6391Column}
+		IDColumn          = postgres.IntegerColumn("id")
+		StoryColumn       = postgres.StringColumn("story")
+		InputColumn       = postgres.StringColumn("input")
+		OutputColumn      = postgres.StringColumn("output")
+		NotesColumn       = postgres.StringColumn("notes")
+		ScoringColumn     = postgres.StringColumn("scoring")
+		LangIso6391Column = postgres.StringColumn("lang_iso639_1")
+		allColumns        = postgres.ColumnList{IDColumn, StoryColumn, InputColumn, OutputColumn, NotesColumn, ScoringColumn, LangIso6391Column}
+		mutableColumns    = postgres.ColumnList{StoryColumn, InputColumn, OutputColumn, NotesColumn, ScoringColumn, LangIso6391Column}
 	)
 
 	return markdownStatementsTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:            IDColumn,
-		Story:         StoryColumn,
-		Input:         InputColumn,
-		Output:        OutputColumn,
-		Notes:         NotesColumn,
-		Scoring:       ScoringColumn,
-		TaskVersionID: TaskVersionIDColumn,
-		LangIso6391:   LangIso6391Column,
+		ID:          IDColumn,
+		Story:       StoryColumn,
+		Input:       InputColumn,
+		Output:      OutputColumn,
+		Notes:       NotesColumn,
+		Scoring:     ScoringColumn,
+		LangIso6391: LangIso6391Column,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

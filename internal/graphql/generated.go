@@ -1032,7 +1032,7 @@ type TaskVersion {
     code: String!
     name: String!
 
-    description: Description!
+    description: Description
     constraints: Constraints!
     metadata: Metadata!
 
@@ -4846,14 +4846,11 @@ func (ec *executionContext) _TaskVersion_description(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*Description)
 	fc.Result = res
-	return ec.marshalNDescription2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescription(ctx, field.Selections, res)
+	return ec.marshalODescription2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescription(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_TaskVersion_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8347,9 +8344,6 @@ func (ec *executionContext) _TaskVersion(ctx context.Context, sel ast.SelectionS
 			}
 		case "description":
 			out.Values[i] = ec._TaskVersion_description(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "constraints":
 			out.Values[i] = ec._TaskVersion_constraints(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8904,16 +8898,6 @@ func (ec *executionContext) marshalNConstraints2ᚖgithubᚗcomᚋprogrammeᚑlv
 		return graphql.Null
 	}
 	return ec._Constraints(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNDescription2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescription(ctx context.Context, sel ast.SelectionSet, v *Description) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Description(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEvaluation2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐEvaluation(ctx context.Context, sel ast.SelectionSet, v *Evaluation) graphql.Marshaler {
@@ -9556,6 +9540,13 @@ func (ec *executionContext) marshalOCompilationDetails2ᚖgithubᚗcomᚋprogram
 		return graphql.Null
 	}
 	return ec._CompilationDetails(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODescription2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐDescription(ctx context.Context, sel ast.SelectionSet, v *Description) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Description(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOExample2ᚕᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []*Example) graphql.Marshaler {

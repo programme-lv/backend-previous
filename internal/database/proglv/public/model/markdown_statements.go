@@ -8,12 +8,11 @@
 package model
 
 type MarkdownStatements struct {
-	ID            int64 `sql:"primary_key"`
-	Story         string
-	Input         string
-	Output        string
-	Notes         *string
-	Scoring       *string
-	TaskVersionID *int64
-	LangIso6391   string
+	ID          int64 `sql:"primary_key"`
+	Story       string
+	Input       string
+	Output      string
+	Notes       *string
+	Scoring     *string
+	LangIso6391 string
 }

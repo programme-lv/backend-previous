@@ -142,7 +142,31 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool,
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	panic(fmt.Errorf("not implemented: ListPublishedTasks - listPublishedTasks"))
+	taskIDs, err := tasks.GetPublishedTaskIDs(r.PostgresDB)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []*Task = make([]*Task, 0)
+	for _, taskID := range taskIDs {
+		taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+		if err != nil {
+			return nil, err
+		}
+
+		if taskObj.Current == nil {
+			continue
+		}
+
+		task, err := internalTaskToGQLTask(taskObj)
+		if err != nil {
+			return nil, err
+		}
+
+		res = append(res, task)
+	}
+
+	return res, nil
 }
 
 // GetStableTaskVersionByPublishedTaskCode is the resolver for the getStableTaskVersionByPublishedTaskCode field.

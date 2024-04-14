@@ -104,7 +104,7 @@ type TaskVersion struct {
 	VersionID   string       `json:"versionID"`
 	Code        string       `json:"code"`
 	Name        string       `json:"name"`
-	Description *Description `json:"description"`
+	Description *Description `json:"description,omitempty"`
 	Constraints *Constraints `json:"constraints"`
 	Metadata    *Metadata    `json:"metadata"`
 	CreatedAt   string       `json:"createdAt"`

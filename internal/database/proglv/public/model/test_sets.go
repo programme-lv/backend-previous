@@ -7,7 +7,11 @@
 
 package model
 
-type VersionAuthors struct {
-	TaskVersionID int32  `sql:"primary_key"`
-	Author        string `sql:"primary_key"`
+import (
+	"time"
+)
+
+type TestSets struct {
+	ID        int64 `sql:"primary_key"`
+	CreatedAt time.Time
 }

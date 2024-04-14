@@ -24,4 +24,7 @@ type TaskVersions struct {
 	UpdatedAt       *time.Time
 	CheckerID       *int64
 	InteractorID    *int64
+	MdStatementID   *int64
+	ExampleSetID    *int64
+	TestSetID       *int64
 }

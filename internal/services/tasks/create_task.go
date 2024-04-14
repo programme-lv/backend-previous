@@ -1,33 +1,49 @@
 package tasks
 
 import (
-	"context"
-
 	"github.com/go-jet/jet/v2/postgres"
-	"github.com/jmoiron/sqlx"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 )
 
-func CreateTask(db *sqlx.DB, name string, code string, userID int64) (int64, error) {
-	t, err := db.BeginTxx(context.TODO(), nil)
-	if err != nil {
-		return 0, err
-	}
-	defer t.Rollback()
-
+func CreateTask(db qrm.DB, name string, code string, userID int64) (int64, error) {
 	createTaskStmt := table.Tasks.INSERT(
 		table.Tasks.CreatedAt,
 		table.Tasks.CreatedByID,
 	).VALUES(postgres.NOW(), userID).RETURNING(table.Tasks.ID)
 
 	var task model.Tasks
-	err = createTaskStmt.Query(t, &task)
+	err := createTaskStmt.Query(db, &task)
 	if err != nil {
 		return 0, err
 	}
 
-	createTaskVersionStmt := table.TaskVersions.INSERT(
+	taskVersID, err := createTaskVersion(db, task.ID, code, name)
+	if err != nil {
+		return 0, err
+	}
+
+	err = assignCurrentVersionToTask(db, task.ID, taskVersID)
+	if err != nil {
+		return 0, err
+	}
+
+	mdStmtID, err := createDefaultMarkdownStatement(db)
+	if err != nil {
+		return 0, err
+	}
+
+	err = assignMdStatementToTaskVersion(db, mdStmtID, taskVersID)
+	if err != nil {
+		return 0, err
+	}
+
+	return task.ID, nil
+}
+
+func createTaskVersion(db qrm.Queryable, taskID int64, code, name string) (int64, error) {
+	insertStmt := table.TaskVersions.INSERT(
 		table.TaskVersions.TaskID,
 		table.TaskVersions.ShortCode,
 		table.TaskVersions.FullName,
@@ -36,45 +52,55 @@ func CreateTask(db *sqlx.DB, name string, code string, userID int64) (int64, err
 		table.TaskVersions.TestingTypeID,
 		table.TaskVersions.CreatedAt,
 	).VALUES(
-		task.ID, code, name, 1000, 65536, "simple", postgres.NOW()).
-		RETURNING(table.TaskVersions.ID)
+		taskID,
+		code,
+		name,
+		1000,
+		65536,
+		"simple",
+		postgres.NOW(),
+	).RETURNING(table.TaskVersions.ID)
 
 	var taskVersion model.TaskVersions
-	err = createTaskVersionStmt.Query(t, &taskVersion)
+	err := insertStmt.Query(db, &taskVersion)
 	if err != nil {
 		return 0, err
 	}
 
-	updateTaskStmt := table.Tasks.UPDATE(
-		table.Tasks.CurrentVersionID,
-	).SET(
-		taskVersion.ID,
-	).WHERE(
-		table.Tasks.ID.EQ(postgres.Int64(task.ID)),
-	)
+	return taskVersion.ID, nil
+}
 
-	_, err = updateTaskStmt.Exec(t)
-	if err != nil {
-		return 0, err
-	}
+func assignCurrentVersionToTask(db qrm.Executable, taskID, versionID int64) error {
+	updateStmt := table.Tasks.UPDATE(table.Tasks.CurrentVersionID).
+		SET(versionID).
+		WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 
-	createMarkdownStmt := table.MarkdownStatements.INSERT(
+	_, err := updateStmt.Exec(db)
+	return err
+}
+
+func createDefaultMarkdownStatement(db qrm.Queryable) (int64, error) {
+	insertStmt := table.MarkdownStatements.INSERT(
 		table.MarkdownStatements.Story,
 		table.MarkdownStatements.Input,
 		table.MarkdownStatements.Output,
-		table.MarkdownStatements.TaskVersionID,
 		table.MarkdownStatements.LangIso6391,
-	).VALUES("", "", "", taskVersion.ID, "lv")
+	).VALUES("", "", "", "lv").RETURNING(table.MarkdownStatements.ID)
 
-	_, err = createMarkdownStmt.Exec(t)
+	var stmtRecord model.MarkdownStatements
+	err := insertStmt.Query(db, &stmtRecord)
 	if err != nil {
 		return 0, err
 	}
 
-	err = t.Commit()
-	if err != nil {
-		return 0, err
-	}
+	return stmtRecord.ID, nil
+}
 
-	return task.ID, nil
+func assignMdStatementToTaskVersion(db qrm.Executable, statementID, versionID int64) error {
+	updateStmt := table.TaskVersions.UPDATE(table.TaskVersions.MdStatementID).
+		SET(statementID).
+		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(int64(versionID))))
+
+	_, err := updateStmt.Exec(db)
+	return err
 }
