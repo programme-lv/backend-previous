@@ -99,7 +99,7 @@ type ComplexityRoot struct {
 		Login                                                  func(childComplexity int, username string, password string) int
 		Logout                                                 func(childComplexity int) int
 		Register                                               func(childComplexity int, username string, password string, email string, firstName string, lastName string) int
-		UpdateTaskVersionStatement                             func(childComplexity int, taskVersionID string, statement StatementInput) int
+		UpdateCurrentTaskVersionStatementByTaskID              func(childComplexity int, taskID string, statement StatementInput) int
 	}
 
 	ProgrammingLanguage struct {
@@ -183,7 +183,7 @@ type MutationResolver interface {
 	Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error)
 	Logout(ctx context.Context) (bool, error)
 	CreateTask(ctx context.Context, name string, code string) (*Task, error)
-	UpdateTaskVersionStatement(ctx context.Context, taskVersionID string, statement StatementInput) (*TaskVersion, error)
+	UpdateCurrentTaskVersionStatementByTaskID(ctx context.Context, taskID string, statement StatementInput) (*TaskVersion, error)
 	DeleteTask(ctx context.Context, taskID string) (bool, error)
 	EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error)
 	ExecuteCode(ctx context.Context, code string, languageID string) (*ExecutionResult, error)
@@ -472,17 +472,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Register(childComplexity, args["username"].(string), args["password"].(string), args["email"].(string), args["firstName"].(string), args["lastName"].(string)), true
 
-	case "Mutation.updateTaskVersionStatement":
-		if e.complexity.Mutation.UpdateTaskVersionStatement == nil {
+	case "Mutation.updateCurrentTaskVersionStatementByTaskID":
+		if e.complexity.Mutation.UpdateCurrentTaskVersionStatementByTaskID == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateTaskVersionStatement_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateCurrentTaskVersionStatementByTaskID_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateTaskVersionStatement(childComplexity, args["taskVersionID"].(string), args["statement"].(StatementInput)), true
+		return e.complexity.Mutation.UpdateCurrentTaskVersionStatementByTaskID(childComplexity, args["taskID"].(string), args["statement"].(StatementInput)), true
 
 	case "ProgrammingLanguage.enabled":
 		if e.complexity.ProgrammingLanguage.Enabled == nil {
@@ -1009,7 +1009,7 @@ extend type Mutation {
     """
     createTask(name: String!, code: String!): Task!
 
-    updateTaskVersionStatement(taskVersionID: ID!, statement: StatementInput!): TaskVersion!
+    updateCurrentTaskVersionStatementByTaskID(taskID: ID!, statement: StatementInput!): TaskVersion!
 
     deleteTask(taskID: ID!): Boolean!
 }
@@ -1356,18 +1356,18 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateTaskVersionStatement_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateCurrentTaskVersionStatementByTaskID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["taskVersionID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskVersionID"))
+	if tmp, ok := rawArgs["taskID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
 		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["taskVersionID"] = arg0
+	args["taskID"] = arg0
 	var arg1 StatementInput
 	if tmp, ok := rawArgs["statement"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statement"))
@@ -2857,8 +2857,8 @@ func (ec *executionContext) fieldContext_Mutation_createTask(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updateTaskVersionStatement(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updateTaskVersionStatement(ctx, field)
+func (ec *executionContext) _Mutation_updateCurrentTaskVersionStatementByTaskID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateCurrentTaskVersionStatementByTaskID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2871,7 +2871,7 @@ func (ec *executionContext) _Mutation_updateTaskVersionStatement(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateTaskVersionStatement(rctx, fc.Args["taskVersionID"].(string), fc.Args["statement"].(StatementInput))
+		return ec.resolvers.Mutation().UpdateCurrentTaskVersionStatementByTaskID(rctx, fc.Args["taskID"].(string), fc.Args["statement"].(StatementInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2888,7 +2888,7 @@ func (ec *executionContext) _Mutation_updateTaskVersionStatement(ctx context.Con
 	return ec.marshalNTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_updateTaskVersionStatement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_updateCurrentTaskVersionStatementByTaskID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -2921,7 +2921,7 @@ func (ec *executionContext) fieldContext_Mutation_updateTaskVersionStatement(ctx
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateTaskVersionStatement_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_updateCurrentTaskVersionStatementByTaskID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -7812,9 +7812,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "updateTaskVersionStatement":
+		case "updateCurrentTaskVersionStatementByTaskID":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateTaskVersionStatement(ctx, field)
+				return ec._Mutation_updateCurrentTaskVersionStatementByTaskID(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

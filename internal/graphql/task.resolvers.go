@@ -54,24 +54,20 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	return task, nil
 }
 
-// UpdateTaskVersionStatement is the resolver for the updateTaskVersionStatement field.
-func (r *mutationResolver) UpdateTaskVersionStatement(ctx context.Context, taskVersionID string, statement StatementInput) (*TaskVersion, error) {
+// UpdateCurrentTaskVersionStatementByTaskID is the resolver for the updateCurrentTaskVersionStatementByTaskID field.
+func (r *mutationResolver) UpdateCurrentTaskVersionStatementByTaskID(ctx context.Context, taskID string, statement StatementInput) (*TaskVersion, error) {
+
 	user, err := r.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	taskVersionIDint64, err := strconv.ParseInt(taskVersionID, 10, 64)
+	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	taskID, err := tasks.GetTaskIDByTaskVersionID(r.PostgresDB, taskVersionIDint64)
-	if err != nil {
-		return nil, err
-	}
-
-	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskID)
+	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
 	if err != nil {
 		return nil, err
 	}
@@ -87,18 +83,13 @@ func (r *mutationResolver) UpdateTaskVersionStatement(ctx context.Context, taskV
 		Notes:  statement.Notes,
 	}
 
-	newTaskVersID, err := tasks.UpdateTaskVersionStatement(r.PostgresDB, taskVersionIDint64, input)
+	err = tasks.UpdateCurrentTaskVersionStatement(r.PostgresDB, taskIDInt64, input)
 	if err != nil {
 		tracerr.PrintSourceColor(err)
 		return nil, err
 	}
 
-	err = tasks.UpdateCurrentTaskVersionID(r.PostgresDB, taskID, newTaskVersID)
-	if err != nil {
-		return nil, err
-	}
-
-	taskVObj, err := tasks.GetTaskVersionByTaskVersionID(r.PostgresDB, newTaskVersID)
+	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
 	if err != nil {
 		return nil, err
 	}
