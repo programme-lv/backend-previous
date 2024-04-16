@@ -14,7 +14,6 @@ type TaskVersion struct {
 	MemoryLimitKb int64
 
 	CreatedAt time.Time
-	UpdatedAt *time.Time
 }
 
 type Task struct {
@@ -25,7 +24,6 @@ type Task struct {
 	Stable  *TaskVersion
 
 	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 type Description struct {

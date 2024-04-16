@@ -26,7 +26,6 @@ type taskVersionsTable struct {
 	TestingTypeID   postgres.ColumnString
 	Origin          postgres.ColumnString
 	CreatedAt       postgres.ColumnTimestampz
-	UpdatedAt       postgres.ColumnTimestampz
 	CheckerID       postgres.ColumnInteger
 	InteractorID    postgres.ColumnInteger
 	MdStatementID   postgres.ColumnInteger
@@ -81,14 +80,13 @@ func newTaskVersionsTableImpl(schemaName, tableName, alias string) taskVersionsT
 		TestingTypeIDColumn   = postgres.StringColumn("testing_type_id")
 		OriginColumn          = postgres.StringColumn("origin")
 		CreatedAtColumn       = postgres.TimestampzColumn("created_at")
-		UpdatedAtColumn       = postgres.TimestampzColumn("updated_at")
 		CheckerIDColumn       = postgres.IntegerColumn("checker_id")
 		InteractorIDColumn    = postgres.IntegerColumn("interactor_id")
 		MdStatementIDColumn   = postgres.IntegerColumn("md_statement_id")
 		ExampleSetIDColumn    = postgres.IntegerColumn("example_set_id")
 		TestSetIDColumn       = postgres.IntegerColumn("test_set_id")
-		allColumns            = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
-		mutableColumns        = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, UpdatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
+		allColumns            = postgres.ColumnList{IDColumn, TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
+		mutableColumns        = postgres.ColumnList{TaskIDColumn, ShortCodeColumn, FullNameColumn, TimeLimMsColumn, MemLimKibibytesColumn, TestingTypeIDColumn, OriginColumn, CreatedAtColumn, CheckerIDColumn, InteractorIDColumn, MdStatementIDColumn, ExampleSetIDColumn, TestSetIDColumn}
 	)
 
 	return taskVersionsTable{
@@ -104,7 +102,6 @@ func newTaskVersionsTableImpl(schemaName, tableName, alias string) taskVersionsT
 		TestingTypeID:   TestingTypeIDColumn,
 		Origin:          OriginColumn,
 		CreatedAt:       CreatedAtColumn,
-		UpdatedAt:       UpdatedAtColumn,
 		CheckerID:       CheckerIDColumn,
 		InteractorID:    InteractorIDColumn,
 		MdStatementID:   MdStatementIDColumn,

@@ -41,16 +41,20 @@ func duplicateTaskVersionWithNewNameAndCode(db qrm.DB, taskVersionID int64, name
 	insertStatement := table.TaskVersions.INSERT(
 		table.TaskVersions.MutableColumns.
 			Except(table.TaskVersions.FullName).
-			Except(table.TaskVersions.ShortCode),
+			Except(table.TaskVersions.ShortCode).
+			Except(table.TaskVersions.CreatedAt),
 		table.TaskVersions.FullName,
 		table.TaskVersions.ShortCode,
+		table.TaskVersions.CreatedAt,
 	).QUERY(
 		postgres.SELECT(
 			table.TaskVersions.MutableColumns.
 				Except(table.TaskVersions.FullName).
-				Except(table.TaskVersions.ShortCode),
+				Except(table.TaskVersions.ShortCode).
+				Except(table.TaskVersions.CreatedAt),
 			postgres.String(name).AS(table.TaskVersions.FullName.Name()),
 			postgres.String(code).AS(table.TaskVersions.ShortCode.Name()),
+			postgres.NOW().AS(table.TaskVersions.CreatedAt.Name()),
 		).FROM(table.TaskVersions).
 			WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID))),
 	).

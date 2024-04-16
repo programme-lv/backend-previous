@@ -21,7 +21,6 @@ type TaskVersions struct {
 	TestingTypeID   string
 	Origin          *string
 	CreatedAt       time.Time
-	UpdatedAt       *time.Time
 	CheckerID       *int64
 	InteractorID    *int64
 	MdStatementID   *int64

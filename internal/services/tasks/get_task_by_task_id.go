@@ -54,7 +54,6 @@ func GetTaskByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
 		Current:     currTaskVers,
 		Stable:      stableTaskVers,
 		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.CreatedAt,
 	}
 
 	return &taskObj, nil

@@ -33,7 +33,6 @@ func GetStableTaskVersionByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion
 		TimeLimitMs:   stableTaskVersion.TimeLimMs,
 		MemoryLimitKb: stableTaskVersion.MemLimKibibytes,
 		CreatedAt:     stableTaskVersion.CreatedAt,
-		UpdatedAt:     stableTaskVersion.UpdatedAt,
 	}
 
 	return &taskVersionObj, nil

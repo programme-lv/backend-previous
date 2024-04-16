@@ -159,12 +159,18 @@ func checkIfDiffUpdateIfIs(statement *model.MarkdownStatements, input UpdateTask
 func duplicateTaskVersionWithNewStmtID(db qrm.DB, taskVersionID int64, newStmtID int64) (int64, error) {
 	// insert new task version
 	insertStatement := table.TaskVersions.INSERT(
-		table.TaskVersions.MutableColumns.Except(table.TaskVersions.MdStatementID),
+		table.TaskVersions.MutableColumns.
+			Except(table.TaskVersions.MdStatementID).
+			Except(table.TaskVersions.CreatedAt),
 		table.TaskVersions.MdStatementID,
+		table.TaskVersions.CreatedAt,
 	).QUERY(
 		postgres.SELECT(
-			table.TaskVersions.MutableColumns.Except(table.TaskVersions.MdStatementID),
+			table.TaskVersions.MutableColumns.
+				Except(table.TaskVersions.MdStatementID).
+				Except(table.TaskVersions.CreatedAt),
 			postgres.Int64(newStmtID).AS(table.TaskVersions.MdStatementID.Name()),
+			postgres.NOW().AS(table.TaskVersions.CreatedAt.Name()),
 		).FROM(table.TaskVersions).
 			WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID))),
 	).

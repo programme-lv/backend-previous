@@ -223,6 +223,28 @@ func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskI
 	return res, nil
 }
 
+// GetTaskByTaskID is the resolver for the getTaskByTaskID field.
+func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Task, error) {
+	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: disallow getting unpublished tasks
+
+	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskIDint64)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := internalTaskToGQLTask(taskObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
 	user, err := r.GetUserFromContext(ctx)

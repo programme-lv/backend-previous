@@ -34,7 +34,6 @@ func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.Tas
 		TimeLimitMs:   tv.TimeLimMs,
 		MemoryLimitKb: tv.MemLimKibibytes,
 		CreatedAt:     tv.CreatedAt,
-		UpdatedAt:     tv.UpdatedAt,
 	}
 
 	return &taskVersionObj, nil

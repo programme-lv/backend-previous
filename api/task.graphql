@@ -18,6 +18,12 @@ extend type Query {
     getCurrentTaskVersionByTaskID(taskID: ID!): TaskVersion!
 
     """
+    Returns the task with the given taskID.
+    Useful when we want to know when task was initiallly created.
+    """
+    getTaskByTaskID(taskID: ID!): Task!
+
+    """
     Returns a list of all tasks that are editable by the current user.
     Used for rendering the editable task list in task constructor.
     """
@@ -48,7 +54,6 @@ type Task {
     stable: TaskVersion
 
     createdAt: String!
-    updatedAt: String!
 }
 
 type TaskVersion {

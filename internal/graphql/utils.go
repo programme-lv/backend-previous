@@ -100,17 +100,11 @@ func internalTaskToGQLTask(task *objects.Task) (*Task, error) {
 		return nil, err
 	}
 
-	marshalledUpdatedAt, err := task.UpdatedAt.MarshalText()
-	if err != nil {
-		return nil, err
-	}
-
 	res := Task{
 		TaskID:    fmt.Sprint(task.ID),
 		Current:   currentTaskVersion,
 		Stable:    stableTaskVersion,
 		CreatedAt: string(marshalledCreatedAt),
-		UpdatedAt: string(marshalledUpdatedAt),
 	}
 	return &res, nil
 }

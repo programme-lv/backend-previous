@@ -97,7 +97,6 @@ type Task struct {
 	Current   *TaskVersion `json:"current"`
 	Stable    *TaskVersion `json:"stable,omitempty"`
 	CreatedAt string       `json:"createdAt"`
-	UpdatedAt string       `json:"updatedAt"`
 }
 
 type TaskVersion struct {
