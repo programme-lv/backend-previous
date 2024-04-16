@@ -56,7 +56,6 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 
 // UpdateCurrentTaskVersionStatementByTaskID is the resolver for the updateCurrentTaskVersionStatementByTaskID field.
 func (r *mutationResolver) UpdateCurrentTaskVersionStatementByTaskID(ctx context.Context, taskID string, statement StatementInput) (*TaskVersion, error) {
-
 	user, err := r.GetUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -86,6 +85,45 @@ func (r *mutationResolver) UpdateCurrentTaskVersionStatementByTaskID(ctx context
 	err = tasks.UpdateCurrentTaskVersionStatement(r.PostgresDB, taskIDInt64, input)
 	if err != nil {
 		tracerr.PrintSourceColor(err)
+		return nil, err
+	}
+
+	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := internalTaskVToGQLTaskV(taskVObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// UpdateCurrentTaskVersionNameAndCodeByTaskID is the resolver for the updateCurrentTaskVersionNameAndCodeByTaskID field.
+func (r *mutationResolver) UpdateCurrentTaskVersionNameAndCodeByTaskID(ctx context.Context, taskID string, name string, code string) (*TaskVersion, error) {
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
+	if err != nil {
+		return nil, err
+	}
+
+	if !canEdit {
+		return nil, fmt.Errorf("user does not have permission to edit this task version")
+	}
+
+	err = tasks.UpdateCurrentTaskVersionNameAndCode(r.PostgresDB, taskIDInt64, name, code)
+	if err != nil {
 		return nil, err
 	}
 

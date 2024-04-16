@@ -34,6 +34,8 @@ extend type Mutation {
 
     updateCurrentTaskVersionStatementByTaskID(taskID: ID!, statement: StatementInput!): TaskVersion!
 
+    updateCurrentTaskVersionNameAndCodeByTaskID(taskID: ID!, name: String!, code: String!): TaskVersion!
+
     deleteTask(taskID: ID!): Boolean!
 }
 
