@@ -8,7 +8,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/programme-lv/backend/internal/dospaces"
 	"github.com/programme-lv/director/msg"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // This file will not be regenerated automatically.
@@ -24,7 +23,7 @@ type Resolver struct {
 	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
-	SubmissionRMQ  *amqp.Connection
-	TestURLs       *dospaces.DOSpacesS3ObjStorage
-	DirectorConn   *AuthDirectorConn
+	// SubmissionRMQ  *amqp.Connection
+	TestURLs     *dospaces.DOSpacesS3ObjStorage
+	DirectorConn *AuthDirectorConn
 }

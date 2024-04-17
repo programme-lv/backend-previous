@@ -25,7 +25,6 @@ import (
 	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/services/submissions"
 	"github.com/programme-lv/director/msg"
-	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -47,13 +46,13 @@ func main() {
 	defer sqlxDb.Close()
 	log.Info("successfully connected to database")
 
-	log.Info("connecting to RabbitMQ...")
-	rmqConn, err := amqp.Dial(conf.AMQPConnString)
-	if err != nil {
-		panic(err)
-	}
-	defer rmqConn.Close()
-	log.Info("successfully connected to RabbitMQ")
+	// log.Info("connecting to RabbitMQ...")
+	// rmqConn, err := amqp.Dial(conf.AMQPConnString)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer rmqConn.Close()
+	// log.Info("successfully connected to RabbitMQ")
 
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
@@ -107,8 +106,8 @@ func main() {
 		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
 		Logger:         log,
-		SubmissionRMQ:  rmqConn,
-		TestURLs:       spacesConn,
+		// SubmissionRMQ:  rmqConn,
+		TestURLs: spacesConn,
 		DirectorConn: &graphql.AuthDirectorConn{
 			GRPCClient: msg.NewDirectorClient(gConn),
 			Password:   conf.DirectorAuthKey,
