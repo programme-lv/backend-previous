@@ -5,23 +5,20 @@ extend type Query {
     """
     listPublishedTasks: [Task!]!
 
-    """
-    Finds the task id associated with the published task code.
-    Returns the stable version of that task.
-    """
-    getStableTaskVersionByPublishedTaskCode(taskCode: String!): TaskVersion!
-
-    """
-    Returns the latest version of a task.
-    Used for task preparation / development / editing.
-    """
-    getCurrentTaskVersionByTaskID(taskID: ID!): TaskVersion!
 
     """
     Returns the task with the given taskID.
     Useful when we want to know when task was initiallly created.
     """
     getTaskByTaskID(taskID: ID!): Task!
+
+
+    """
+    Finds task id in the published_task_codes table.
+    Returns the task with the given code.
+    """
+    getTaskByPublishedTaskCode(code: String!): Task!
+
 
     """
     Returns a list of all tasks that are editable by the current user.

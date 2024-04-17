@@ -111,15 +111,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetCurrentTaskVersionByTaskID           func(childComplexity int, taskID string) int
-		GetStableTaskVersionByPublishedTaskCode func(childComplexity int, taskCode string) int
-		GetSubmission                           func(childComplexity int, id string) int
-		GetTaskByTaskID                         func(childComplexity int, taskID string) int
-		ListEditableTasks                       func(childComplexity int) int
-		ListLanguages                           func(childComplexity int, enabled *bool) int
-		ListPublicSubmissions                   func(childComplexity int) int
-		ListPublishedTasks                      func(childComplexity int) int
-		Whoami                                  func(childComplexity int) int
+		GetSubmission              func(childComplexity int, id string) int
+		GetTaskByPublishedTaskCode func(childComplexity int, code string) int
+		GetTaskByTaskID            func(childComplexity int, taskID string) int
+		ListEditableTasks          func(childComplexity int) int
+		ListLanguages              func(childComplexity int, enabled *bool) int
+		ListPublicSubmissions      func(childComplexity int) int
+		ListPublishedTasks         func(childComplexity int) int
+		Whoami                     func(childComplexity int) int
 	}
 
 	RuntimeStatistics struct {
@@ -193,9 +192,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Whoami(ctx context.Context) (*User, error)
 	ListPublishedTasks(ctx context.Context) ([]*Task, error)
-	GetStableTaskVersionByPublishedTaskCode(ctx context.Context, taskCode string) (*TaskVersion, error)
-	GetCurrentTaskVersionByTaskID(ctx context.Context, taskID string) (*TaskVersion, error)
 	GetTaskByTaskID(ctx context.Context, taskID string) (*Task, error)
+	GetTaskByPublishedTaskCode(ctx context.Context, code string) (*Task, error)
 	ListEditableTasks(ctx context.Context) ([]*Task, error)
 	ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error)
 	ListPublicSubmissions(ctx context.Context) ([]*Submission, error)
@@ -527,30 +525,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProgrammingLanguage.MonacoID(childComplexity), true
 
-	case "Query.getCurrentTaskVersionByTaskID":
-		if e.complexity.Query.GetCurrentTaskVersionByTaskID == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getCurrentTaskVersionByTaskID_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetCurrentTaskVersionByTaskID(childComplexity, args["taskID"].(string)), true
-
-	case "Query.getStableTaskVersionByPublishedTaskCode":
-		if e.complexity.Query.GetStableTaskVersionByPublishedTaskCode == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getStableTaskVersionByPublishedTaskCode_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetStableTaskVersionByPublishedTaskCode(childComplexity, args["taskCode"].(string)), true
-
 	case "Query.getSubmission":
 		if e.complexity.Query.GetSubmission == nil {
 			break
@@ -562,6 +536,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetSubmission(childComplexity, args["id"].(string)), true
+
+	case "Query.getTaskByPublishedTaskCode":
+		if e.complexity.Query.GetTaskByPublishedTaskCode == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getTaskByPublishedTaskCode_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetTaskByPublishedTaskCode(childComplexity, args["code"].(string)), true
 
 	case "Query.getTaskByTaskID":
 		if e.complexity.Query.GetTaskByTaskID == nil {
@@ -1002,23 +988,20 @@ type User {
     """
     listPublishedTasks: [Task!]!
 
-    """
-    Finds the task id associated with the published task code.
-    Returns the stable version of that task.
-    """
-    getStableTaskVersionByPublishedTaskCode(taskCode: String!): TaskVersion!
-
-    """
-    Returns the latest version of a task.
-    Used for task preparation / development / editing.
-    """
-    getCurrentTaskVersionByTaskID(taskID: ID!): TaskVersion!
 
     """
     Returns the task with the given taskID.
     Useful when we want to know when task was initiallly created.
     """
     getTaskByTaskID(taskID: ID!): Task!
+
+
+    """
+    Finds task id in the published_task_codes table.
+    Returns the task with the given code.
+    """
+    getTaskByPublishedTaskCode(code: String!): Task!
+
 
     """
     Returns a list of all tasks that are editable by the current user.
@@ -1455,36 +1438,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getCurrentTaskVersionByTaskID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["taskID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskID"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["taskID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getStableTaskVersionByPublishedTaskCode_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["taskCode"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskCode"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["taskCode"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_getSubmission_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1497,6 +1450,21 @@ func (ec *executionContext) field_Query_getSubmission_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getTaskByPublishedTaskCode_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["code"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["code"] = arg0
 	return args, nil
 }
 
@@ -3541,148 +3509,6 @@ func (ec *executionContext) fieldContext_Query_listPublishedTasks(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getStableTaskVersionByPublishedTaskCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getStableTaskVersionByPublishedTaskCode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetStableTaskVersionByPublishedTaskCode(rctx, fc.Args["taskCode"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*TaskVersion)
-	fc.Result = res
-	return ec.marshalNTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getStableTaskVersionByPublishedTaskCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "versionID":
-				return ec.fieldContext_TaskVersion_versionID(ctx, field)
-			case "code":
-				return ec.fieldContext_TaskVersion_code(ctx, field)
-			case "name":
-				return ec.fieldContext_TaskVersion_name(ctx, field)
-			case "description":
-				return ec.fieldContext_TaskVersion_description(ctx, field)
-			case "constraints":
-				return ec.fieldContext_TaskVersion_constraints(ctx, field)
-			case "metadata":
-				return ec.fieldContext_TaskVersion_metadata(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_TaskVersion_createdAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TaskVersion", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getStableTaskVersionByPublishedTaskCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_getCurrentTaskVersionByTaskID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getCurrentTaskVersionByTaskID(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCurrentTaskVersionByTaskID(rctx, fc.Args["taskID"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*TaskVersion)
-	fc.Result = res
-	return ec.marshalNTaskVersion2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTaskVersion(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getCurrentTaskVersionByTaskID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "versionID":
-				return ec.fieldContext_TaskVersion_versionID(ctx, field)
-			case "code":
-				return ec.fieldContext_TaskVersion_code(ctx, field)
-			case "name":
-				return ec.fieldContext_TaskVersion_name(ctx, field)
-			case "description":
-				return ec.fieldContext_TaskVersion_description(ctx, field)
-			case "constraints":
-				return ec.fieldContext_TaskVersion_constraints(ctx, field)
-			case "metadata":
-				return ec.fieldContext_TaskVersion_metadata(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_TaskVersion_createdAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TaskVersion", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getCurrentTaskVersionByTaskID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_getTaskByTaskID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getTaskByTaskID(ctx, field)
 	if err != nil {
@@ -3742,6 +3568,71 @@ func (ec *executionContext) fieldContext_Query_getTaskByTaskID(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getTaskByTaskID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getTaskByPublishedTaskCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getTaskByPublishedTaskCode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetTaskByPublishedTaskCode(rctx, fc.Args["code"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Task)
+	fc.Result = res
+	return ec.marshalNTask2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getTaskByPublishedTaskCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "taskID":
+				return ec.fieldContext_Task_taskID(ctx, field)
+			case "current":
+				return ec.fieldContext_Task_current(ctx, field)
+			case "stable":
+				return ec.fieldContext_Task_stable(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Task_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getTaskByPublishedTaskCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8140,50 +8031,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getStableTaskVersionByPublishedTaskCode":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getStableTaskVersionByPublishedTaskCode(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getCurrentTaskVersionByTaskID":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getCurrentTaskVersionByTaskID(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getTaskByTaskID":
 			field := field
 
@@ -8194,6 +8041,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getTaskByTaskID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getTaskByPublishedTaskCode":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getTaskByPublishedTaskCode(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

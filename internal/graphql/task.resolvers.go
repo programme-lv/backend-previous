@@ -198,31 +198,6 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 	return res, nil
 }
 
-// GetStableTaskVersionByPublishedTaskCode is the resolver for the getStableTaskVersionByPublishedTaskCode field.
-func (r *queryResolver) GetStableTaskVersionByPublishedTaskCode(ctx context.Context, taskCode string) (*TaskVersion, error) {
-	panic(fmt.Errorf("not implemented: GetStableTaskVersionByPublishedTaskCode - getStableTaskVersionByPublishedTaskCode"))
-}
-
-// GetCurrentTaskVersionByTaskID is the resolver for the getCurrentTaskVersionByTaskID field.
-func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskID string) (*TaskVersion, error) {
-	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDint64)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := internalTaskVToGQLTaskV(taskVObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
 // GetTaskByTaskID is the resolver for the getTaskByTaskID field.
 func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Task, error) {
 	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
@@ -233,6 +208,26 @@ func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Ta
 	// TODO: disallow getting unpublished tasks
 
 	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskIDint64)
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := internalTaskToGQLTask(taskObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
+// GetTaskByPublishedTaskCode is the resolver for the getTaskByPublishedTaskCode field.
+func (r *queryResolver) GetTaskByPublishedTaskCode(ctx context.Context, code string) (*Task, error) {
+	taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, code)
+	if err != nil {
+		return nil, err
+	}
+
+	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +270,34 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 		}
 
 		res = append(res, task)
+	}
+
+	return res, nil
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) GetStableTaskVersionByPublishedTaskCode(ctx context.Context, taskCode string) (*TaskVersion, error) {
+	panic(fmt.Errorf("not implemented: GetStableTaskVersionByPublishedTaskCode - getStableTaskVersionByPublishedTaskCode"))
+}
+func (r *queryResolver) GetCurrentTaskVersionByTaskID(ctx context.Context, taskID string) (*TaskVersion, error) {
+	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDint64)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := internalTaskVToGQLTaskV(taskVObj)
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
