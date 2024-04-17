@@ -12,7 +12,7 @@ import (
 	"github.com/alexedwards/scs/redisstore"
 	"github.com/lmittmann/tint"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -77,7 +77,7 @@ func main() {
 	log.Info("successfully connected to DO Spaces")
 
 	log.Info("connecting to \"director\" gRPC service...")
-	gConn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	gConn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
 	if err != nil {
 		log.Error("could not connect to director", "error", err)
 		panic(err)
@@ -145,7 +145,7 @@ func testTestURLs(urls *submissions.S3TestURLs) error {
 func testConnToDirector(conn *grpc.ClientConn, directorAuthKey string) error {
 	c := msg.NewDirectorClient(conn)
 	md := metadata.New(map[string]string{"authorization": directorAuthKey})
-	ctx2, _ := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+	ctx2, _ := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
 	ctx := metadata.NewOutgoingContext(ctx2, md)
 	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
 	if err != nil {
