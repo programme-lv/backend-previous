@@ -20,6 +20,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/programme-lv/backend/internal/dospaces"
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/services/submissions"
@@ -66,11 +67,19 @@ func main() {
 	sessions.Store = redisstore.New(redisPool)
 
 	log.Info("connecting to DigitalOcean Spaces...")
-	urls, err := submissions.NewS3TestURLs(conf.DOSpacesKey, conf.DOSpacesSecret, "fra1", conf.S3Endpoint, conf.S3Bucket)
+	spacesConnParams := dospaces.DOSpacesConnParams{
+		AccessKey: conf.DOSpacesKey,
+		SecretKey: conf.DOSpacesSecret,
+		Region:    "fra1",
+		Endpoint:  conf.S3Endpoint,
+		Bucket:    conf.S3Bucket,
+	}
+	spacesConn, err := dospaces.NewDOSpacesConn(spacesConnParams)
 	if err != nil {
 		panic(err)
 	}
-	if err := testTestURLs(urls); err != nil {
+
+	if err := testTestURLs(spacesConn); err != nil {
 		log.Error("could not download test file", "error", err)
 		panic(err)
 	}
@@ -99,9 +108,11 @@ func main() {
 		SessionManager: sessions,
 		Logger:         log,
 		SubmissionRMQ:  rmqConn,
-		TestURLs:       urls,
-		DirectorClient: msg.NewDirectorClient(gConn),
-		DirectorPasswd: conf.DirectorAuthKey,
+		TestURLs:       spacesConn,
+		DirectorConn: &graphql.AuthDirectorConn{
+			GRPCClient: msg.NewDirectorClient(gConn),
+			Password:   conf.DirectorAuthKey,
+		},
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
@@ -115,7 +126,7 @@ func main() {
 	log.Error(http.ListenAndServe(":"+defaultPort, nil).Error())
 }
 
-func testTestURLs(urls *submissions.S3TestURLs) error {
+func testTestURLs(urls submissions.TestDownloadURLProvider) error {
 	url, err := urls.GetTestDownloadURL("test")
 	if err != nil {
 		return err

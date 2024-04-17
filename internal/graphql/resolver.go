@@ -6,7 +6,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/programme-lv/backend/internal/services/submissions"
+	"github.com/programme-lv/backend/internal/dospaces"
 	"github.com/programme-lv/director/msg"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -15,12 +15,16 @@ import (
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
+type AuthDirectorConn struct {
+	GRPCClient msg.DirectorClient
+	Password   string
+}
+
 type Resolver struct {
 	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	SubmissionRMQ  *amqp.Connection
-	TestURLs       *submissions.S3TestURLs
-	DirectorClient msg.DirectorClient
-	DirectorPasswd string
+	TestURLs       *dospaces.DOSpacesS3ObjStorage
+	DirectorConn   *AuthDirectorConn
 }

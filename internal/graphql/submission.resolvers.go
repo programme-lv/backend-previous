@@ -11,6 +11,7 @@ import (
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error) {
+
 	panic(fmt.Errorf("not implemented: EnqueueSubmissionForPublishedTaskCodeStableTaskVersion - enqueueSubmissionForPublishedTaskCodeStableTaskVersion"))
 }
 

@@ -1,4 +1,4 @@
-package submissions
+package dospaces
 
 import (
 	"log/slog"
@@ -10,7 +10,14 @@ import (
 func TestGetPresignedURL(t *testing.T) {
 	config := environment.ReadEnvConfig(slog.Default())
 
-	urls, err := NewS3TestURLs(config.DOSpacesKey, config.DOSpacesSecret, "fra1", config.S3Endpoint, config.S3Bucket)
+	s3ConnParams := DOSpacesConnParams{
+		AccessKey: config.DOSpacesKey,
+		SecretKey: config.DOSpacesSecret,
+		Region:    "fra1",
+		Endpoint:  config.S3Endpoint,
+		Bucket:    config.S3Bucket,
+	}
+	urls, err := NewDOSpacesConn(s3ConnParams)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

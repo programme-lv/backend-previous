@@ -15,8 +15,20 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
-	urlGet DownlURLGetter, dc msg.DirectorClient, dPass string) error {
+type TestingDirectorConn struct {
+	GRPCClient msg.DirectorClient
+	Password   string
+}
+
+type TestDownloadURLProvider interface {
+	GetTestDownloadURL(testSHA256 string) (string, error)
+}
+
+func EvaluateSubmission(db qrm.DB,
+	submissionID int64, taskVersionID int64,
+	urlProvider TestDownloadURLProvider,
+	directorConn TestingDirectorConn) error {
+
 	evalID, err := insertNewEvaluation(db, taskVersionID)
 	if err != nil {
 		return err
@@ -41,7 +53,7 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 		TestlibChecker: "",
 	}
 
-	err = populateSubmissionAndLangID(db, submID, &req)
+	err = populateSubmissionAndLangID(db, submissionID, &req)
 	if err != nil {
 		return err
 	}
@@ -68,14 +80,14 @@ func EvaluateSubmission(db qrm.DB, submID int64, taskVersionID int64,
 		}
 	}
 
-	err = populateTests(db, taskVersionID, urlGet, &req)
+	err = populateTests(db, taskVersionID, urlProvider, &req)
 	if err != nil {
 		return err
 	}
 
-	md := metadata.New(map[string]string{"authorization": dPass})
+	md := metadata.New(map[string]string{"authorization": directorConn.Password})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	evaluationClient, err := dc.EvaluateSubmission(ctx, &req)
+	evaluationClient, err := directorConn.GRPCClient.EvaluateSubmission(ctx, &req)
 	if err != nil {
 		return err
 	}
@@ -187,7 +199,7 @@ func populateTestlibChecker(db qrm.DB, checkerID int64, req *msg.EvaluationReque
 	return nil
 }
 
-func populateTests(db qrm.DB, taskVersionID int64, urls DownlURLGetter, req *msg.EvaluationRequest) error {
+func populateTests(db qrm.DB, taskVersionID int64, urls TestDownloadURLProvider, req *msg.EvaluationRequest) error {
 	selectTestSetIDStmt := postgres.SELECT(
 		table.TaskVersions.TestSetID,
 	).FROM(table.TaskVersions).

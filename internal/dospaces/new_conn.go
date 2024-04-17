@@ -1,43 +1,30 @@
-package submissions
+package dospaces
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type DownlURLGetter interface {
-	GetTestDownloadURL(testSHA256 string) (string, error)
+type DOSpacesConnParams struct {
+	AccessKey string
+	SecretKey string
+	Region    string
+	Endpoint  string
+	Bucket    string
 }
 
-type S3TestURLs struct {
-	presignClient *s3.PresignClient
-	bucketName    string
-}
+func NewDOSpacesConn(params DOSpacesConnParams) (*DOSpacesS3ObjStorage, error) {
+	accessKey := params.AccessKey
+	secretKey := params.SecretKey
+	region := params.Region
+	endpoint := params.Endpoint
+	bucket := params.Bucket
 
-var _ DownlURLGetter = &S3TestURLs{}
-
-func (s *S3TestURLs) GetTestDownloadURL(testSHA256 string) (string, error) {
-	objectKey := fmt.Sprintf("tests/%s", testSHA256)
-	request, err := s.presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
-		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(objectKey),
-	}, func(opts *s3.PresignOptions) {
-		opts.Expires = time.Duration(24 * time.Hour) // 24 hours
-	})
-	if err != nil {
-		return "",
-			fmt.Errorf("failed to presign object: %v", err)
-	}
-	return request.URL, nil
-}
-
-func NewS3TestURLs(accessKey, secretKey, region, endpoint, bucket string) (*S3TestURLs, error) {
-	res := &S3TestURLs{
+	res := &DOSpacesS3ObjStorage{
 		presignClient: nil,
 		bucketName:    bucket,
 	}
