@@ -8,7 +8,7 @@ import (
 	"github.com/programme-lv/backend/internal/services/objects"
 )
 
-func GetStableTaskVersionByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion, error) {
+func GetStableTaskVersionObjectByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion, error) {
 	stmt := postgres.SELECT(table.TaskVersions.AllColumns).FROM(
 		table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersions.ID.EQ(table.Tasks.StableVersionID)),
 	).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))

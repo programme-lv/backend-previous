@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"sort"
 
 	set "github.com/deckarep/golang-set/v2"
@@ -30,6 +31,17 @@ func EvaluateSubmission(db qrm.DB,
 	directorConn TestingDirectorConn) error {
 
 	evalID, err := insertNewEvaluation(db, taskVersionID)
+	if err != nil {
+		return err
+	}
+
+	// set this evaluation as the visible one
+	stmtUpdateEval := table.TaskSubmissions.UPDATE(
+		table.TaskSubmissions.VisibleEvalID).
+		SET(postgres.Int64(evalID)).
+		WHERE(table.TaskSubmissions.ID.EQ(
+			postgres.Int64(submissionID)))
+	_, err = stmtUpdateEval.Exec(db)
 	if err != nil {
 		return err
 	}
@@ -92,21 +104,25 @@ func EvaluateSubmission(db qrm.DB,
 		return err
 	}
 
-	fbProc := NewEvalFeedbackProcessor(db, evalID)
-	for {
-		res, err := evaluationClient.Recv()
-		if err != nil {
-			if err == io.EOF {
+	go func() {
+		fbProc := NewEvalFeedbackProcessor(db, evalID)
+		for {
+			res, err := evaluationClient.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				slog.Error("error receiving evaluation feedback", err)
 				break
 			}
-			return err
-		}
 
-		err = fbProc.Process(res)
-		if err != nil {
-			return err
+			err = fbProc.Process(res)
+			if err != nil {
+				slog.Error("error processing evaluation feedback", err)
+				break
+			}
 		}
-	}
+	}()
 
 	return nil
 }

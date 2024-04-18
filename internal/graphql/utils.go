@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/programme-lv/backend/internal/database"
+	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/services/users"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (r *Resolver) GetUserFromContext(ctx context.Context) (*database.User, error) {
-	userId, ok := r.SessionManager.Get(ctx, "user_id").(int64)
+func (r *Resolver) GetUserFromContext(ctx context.Context) (*model.Users, error) {
+	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
 	if !ok {
 		return nil, fmt.Errorf("user is not logged in")
 	}
 
-	var user database.User
-	err := r.PostgresDB.Get(&user, "SELECT * FROM users WHERE id = $1", userId)
+	user, err := users.FindUserByID(r.PostgresDB, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (r *Resolver) HashPassword(password string) (string, error) {

@@ -7,12 +7,55 @@ package graphql
 import (
 	"context"
 	"fmt"
+
+	"github.com/programme-lv/backend/internal/services/langs"
+	"github.com/programme-lv/backend/internal/services/submissions"
+	"github.com/programme-lv/backend/internal/services/tasks"
 )
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error) {
+	user, err := r.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	panic(fmt.Errorf("not implemented: EnqueueSubmissionForPublishedTaskCodeStableTaskVersion - enqueueSubmissionForPublishedTaskCodeStableTaskVersion"))
+	programmingLang, err := langs.FindLanguageByID(r.PostgresDB, languageID)
+	if err != nil {
+		return nil, err
+	}
+
+	taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, taskCode)
+	if err != nil {
+		return nil, err
+	}
+
+	submissionID, err := submissions.CreateSubmission(r.PostgresDB, submissions.CreateSubmissionParams{
+		UserID:            user.ID,
+		TaskID:            taskID,
+		ProgrammingLangID: programmingLang.ID,
+		Submission:        submissionCode,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	stableTaskVersID, err := tasks.GetStableTaskVerssionIDByTaskID(r.PostgresDB, taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = submissions.EvaluateSubmission(r.PostgresDB, submissionID, stableTaskVersID,
+		r.TestURLs, submissions.TestingDirectorConn{
+			GRPCClient: r.DirectorConn.GRPCClient,
+			Password:   r.DirectorConn.Password,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: return the submission object
+	return nil, nil
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
