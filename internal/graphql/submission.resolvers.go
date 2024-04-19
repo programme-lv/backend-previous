@@ -86,6 +86,10 @@ func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submissi
 		return nil, err
 	}
 
-	fmt.Printf("%+v\n", submObj)
-	panic(fmt.Errorf("not implemented: GetSubmission - getSubmission"))
+	gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlSubm, nil
 }

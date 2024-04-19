@@ -185,9 +185,11 @@ type ComplexityRoot struct {
 	}
 
 	TestResult struct {
-		MemoryKb func(childComplexity int) int
-		Result   func(childComplexity int) int
-		TimeMs   func(childComplexity int) int
+		CheckerRData  func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Result        func(childComplexity int) int
+		TaskVTestID   func(childComplexity int) int
+		UserSubmRData func(childComplexity int) int
 	}
 
 	User struct {
@@ -896,12 +898,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Test.TestID(childComplexity), true
 
-	case "TestResult.memoryKb":
-		if e.complexity.TestResult.MemoryKb == nil {
+	case "TestResult.checkerRData":
+		if e.complexity.TestResult.CheckerRData == nil {
 			break
 		}
 
-		return e.complexity.TestResult.MemoryKb(childComplexity), true
+		return e.complexity.TestResult.CheckerRData(childComplexity), true
+
+	case "TestResult.id":
+		if e.complexity.TestResult.ID == nil {
+			break
+		}
+
+		return e.complexity.TestResult.ID(childComplexity), true
 
 	case "TestResult.result":
 		if e.complexity.TestResult.Result == nil {
@@ -910,12 +919,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TestResult.Result(childComplexity), true
 
-	case "TestResult.timeMs":
-		if e.complexity.TestResult.TimeMs == nil {
+	case "TestResult.taskVTestID":
+		if e.complexity.TestResult.TaskVTestID == nil {
 			break
 		}
 
-		return e.complexity.TestResult.TimeMs(childComplexity), true
+		return e.complexity.TestResult.TaskVTestID(childComplexity), true
+
+	case "TestResult.userSubmRData":
+		if e.complexity.TestResult.UserSubmRData == nil {
+			break
+		}
+
+		return e.complexity.TestResult.UserSubmRData(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -1299,8 +1315,10 @@ type RuntimeData {
 }
 
 type TestResult {
-  timeMs: Int!
-  memoryKb: Int!
+  id: ID!
+  taskVTestID: ID!
+  userSubmRData: RuntimeData
+  checkerRData: RuntimeData
   result: TestResultType!
 }
 
@@ -2299,10 +2317,14 @@ func (ec *executionContext) fieldContext_Evaluation_testResults(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "timeMs":
-				return ec.fieldContext_TestResult_timeMs(ctx, field)
-			case "memoryKb":
-				return ec.fieldContext_TestResult_memoryKb(ctx, field)
+			case "id":
+				return ec.fieldContext_TestResult_id(ctx, field)
+			case "taskVTestID":
+				return ec.fieldContext_TestResult_taskVTestID(ctx, field)
+			case "userSubmRData":
+				return ec.fieldContext_TestResult_userSubmRData(ctx, field)
+			case "checkerRData":
+				return ec.fieldContext_TestResult_checkerRData(ctx, field)
 			case "result":
 				return ec.fieldContext_TestResult_result(ctx, field)
 			}
@@ -5982,8 +6004,8 @@ func (ec *executionContext) fieldContext_Test_answer(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _TestResult_timeMs(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TestResult_timeMs(ctx, field)
+func (ec *executionContext) _TestResult_id(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestResult_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5996,7 +6018,7 @@ func (ec *executionContext) _TestResult_timeMs(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TimeMs, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6008,26 +6030,26 @@ func (ec *executionContext) _TestResult_timeMs(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TestResult_timeMs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TestResult_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TestResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _TestResult_memoryKb(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TestResult_memoryKb(ctx, field)
+func (ec *executionContext) _TestResult_taskVTestID(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestResult_taskVTestID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6040,7 +6062,7 @@ func (ec *executionContext) _TestResult_memoryKb(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryKb, nil
+		return obj.TaskVTestID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6052,19 +6074,125 @@ func (ec *executionContext) _TestResult_memoryKb(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_TestResult_memoryKb(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_TestResult_taskVTestID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TestResult",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestResult_userSubmRData(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestResult_userSubmRData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserSubmRData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RuntimeData)
+	fc.Result = res
+	return ec.marshalORuntimeData2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐRuntimeData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestResult_userSubmRData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timeMs":
+				return ec.fieldContext_RuntimeData_timeMs(ctx, field)
+			case "memoryKb":
+				return ec.fieldContext_RuntimeData_memoryKb(ctx, field)
+			case "exitCode":
+				return ec.fieldContext_RuntimeData_exitCode(ctx, field)
+			case "stdout":
+				return ec.fieldContext_RuntimeData_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_RuntimeData_stderr(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeData", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TestResult_checkerRData(ctx context.Context, field graphql.CollectedField, obj *TestResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TestResult_checkerRData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CheckerRData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*RuntimeData)
+	fc.Result = res
+	return ec.marshalORuntimeData2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐRuntimeData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TestResult_checkerRData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "timeMs":
+				return ec.fieldContext_RuntimeData_timeMs(ctx, field)
+			case "memoryKb":
+				return ec.fieldContext_RuntimeData_memoryKb(ctx, field)
+			case "exitCode":
+				return ec.fieldContext_RuntimeData_exitCode(ctx, field)
+			case "stdout":
+				return ec.fieldContext_RuntimeData_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_RuntimeData_stderr(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RuntimeData", field.Name)
 		},
 	}
 	return fc, nil
@@ -9397,16 +9525,20 @@ func (ec *executionContext) _TestResult(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("TestResult")
-		case "timeMs":
-			out.Values[i] = ec._TestResult_timeMs(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._TestResult_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "memoryKb":
-			out.Values[i] = ec._TestResult_memoryKb(ctx, field, obj)
+		case "taskVTestID":
+			out.Values[i] = ec._TestResult_taskVTestID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "userSubmRData":
+			out.Values[i] = ec._TestResult_userSubmRData(ctx, field, obj)
+		case "checkerRData":
+			out.Values[i] = ec._TestResult_checkerRData(ctx, field, obj)
 		case "result":
 			out.Values[i] = ec._TestResult_result(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

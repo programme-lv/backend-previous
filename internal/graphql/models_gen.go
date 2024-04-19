@@ -139,9 +139,11 @@ type Test struct {
 }
 
 type TestResult struct {
-	TimeMs   int            `json:"timeMs"`
-	MemoryKb int            `json:"memoryKb"`
-	Result   TestResultType `json:"result"`
+	ID            string         `json:"id"`
+	TaskVTestID   string         `json:"taskVTestID"`
+	UserSubmRData *RuntimeData   `json:"userSubmRData,omitempty"`
+	CheckerRData  *RuntimeData   `json:"checkerRData,omitempty"`
+	Result        TestResultType `json:"result"`
 }
 
 type User struct {

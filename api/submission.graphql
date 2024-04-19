@@ -79,8 +79,10 @@ type RuntimeData {
 }
 
 type TestResult {
-  timeMs: Int!
-  memoryKb: Int!
+  id: ID!
+  taskVTestID: ID!
+  userSubmRData: RuntimeData
+  checkerRData: RuntimeData
   result: TestResultType!
 }
 
