@@ -7,6 +7,8 @@ import (
 	"reflect"
 
 	"github.com/jedib0t/go-pretty/table"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 )
 
@@ -54,6 +56,11 @@ func ReadEnvConfig(log *slog.Logger) *EnvConfig {
 	}
 
 	return config
+}
+
+func ConnectToPostgresByEnvConf() (*sqlx.DB, error) {
+	config := ReadEnvConfig(slog.Default())
+	return sqlx.Connect("postgres", config.SqlxConnString)
 }
 
 func getDefaultConfig() *EnvConfig {

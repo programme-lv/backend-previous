@@ -3,7 +3,7 @@ extend type Query {
   Returns all visible (not hidden) submissions for tasks that have a published task code.
   An example of a hidden submission is a submission made by an admin for testing purposes.
   """
-  listPublicSubmissions: [Submission!]!
+  listPublicSubmissions: [SubmissionOverview!]!
 
   getSubmission(id: ID!): Submission!
 }
@@ -16,7 +16,18 @@ extend type Mutation {
   ): Submission!
 }
 
-# submission must be somehow linked to an evaluation
+type SubmissionOverview {
+  id: ID!
+
+  task: TaskOverview!
+  language: ProgrammingLanguage!
+  evaluation: ShallowEvaluation!
+
+  username: String!
+
+  createdAt: String!
+}
+
 type Submission {
   id: ID!
   task: Task!
@@ -25,6 +36,14 @@ type Submission {
   evaluation: Evaluation!
   username: String!
   createdAt: String!
+}
+
+type ShallowEvaluation {
+  id: ID!
+  status: String!
+  
+  totalScore: Int!
+  possibleScore: Int
 }
 
 type Evaluation {
@@ -39,7 +58,8 @@ type Evaluation {
   """
   Some programming languages do not support compilation, so this field may be null.
   """
-  compilation: CompilationDetails
+  compileRData: RuntimeData
+
   testResults: [TestResult!]!
 }
 
@@ -50,7 +70,7 @@ type RuntimeStatistics {
   maxMemoryKb: Int!
 }
 
-type CompilationDetails {
+type RuntimeData {
   timeMs: Int!
   memoryKb: Int!
   exitCode: Int!

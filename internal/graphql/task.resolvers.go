@@ -41,7 +41,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 		return nil, err
 	}
 
-	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 
 	var res []*Task = make([]*Task, 0)
 	for _, taskID := range taskIDs {
-		taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+		taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Ta
 
 	// TODO: disallow getting unpublished tasks
 
-	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskIDint64)
+	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskIDint64)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (r *queryResolver) GetTaskByPublishedTaskCode(ctx context.Context, code str
 		return nil, err
 	}
 
-	taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 
 	var res []*Task = make([]*Task, 0)
 	for _, taskID := range taskIds {
-		taskObj, err := tasks.GetTaskByTaskID(r.PostgresDB, taskID)
+		taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID)
 		if err != nil {
 			tracerr.PrintSourceColor(err)
 			return nil, err

@@ -8,14 +8,6 @@ import (
 	"strconv"
 )
 
-type CompilationDetails struct {
-	TimeMs   int    `json:"timeMs"`
-	MemoryKb int    `json:"memoryKb"`
-	ExitCode int    `json:"exitCode"`
-	Stdout   string `json:"stdout"`
-	Stderr   string `json:"stderr"`
-}
-
 type Constraints struct {
 	TimeLimitMs   int `json:"timeLimitMs"`
 	MemoryLimitKb int `json:"memoryLimitKb"`
@@ -36,8 +28,8 @@ type Evaluation struct {
 	PossibleScore     *int               `json:"possibleScore,omitempty"`
 	RuntimeStatistics *RuntimeStatistics `json:"runtimeStatistics,omitempty"`
 	// Some programming languages do not support compilation, so this field may be null.
-	Compilation *CompilationDetails `json:"compilation,omitempty"`
-	TestResults []*TestResult       `json:"testResults"`
+	CompileRData *RuntimeData  `json:"compileRData,omitempty"`
+	TestResults  []*TestResult `json:"testResults"`
 }
 
 type Example struct {
@@ -68,11 +60,26 @@ type ProgrammingLanguage struct {
 type Query struct {
 }
 
+type RuntimeData struct {
+	TimeMs   int    `json:"timeMs"`
+	MemoryKb int    `json:"memoryKb"`
+	ExitCode int    `json:"exitCode"`
+	Stdout   string `json:"stdout"`
+	Stderr   string `json:"stderr"`
+}
+
 type RuntimeStatistics struct {
 	AvgTimeMs   int `json:"avgTimeMs"`
 	MaxTimeMs   int `json:"maxTimeMs"`
 	AvgMemoryKb int `json:"avgMemoryKb"`
 	MaxMemoryKb int `json:"maxMemoryKb"`
+}
+
+type ShallowEvaluation struct {
+	ID            string `json:"id"`
+	Status        string `json:"status"`
+	TotalScore    int    `json:"totalScore"`
+	PossibleScore *int   `json:"possibleScore,omitempty"`
 }
 
 type StatementInput struct {
@@ -92,11 +99,26 @@ type Submission struct {
 	CreatedAt  string               `json:"createdAt"`
 }
 
+type SubmissionOverview struct {
+	ID         string               `json:"id"`
+	Task       *TaskOverview        `json:"task"`
+	Language   *ProgrammingLanguage `json:"language"`
+	Evaluation *ShallowEvaluation   `json:"evaluation"`
+	Username   string               `json:"username"`
+	CreatedAt  string               `json:"createdAt"`
+}
+
 type Task struct {
 	TaskID    string       `json:"taskID"`
 	Current   *TaskVersion `json:"current"`
 	Stable    *TaskVersion `json:"stable,omitempty"`
 	CreatedAt string       `json:"createdAt"`
+}
+
+type TaskOverview struct {
+	TaskID string `json:"taskID"`
+	Name   string `json:"name"`
+	Code   string `json:"code"`
 }
 
 type TaskVersion struct {

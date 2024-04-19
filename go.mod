@@ -19,7 +19,6 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/lmittmann/tint v1.0.4
 	github.com/programme-lv/director v0.1.6
-	github.com/programme-lv/tester v0.2.0
 	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0

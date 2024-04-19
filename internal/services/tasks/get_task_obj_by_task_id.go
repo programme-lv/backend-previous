@@ -11,7 +11,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func GetTaskByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
+func GetTaskObjByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 
 	var task model.Tasks

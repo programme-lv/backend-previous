@@ -2,34 +2,50 @@ package objects
 
 import "time"
 
-type EvaluationJob struct {
-	ID            int64
-	TaskVersionID int64
+type EvalTestRes struct {
+	ID           int64
+	EvaluationID int64
+	EvalStatusID string
+	TaskVTestID  int64
+	ExecRData    *RuntimeData
+	CheckerRData *RuntimeData
 }
 
 type Evaluation struct {
 	ID            int64
 	TaskVersionID int64
 
-	StatusID       string
-	TotalScore     int64
-	PossibleScore  int64
-	RuntimeStatsID int64
-	CompileDataID  int64
-	CreatedAt      time.Time
-}
+	StatusID      string
+	ReceivedScore int64
+	PossibleScore *int64
 
-type RawSubmission struct {
-	Content    string
-	LanguageID string
+	CheckerRunData *RuntimeData
+
+	TestResults []EvalTestRes
+
+	CreatedAt time.Time
 }
 
 type TaskSubmission struct {
-	RawSubmission
-	ID            int64
-	UserID        int64
-	TaskID        int64
-	CreatedAt     time.Time
-	Hidden        bool
-	VisibleEvalID int64
+	ID          int64
+	Author      *User
+	Language    *ProgrammingLanguage
+	Content     string
+	Task        *Task
+	VisibleEval *Evaluation
+	Hidden      bool
+	CreatedAt   time.Time
+}
+
+type RuntimeData struct {
+	ID int64
+
+	Stdout *string
+	Stderr *string
+
+	TimeMillis      *int64
+	MemoryKibibytes *int64
+	TimeWallMillis  *int64
+
+	ExitCode *int64
 }

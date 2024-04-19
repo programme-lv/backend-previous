@@ -7,6 +7,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/programme-lv/backend/internal/services/langs"
 	"github.com/programme-lv/backend/internal/services/submissions"
@@ -59,11 +60,32 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersio
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
-func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submission, error) {
+func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*SubmissionOverview, error) {
 	panic(fmt.Errorf("not implemented: ListPublicSubmissions - listPublicSubmissions"))
 }
 
 // GetSubmission is the resolver for the getSubmission field.
 func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
+	// res := Submission{
+	// 	ID:         id,
+	// 	Task:       &Task{},
+	// 	Language:   &ProgrammingLanguage{},
+	// 	Submission: "",
+	// 	Evaluation: &Evaluation{},
+	// 	Username:   "",
+	// 	CreatedAt:  "",
+	// }
+	// parse
+	submIDInt64, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%+v\n", submObj)
 	panic(fmt.Errorf("not implemented: GetSubmission - getSubmission"))
 }
