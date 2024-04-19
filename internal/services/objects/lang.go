@@ -9,4 +9,5 @@ type ProgrammingLanguage struct {
 	EnvVersionCommand *string
 	HelloWorldCode    *string
 	MonacoID          *string
+	Enabled           bool
 }

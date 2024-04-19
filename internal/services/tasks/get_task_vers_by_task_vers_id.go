@@ -1,15 +1,17 @@
 package tasks
 
 import (
-	"github.com/go-jet/jet/qrm"
 	"github.com/go-jet/jet/v2/postgres"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/ztrue/tracerr"
 )
 
-func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.TaskVersion, error) {
+func GetTaskVersionObjByTaskVersionID(db qrm.DB, taskVersionID int64,
+	fillDescription bool) (*objects.TaskVersion, error) {
+
 	stmt := postgres.SELECT(table.TaskVersions.AllColumns).FROM(
 		table.TaskVersions).
 		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID)))
@@ -20,9 +22,13 @@ func GetTaskVersionByTaskVersionID(db qrm.DB, taskVersionID int64) (*objects.Tas
 		return nil, tracerr.Wrap(err)
 	}
 
-	descriptionObj, err := GetTaskVersionDescription(db, tv.ID)
-	if err != nil {
-		return nil, tracerr.Wrap(err)
+	var descriptionObj *objects.Description = nil
+
+	if fillDescription {
+		descriptionObj, err = GetTaskVersionDescriptionObj(db, tv.ID)
+		if err != nil {
+			return nil, tracerr.Wrap(err)
+		}
 	}
 
 	taskVersionObj := objects.TaskVersion{

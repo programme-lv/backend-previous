@@ -10,7 +10,7 @@ import (
 	"github.com/programme-lv/backend/internal/services/objects"
 )
 
-func GetEvaluationObj(db qrm.DB, evalID int64) (*objects.Evaluation, error) {
+func GetEvaluationObj(db qrm.DB, evalID int64, fillTests bool) (*objects.Evaluation, error) {
 	res := objects.Evaluation{
 		ID:             evalID,
 		TaskVersionID:  0,
@@ -51,35 +51,37 @@ func GetEvaluationObj(db qrm.DB, evalID int64) (*objects.Evaluation, error) {
 		}
 	}
 
-	testResults, err := selectEvalTestResWithRData(db, evalID)
-	if err != nil {
-		return nil, err
-	}
-	res.TestResults = make([]objects.EvalTestRes, len(testResults))
-	for i, tr := range testResults {
-		res.TestResults[i] = objects.EvalTestRes{
-			ID:           tr.ETR.ID,
-			EvaluationID: tr.ETR.EvaluationID,
-			EvalStatusID: tr.ETR.EvalStatusID,
-			TaskVTestID:  tr.ETR.TaskVTestID,
-			ExecRData: &objects.RuntimeData{
-				ID:              tr.RD1.ID,
-				Stdout:          tr.RD1.Stdout,
-				Stderr:          tr.RD1.Stderr,
-				TimeMillis:      tr.RD1.TimeMillis,
-				MemoryKibibytes: tr.RD1.MemoryKibibytes,
-				TimeWallMillis:  tr.RD1.TimeWallMillis,
-				ExitCode:        tr.RD1.ExitCode,
-			},
-			CheckerRData: &objects.RuntimeData{
-				ID:              tr.RD2.ID,
-				Stdout:          tr.RD2.Stdout,
-				Stderr:          tr.RD2.Stderr,
-				TimeMillis:      tr.RD2.TimeMillis,
-				MemoryKibibytes: tr.RD2.MemoryKibibytes,
-				TimeWallMillis:  tr.RD2.TimeWallMillis,
-				ExitCode:        tr.RD2.ExitCode,
-			},
+	if fillTests {
+		testResults, err := selectEvalTestResWithRData(db, evalID)
+		if err != nil {
+			return nil, err
+		}
+		res.TestResults = make([]objects.EvalTestRes, len(testResults))
+		for i, tr := range testResults {
+			res.TestResults[i] = objects.EvalTestRes{
+				ID:           tr.ETR.ID,
+				EvaluationID: tr.ETR.EvaluationID,
+				EvalStatusID: tr.ETR.EvalStatusID,
+				TaskVTestID:  tr.ETR.TaskVTestID,
+				ExecRData: &objects.RuntimeData{
+					ID:              tr.RD1.ID,
+					Stdout:          tr.RD1.Stdout,
+					Stderr:          tr.RD1.Stderr,
+					TimeMillis:      tr.RD1.TimeMillis,
+					MemoryKibibytes: tr.RD1.MemoryKibibytes,
+					TimeWallMillis:  tr.RD1.TimeWallMillis,
+					ExitCode:        tr.RD1.ExitCode,
+				},
+				CheckerRData: &objects.RuntimeData{
+					ID:              tr.RD2.ID,
+					Stdout:          tr.RD2.Stdout,
+					Stderr:          tr.RD2.Stderr,
+					TimeMillis:      tr.RD2.TimeMillis,
+					MemoryKibibytes: tr.RD2.MemoryKibibytes,
+					TimeWallMillis:  tr.RD2.TimeWallMillis,
+					ExitCode:        tr.RD2.ExitCode,
+				},
+			}
 		}
 	}
 

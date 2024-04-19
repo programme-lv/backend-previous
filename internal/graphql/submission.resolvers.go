@@ -12,6 +12,7 @@ import (
 	"github.com/programme-lv/backend/internal/services/langs"
 	"github.com/programme-lv/backend/internal/services/submissions"
 	"github.com/programme-lv/backend/internal/services/tasks"
+	"github.com/programme-lv/backend/internal/services/users"
 )
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
@@ -61,21 +62,72 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersio
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*SubmissionOverview, error) {
-	panic(fmt.Errorf("not implemented: ListPublicSubmissions - listPublicSubmissions"))
+	// load all non-hidden task submRecords
+	submRecords, err := submissions.ListVisibleTaskSubmissionRowsWithEvaluation(r.PostgresDB)
+	if err != nil {
+		return nil, err
+	}
+
+	var gqlSubms []*SubmissionOverview = make([]*SubmissionOverview, 0, len(submRecords))
+	for _, subm := range submRecords {
+		task, err := tasks.GetTaskObjByTaskID(r.PostgresDB, subm.TaskID, 0, 1)
+		if err != nil {
+			return nil, err
+		}
+		user, err := users.GetUserObj(r.PostgresDB, subm.UserID)
+		if err != nil {
+			return nil, err
+		}
+		lang, err := langs.GetLangObj(r.PostgresDB, subm.ProgrammingLangID)
+		if err != nil {
+			return nil, err
+		}
+		if subm.VisibleEvalID == nil {
+			return nil, fmt.Errorf("submission %d has no visible evaluation", subm.ID)
+		}
+		evalObj, err := submissions.GetEvaluationObj(r.PostgresDB, *subm.VisibleEvalID, false)
+		if err != nil {
+			return nil, err
+		}
+		var possibleScore int = 100
+		if evalObj.PossibleScore != nil {
+			possibleScore = int(*evalObj.PossibleScore)
+		}
+		marshalledCreatedAt, err := subm.CreatedAt.MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		gqlSubm := &SubmissionOverview{
+			ID: fmt.Sprint(subm.ID),
+			Task: &TaskOverview{
+				TaskID: strconv.FormatInt(task.ID, 10),
+				Name:   task.Stable.Name,
+				Code:   task.Stable.Code,
+			},
+			Language: &ProgrammingLanguage{
+				ID:       fmt.Sprint(lang.ID),
+				FullName: lang.Name,
+				MonacoID: lang.MonacoID,
+				Enabled:  lang.Enabled,
+			},
+			Evaluation: &ShallowEvaluation{
+				ID:            fmt.Sprint(evalObj.ID),
+				Status:        evalObj.StatusID,
+				TotalScore:    int(evalObj.ReceivedScore),
+				PossibleScore: &possibleScore,
+			},
+			Username:  user.Username,
+			CreatedAt: string(marshalledCreatedAt),
+		}
+
+		gqlSubms = append(gqlSubms, gqlSubm)
+	}
+
+	return gqlSubms, nil
 }
 
 // GetSubmission is the resolver for the getSubmission field.
 func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
-	// res := Submission{
-	// 	ID:         id,
-	// 	Task:       &Task{},
-	// 	Language:   &ProgrammingLanguage{},
-	// 	Submission: "",
-	// 	Evaluation: &Evaluation{},
-	// 	Username:   "",
-	// 	CreatedAt:  "",
-	// }
-	// parse
 	submIDInt64, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		return nil, err

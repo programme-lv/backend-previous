@@ -22,6 +22,7 @@ func GetLangObj(db qrm.DB, langID string) (*objects.ProgrammingLanguage, error) 
 		EnvVersionCommand: new(string),
 		HelloWorldCode:    new(string),
 		MonacoID:          new(string),
+		Enabled:           true,
 	}
 	if langRecord != nil {
 		res.Name = langRecord.FullName
@@ -31,6 +32,7 @@ func GetLangObj(db qrm.DB, langID string) (*objects.ProgrammingLanguage, error) 
 		res.EnvVersionCommand = langRecord.EnvVersionCmd
 		res.HelloWorldCode = langRecord.HelloWorldCode
 		res.MonacoID = langRecord.MonacoID
+		res.Enabled = langRecord.Enabled
 	}
 	return &res, nil
 }

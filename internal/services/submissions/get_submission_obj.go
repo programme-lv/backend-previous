@@ -47,13 +47,13 @@ func GetSubmissionObject(db qrm.DB, submissionID int64) (*objects.TaskSubmission
 	}
 	res.Language = langObj
 
-	taskObj, err := tasks.GetTaskObjByTaskID(db, submRecord.TaskID)
+	taskObj, err := tasks.GetTaskObjByTaskID(db, submRecord.TaskID, 2, 2)
 	if err != nil {
 		return nil, err
 	}
 	res.Task = taskObj
 
-	evalObj, err := GetEvaluationObj(db, *submRecord.VisibleEvalID)
+	evalObj, err := GetEvaluationObj(db, *submRecord.VisibleEvalID, true)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ func GetStableTaskVersionObjectByTaskID(db qrm.DB, taskID int64) (*objects.TaskV
 		return nil, err
 	}
 
-	descriptionObj, err := GetTaskVersionDescription(db, stableTaskVersion.ID)
+	descriptionObj, err := GetTaskVersionDescriptionObj(db, stableTaskVersion.ID)
 	if err != nil {
 		return nil, err
 	}

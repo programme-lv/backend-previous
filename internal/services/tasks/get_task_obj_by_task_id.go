@@ -11,7 +11,10 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func GetTaskObjByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
+// 0 - no version
+// 1 - version without description
+// 2 - full version
+func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth int) (*objects.Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 
 	var task model.Tasks
@@ -22,30 +25,32 @@ func GetTaskObjByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
 
 	var currTaskVers *objects.TaskVersion = nil
 	if task.CurrentVersionID != nil {
-		currTaskVers, err = GetTaskVersionByTaskVersionID(db, *task.CurrentVersionID)
-		if err != nil {
-			return nil, tracerr.Wrap(err)
+		if currVersDepth == 2 {
+			currTaskVers, err = GetTaskVersionObjByTaskVersionID(db, *task.CurrentVersionID, true)
+			if err != nil {
+				return nil, tracerr.Wrap(err)
+			}
+		} else if currVersDepth == 1 {
+			currTaskVers, err = GetTaskVersionObjByTaskVersionID(db, *task.CurrentVersionID, false)
+			if err != nil {
+				return nil, tracerr.Wrap(err)
+			}
 		}
 	}
 
 	var stableTaskVers *objects.TaskVersion = nil
 	if task.StableVersionID != nil {
-		stableTaskVers, err = GetTaskVersionByTaskVersionID(db, *task.StableVersionID)
-		if err != nil {
-			return nil, tracerr.Wrap(err)
+		if stableVersDepth == 2 {
+			stableTaskVers, err = GetTaskVersionObjByTaskVersionID(db, *task.StableVersionID, true)
+			if err != nil {
+				return nil, tracerr.Wrap(err)
+			}
+		} else if stableVersDepth == 1 {
+			stableTaskVers, err = GetTaskVersionObjByTaskVersionID(db, *task.StableVersionID, false)
+			if err != nil {
+				return nil, tracerr.Wrap(err)
+			}
 		}
-	}
-
-	stmt = postgres.SELECT(postgres.MAX(table.TaskVersions.CreatedAt).AS("abc")).
-		FROM(table.TaskVersions).
-		WHERE(table.TaskVersions.TaskID.EQ(postgres.Int64(taskID)))
-
-	var updatedAt struct {
-		Abc *time.Time `alias:"abc"`
-	}
-	err = stmt.Query(db, &updatedAt)
-	if err != nil {
-		return nil, tracerr.Wrap(err)
 	}
 
 	taskObj := objects.Task{
@@ -57,4 +62,20 @@ func GetTaskObjByTaskID(db qrm.DB, taskID int64) (*objects.Task, error) {
 	}
 
 	return &taskObj, nil
+}
+
+func getMaxCreatedAtOfTaskVersions(db qrm.DB, taskID int64) (*time.Time, error) {
+	stmt := postgres.SELECT(postgres.MAX(table.TaskVersions.CreatedAt).AS("abc")).
+		FROM(table.TaskVersions).
+		WHERE(table.TaskVersions.TaskID.EQ(postgres.Int64(taskID)))
+
+	var updatedAt struct {
+		Abc *time.Time `alias:"abc"`
+	}
+	err := stmt.Query(db, &updatedAt)
+	if err != nil {
+		return nil, tracerr.Wrap(err)
+	}
+
+	return updatedAt.Abc, nil
 }

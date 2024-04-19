@@ -11,7 +11,7 @@ import (
 	"github.com/ztrue/tracerr"
 )
 
-func GetTaskVersionDescription(db qrm.DB, taskVersionID int64) (*objects.Description, error) {
+func GetTaskVersionDescriptionObj(db qrm.DB, taskVersionID int64) (*objects.Description, error) {
 	selectDescriptionStmt := postgres.SELECT(table.MarkdownStatements.AllColumns).
 		FROM(table.TaskVersions.INNER_JOIN(table.MarkdownStatements, table.TaskVersions.MdStatementID.EQ(table.MarkdownStatements.ID))).
 		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID)))

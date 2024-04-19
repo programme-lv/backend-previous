@@ -13,7 +13,7 @@ func TestGetEvaluationObj(t *testing.T) {
 		t.Fatalf("failed to connect to postgres: %v", err)
 	}
 
-	evalObj, err := submissions.GetEvaluationObj(db, 45)
+	evalObj, err := submissions.GetEvaluationObj(db, 45, true)
 	if err != nil {
 		t.Fatalf("failed to get evaluation obj: %v", err)
 	}
