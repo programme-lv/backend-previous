@@ -46,8 +46,12 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	requestLogger.Info("login successful")
 
 	return &User{
-		ID:       fmt.Sprintf("%d", user.ID),
-		Username: user.Username,
+		ID:        fmt.Sprintf("%d", user.ID),
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		IsAdmin:   user.IsAdmin,
 	}, nil
 }
 
