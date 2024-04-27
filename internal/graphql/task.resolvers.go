@@ -7,6 +7,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/programme-lv/backend/internal/services/users"
 	"strconv"
 
 	"github.com/programme-lv/backend/internal/services/tasks"
@@ -273,6 +274,25 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 	}
 
 	return res, nil
+}
+
+// ListSolvedPublishedTaskOverviewsByUsername is the resolver for the listSolvedPublishedTaskOverviewsByUsername field.
+func (r *queryResolver) ListSolvedPublishedTaskOverviewsByUsername(ctx context.Context, username string) ([]*TaskOverview, error) {
+	// get published tasks join with user submissions on task id
+	// get user submissions join with evaluations
+	// look at evaluations where possible score = total score and total score > 0
+	/*
+		select distinct task_code from published_task_codes ptc
+		inner join task_submissions ts on ts.task_id = ptc.task_id
+		inner join evaluations e on e.id = ts.visible_eval_id
+		where eval_total_score = eval_possible_score and ts.user_id = 1;
+	*/
+	userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
+	if err != nil {
+		return nil, err
+	}
+	
+	panic(fmt.Errorf("not implemented: ListSolvedPublishedTaskOverviewsByUsername - listSolvedPublishedTaskOverviewsByUsername"))
 }
 
 // !!! WARNING !!!

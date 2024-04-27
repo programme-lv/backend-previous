@@ -25,6 +25,9 @@ extend type Query {
     Used for rendering the editable task list in task constructor.
     """
     listEditableTasks: [Task!]!
+
+
+    listSolvedPublishedTaskOverviewsByUsername(username: String!): [TaskOverview!]!
 }
 
 extend type Mutation {
