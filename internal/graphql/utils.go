@@ -134,11 +134,13 @@ func internalSubmissionToGQLSubmission(submission *objects.TaskSubmission) (*Sub
 	GQLLang := internalProgrammingLanguageToGraphQL(submission.Language)
 	res.Language = GQLLang
 
-	visEvalObj, err := internalEvalObjToGQLEvaluation(submission.VisibleEval)
-	if err != nil {
-		return nil, err
+	if submission.VisibleEval != nil {
+		visEvalObj, err := internalEvalObjToGQLEvaluation(submission.VisibleEval)
+		if err != nil {
+			return nil, err
+		}
+		res.Evaluation = visEvalObj
 	}
-	res.Evaluation = visEvalObj
 
 	return &res, nil
 }
@@ -176,6 +178,9 @@ func internalEvalObjToGQLEvaluation(eval *objects.Evaluation) (*Evaluation, erro
 }
 
 func internalRDataToGQLRData(data *objects.RuntimeData) *RuntimeData {
+	if data == nil {
+		return nil
+	}
 	res := &RuntimeData{
 		TimeMs:   0,
 		MemoryKb: 0,

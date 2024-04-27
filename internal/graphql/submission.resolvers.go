@@ -56,8 +56,17 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersio
 		return nil, err
 	}
 
-	// TODO: return the submission object
-	return nil, nil
+	submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submissionID)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlSubm, nil
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
