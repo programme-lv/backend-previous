@@ -27,7 +27,7 @@ extend type Query {
     listEditableTasks: [Task!]!
 
 
-    listSolvedPublishedTaskOverviewsByUsername(username: String!): [TaskOverview!]!
+    listSolvedPublishedTaskCodesByUsername(username: String!): [String!]!
 }
 
 extend type Mutation {

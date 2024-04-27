@@ -276,7 +276,27 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 	return res, nil
 }
 
-// ListSolvedPublishedTaskOverviewsByUsername is the resolver for the listSolvedPublishedTaskOverviewsByUsername field.
+// ListSolvedPublishedTaskCodesByUsername is the resolver for the listSolvedPublishedTaskCodesByUsername field.
+func (r *queryResolver) ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error) {
+	userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
+	if err != nil {
+		return nil, err
+	}
+
+	taskCodes, err := tasks.ListSolvedPublishedTaskCodesByUserID(r.PostgresDB, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskCodes, nil
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *queryResolver) ListSolvedPublishedTaskOverviewsByUsername(ctx context.Context, username string) ([]*TaskOverview, error) {
 	// get published tasks join with user submissions on task id
 	// get user submissions join with evaluations
@@ -287,20 +307,9 @@ func (r *queryResolver) ListSolvedPublishedTaskOverviewsByUsername(ctx context.C
 		inner join evaluations e on e.id = ts.visible_eval_id
 		where eval_total_score = eval_possible_score and ts.user_id = 1;
 	*/
-	userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
-	if err != nil {
-		return nil, err
-	}
-	
+
 	panic(fmt.Errorf("not implemented: ListSolvedPublishedTaskOverviewsByUsername - listSolvedPublishedTaskOverviewsByUsername"))
 }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *queryResolver) GetStableTaskVersionByPublishedTaskCode(ctx context.Context, taskCode string) (*TaskVersion, error) {
 	panic(fmt.Errorf("not implemented: GetStableTaskVersionByPublishedTaskCode - getStableTaskVersionByPublishedTaskCode"))
 }
