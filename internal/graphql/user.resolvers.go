@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 	"log"
 	"net/mail"
 
@@ -24,20 +23,11 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 		slog.String("username", username))
 	requestLogger.Info("received login request")
 
-	opCtx := graphql.GetOperationContext(ctx)
-
-	lang := opCtx.Headers.Get("Accept-Language")
-	if lang == "" {
-		lang = "en"
-	}
-
-	requestLogger = requestLogger.With(slog.String("lang", lang))
-
 	user, err := database.SelectUserByUsername(r.PostgresDB, username)
 	if errors.Is(err, sql.ErrNoRows) {
 		requestLogger.Info("user not found")
 
-		return nil, ErrUsernameOrPasswordIncorrect("lv")
+		return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
 	} else if err != nil {
 		requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
 		return nil, err

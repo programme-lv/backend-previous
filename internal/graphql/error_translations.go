@@ -12,10 +12,8 @@ func ErrUserNotFound(lang string) error {
 }
 
 func ErrUsernameOrPasswordIncorrect(lang string) error {
-	switch lang {
-	case "lv":
+	if lang == "lv" {
 		return fmt.Errorf("lietotājvārds vai parole ir nepareiza")
-	default:
-		return fmt.Errorf("username or password is incorrect")
 	}
+	return fmt.Errorf("username or password is incorrect")
 }
