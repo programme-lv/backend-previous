@@ -26,11 +26,10 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	user, err := database.SelectUserByUsername(r.PostgresDB, username)
 	if errors.Is(err, sql.ErrNoRows) {
 		requestLogger.Info("user not found")
-
 		return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
 	} else if err != nil {
 		requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
-		return nil, err
+		return nil, ErrInternalServer(getGQLReqLang(ctx))
 	}
 
 	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
@@ -39,7 +38,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
 		requestLogger.Info("password is incorrect")
-		return nil, fmt.Errorf("username or password is incorrect")
+		return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
 	}
 
 	// Set the user ID in the session
@@ -65,27 +64,27 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 
 	// validate registration data
 	if username == "" || password == "" {
-		return nil, fmt.Errorf("username and password are required")
+		return nil, ErrUsernameOrPasswordEmpty(getGQLReqLang(ctx))
 	}
 	if len(password) < 8 {
-		return nil, fmt.Errorf("password must be at least %d characters", 8)
+		return nil, ErrPasswordTooShort(getGQLReqLang(ctx), 8)
 	}
 	if len(password) > 32 {
-		return nil, fmt.Errorf("password must be at most %d characters", 32)
+		return nil, ErrPasswordTooLong(getGQLReqLang(ctx), 32)
 	}
 	if len(username) < 3 {
-		return nil, fmt.Errorf("username must be at least %d characters", 3)
+		return nil, ErrUsernameTooShort(getGQLReqLang(ctx), 3)
 	}
 	if len(username) > 15 {
-		return nil, fmt.Errorf("username must be at most %d characters", 15)
+		return nil, ErrUsernameTooLong(getGQLReqLang(ctx), 15)
 	}
 
 	usernameExists, err := database.DoesUserExistByUsername(r.PostgresDB, username)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternalServer(getGQLReqLang(ctx))
 	}
 	if usernameExists {
-		return nil, fmt.Errorf("user with that username already exists")
+		return nil, ErrUserWithThatUsernameExists(getGQLReqLang(ctx))
 	}
 
 	emailExists, err := database.DoesUserExistByEmail(r.PostgresDB, email)
@@ -93,28 +92,28 @@ func (r *mutationResolver) Register(ctx context.Context, username string, passwo
 		return nil, err
 	}
 	if emailExists {
-		return nil, fmt.Errorf("user with that email already exists")
+		return nil, ErrUserWithThatEmailExists(getGQLReqLang(ctx))
 	}
 
 	// validate email
 	_, err = mail.ParseAddress(email)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidEmail(getGQLReqLang(ctx))
 	}
 
 	hashedPassword, err := r.HashPassword(password)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternalServer(getGQLReqLang(ctx))
 	}
 
 	err = database.CreateUser(r.PostgresDB, username, hashedPassword, email, firstName, lastName)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternalServer(getGQLReqLang(ctx))
 	}
 
 	user, err := database.SelectUserByUsername(r.PostgresDB, username)
 	if err != nil {
-		return nil, err
+		return nil, ErrInternalServer(getGQLReqLang(ctx))
 	}
 
 	return &User{
