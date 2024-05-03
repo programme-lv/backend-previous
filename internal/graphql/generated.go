@@ -153,6 +153,7 @@ type ComplexityRoot struct {
 		Evaluation func(childComplexity int) int
 		ID         func(childComplexity int) int
 		Language   func(childComplexity int) int
+		Submission func(childComplexity int) int
 		Task       func(childComplexity int) int
 		Username   func(childComplexity int) int
 	}
@@ -783,6 +784,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SubmissionOverview.Language(childComplexity), true
 
+	case "SubmissionOverview.submission":
+		if e.complexity.SubmissionOverview.Submission == nil {
+			break
+		}
+
+		return e.complexity.SubmissionOverview.Submission(childComplexity), true
+
 	case "SubmissionOverview.task":
 		if e.complexity.SubmissionOverview.Task == nil {
 			break
@@ -1335,6 +1343,7 @@ extend type Mutation {
 
 type SubmissionOverview {
   id: ID!
+  submission: String!
 
   task: TaskOverview!
   language: ProgrammingLanguage!
@@ -3906,6 +3915,8 @@ func (ec *executionContext) fieldContext_Query_listPublicSubmissions(ctx context
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_SubmissionOverview_id(ctx, field)
+			case "submission":
+				return ec.fieldContext_SubmissionOverview_submission(ctx, field)
 			case "task":
 				return ec.fieldContext_SubmissionOverview_task(ctx, field)
 			case "language":
@@ -5080,6 +5091,50 @@ func (ec *executionContext) fieldContext_SubmissionOverview_id(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _SubmissionOverview_submission(ctx context.Context, field graphql.CollectedField, obj *SubmissionOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SubmissionOverview_submission(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submission, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SubmissionOverview_submission(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SubmissionOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SubmissionOverview_task(ctx context.Context, field graphql.CollectedField, obj *SubmissionOverview) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SubmissionOverview_task(ctx, field)
 	if err != nil {
@@ -5383,6 +5438,8 @@ func (ec *executionContext) fieldContext_Subscription_onNewPublicSubmission(ctx 
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_SubmissionOverview_id(ctx, field)
+			case "submission":
+				return ec.fieldContext_SubmissionOverview_submission(ctx, field)
 			case "task":
 				return ec.fieldContext_SubmissionOverview_task(ctx, field)
 			case "language":
@@ -9588,6 +9645,11 @@ func (ec *executionContext) _SubmissionOverview(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("SubmissionOverview")
 		case "id":
 			out.Values[i] = ec._SubmissionOverview_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "submission":
+			out.Values[i] = ec._SubmissionOverview_submission(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

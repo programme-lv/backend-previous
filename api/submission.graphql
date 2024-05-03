@@ -32,6 +32,7 @@ extend type Mutation {
 
 type SubmissionOverview {
   id: ID!
+  submission: String!
 
   task: TaskOverview!
   language: ProgrammingLanguage!

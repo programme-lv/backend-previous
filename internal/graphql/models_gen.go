@@ -101,6 +101,7 @@ type Submission struct {
 
 type SubmissionOverview struct {
 	ID         string               `json:"id"`
+	Submission string               `json:"submission"`
 	Task       *TaskOverview        `json:"task"`
 	Language   *ProgrammingLanguage `json:"language"`
 	Evaluation *ShallowEvaluation   `json:"evaluation"`

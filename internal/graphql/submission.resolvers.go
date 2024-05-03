@@ -110,7 +110,8 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 			return nil, err
 		}
 		gqlSubm := &SubmissionOverview{
-			ID: fmt.Sprint(subm.ID),
+			ID:         fmt.Sprint(subm.ID),
+			Submission: subm.Submission,
 			Task: &TaskOverview{
 				TaskID: strconv.FormatInt(task.ID, 10),
 				Name:   task.Stable.Name,
