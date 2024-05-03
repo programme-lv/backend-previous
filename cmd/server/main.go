@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"io"
 	"log/slog"
 	"net/http"
@@ -115,6 +116,7 @@ func main() {
 	}
 
 	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
+	srv.AddTransport(&transport.Websocket{}) // <---- This is the important part!
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello world :)"))

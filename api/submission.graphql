@@ -1,3 +1,17 @@
+extend type Subscription {
+  """
+  Subscribes to new public submissions for tasks with a published task code.
+  Only submissions that are not hidden (like those by admins for testing) will be streamed.
+  """
+  onNewPublicSubmission: SubmissionOverview!
+
+  """
+  Subscribes to updates on an existing submission, including changes to its evaluation status or scores.
+  Clients must provide the submission ID to receive targeted updates.
+  """
+  onSubmissionUpdate(submissionId: ID!): Submission!
+}
+
 extend type Query {
   """
   Returns all visible (not hidden) submissions for tasks that have a published task code.

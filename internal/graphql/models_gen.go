@@ -108,6 +108,9 @@ type SubmissionOverview struct {
 	CreatedAt  string               `json:"createdAt"`
 }
 
+type Subscription struct {
+}
+
 type Task struct {
 	TaskID    string       `json:"taskID"`
 	Current   *TaskVersion `json:"current"`

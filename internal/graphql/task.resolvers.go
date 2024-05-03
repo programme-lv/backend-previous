@@ -7,10 +7,10 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/programme-lv/backend/internal/services/users"
 	"strconv"
 
 	"github.com/programme-lv/backend/internal/services/tasks"
+	"github.com/programme-lv/backend/internal/services/users"
 	"github.com/ztrue/tracerr"
 )
 

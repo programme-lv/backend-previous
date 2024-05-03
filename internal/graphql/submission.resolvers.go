@@ -7,7 +7,10 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/programme-lv/backend/internal/services/langs"
 	"github.com/programme-lv/backend/internal/services/submissions"
@@ -153,4 +156,69 @@ func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submissi
 	}
 
 	return gqlSubm, nil
+}
+
+// OnNewPublicSubmission is the resolver for the onNewPublicSubmission field.
+func (r *subscriptionResolver) OnNewPublicSubmission(ctx context.Context) (<-chan *SubmissionOverview, error) {
+	panic(fmt.Errorf("not implemented: OnNewPublicSubmission - onNewPublicSubmission"))
+}
+
+// OnSubmissionUpdate is the resolver for the onSubmissionUpdate field.
+func (r *subscriptionResolver) OnSubmissionUpdate(ctx context.Context, submissionID string) (<-chan *Submission, error) {
+	submIDInt64, err := strconv.ParseInt(submissionID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("submIDInt64 1", submIDInt64)
+
+	previousSubmObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+	if err != nil {
+		return nil, err
+	}
+	prevSubmObjGQL, err := internalSubmissionToGQLSubmission(previousSubmObj)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("submIDInt64 2", submIDInt64)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	quit := make(chan struct{})
+	res := make(chan *Submission)
+	go func() {
+		res <- prevSubmObjGQL
+		for {
+			select {
+			case <-ticker.C:
+				submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+				if err != nil {
+					log.Println("err for submIDInt64", submIDInt64, err)
+					close(res)
+					return
+				}
+				// check if the submission has changed
+				if !reflect.DeepEqual(submObj, previousSubmObj) {
+					gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+					if err != nil {
+						log.Println("err for submIDInt64", submIDInt64, err)
+						close(res)
+						return
+					}
+
+					log.Println("gqlSubm", gqlSubm)
+					res <- gqlSubm
+					previousSubmObj = submObj
+				}
+			case <-quit:
+				log.Println("quit for submIDInt64", submIDInt64)
+				ticker.Stop()
+				return
+			case <-ctx.Done():
+				log.Println("ctx.Done() for submIDInt64", submIDInt64)
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	return res, nil
 }

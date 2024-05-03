@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/99designs/gqlgen v0.17.45
 	github.com/alexedwards/scs/redisstore v0.0.0-20231113091146-cef4b05350c8
-	github.com/alexedwards/scs/v2 v2.7.0
+	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/aws/aws-sdk-go-v2 v1.26.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.9
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.0
