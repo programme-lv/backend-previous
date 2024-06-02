@@ -85,7 +85,7 @@ func duplicateTaskVersionWithNewNameAndCode(db qrm.DB, taskVersionID int64, name
 		).
 			RETURNING(table.TaskVersions.ID)
 
-		var taskVersion model.TaskVersions
+		var taskVersion domain.TaskVersions
 		err := insertStatement.Query(db, &taskVersion)
 		if err != nil {
 			tracerr.Wrap(err)

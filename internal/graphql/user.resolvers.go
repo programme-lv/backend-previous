@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/mail"
 
-	"github.com/programme-lv/backend/internal/database"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/exp/slog"
 )
