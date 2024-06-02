@@ -13,3 +13,11 @@ type AuthSessionManager interface {
 	GetUserIDFromCtx(ctx interface{}) (int64, error)
 	PopUserIDFromCtx(ctx interface{}) (int64, error)
 }
+
+type UserRepo interface {
+	DoesUserExistByUsername(username string) (bool, error)
+	DoesUserExistByEmail(email string) (bool, error)
+	CreateUser(username string, hashedPassword []byte, email, firstName, lastName string) (int64, error)
+	GetUserByID(id int64) (*domain.User, error)
+	GetUserByUsername(username string) (*domain.User, error)
+}
