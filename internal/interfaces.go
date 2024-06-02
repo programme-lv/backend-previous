@@ -1,6 +1,9 @@
 package internal
 
-import "github.com/programme-lv/backend/internal/domain"
+import (
+	"context"
+	"github.com/programme-lv/backend/internal/domain"
+)
 
 type UserService interface {
 	Login(username, password string) (*domain.User, error)
@@ -9,9 +12,9 @@ type UserService interface {
 }
 
 type AuthSessionManager interface {
-	PutUserIDIntoCtx(ctx interface{}, userID int64)
-	GetUserIDFromCtx(ctx interface{}) (int64, error)
-	PopUserIDFromCtx(ctx interface{}) (int64, error)
+	PutUserIDIntoCtx(ctx context.Context, userID int64)
+	GetUserIDFromCtx(ctx context.Context) (int64, error)
+	PopUserIDFromCtx(ctx context.Context) (int64, error)
 }
 
 type UserRepo interface {

@@ -104,6 +104,8 @@ func main() {
 	log.Info("successfully tested connection to tester")
 
 	resolver := &graphql.Resolver{
+		UserSrv:        nil,
+		AuthState:      nil,
 		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
 		Logger:         log,

@@ -14,6 +14,8 @@ type UserService struct {
 	logger   slog.Logger
 }
 
+var _ internal.UserService = &UserService{}
+
 func (s *UserService) Login(username, password string) (*domain.User, error) {
 	user, err := s.userRepo.GetUserByUsername(username)
 	if err != nil {
@@ -100,4 +102,8 @@ func (s *UserService) Register(username, password, email, firstName, lastName st
 	}
 
 	return user, nil
+}
+
+func (s *UserService) GetUserByID(id int64) (*domain.User, error) {
+	return s.userRepo.GetUserByID(id)
 }
