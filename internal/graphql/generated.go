@@ -4049,7 +4049,7 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -7469,7 +7469,7 @@ func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -7705,7 +7705,7 @@ func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, 
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -7853,7 +7853,7 @@ func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, fie
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -7919,7 +7919,7 @@ func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context,
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -7982,7 +7982,7 @@ func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Conte
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -8045,7 +8045,7 @@ func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.C
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -8356,7 +8356,7 @@ func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, 
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -8419,7 +8419,7 @@ func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Contex
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -8595,7 +8595,7 @@ func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, fiel
 				return ec.fieldContext___Type_description(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
-			case "interfaces":
+			case "interface":
 				return ec.fieldContext___Type_interfaces(ctx, field)
 			case "possibleTypes":
 				return ec.fieldContext___Type_possibleTypes(ctx, field)
@@ -10347,7 +10347,7 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_description(ctx, field, obj)
 		case "fields":
 			out.Values[i] = ec.___Type_fields(ctx, field, obj)
-		case "interfaces":
+		case "interface":
 			out.Values[i] = ec.___Type_interfaces(ctx, field, obj)
 		case "possibleTypes":
 			out.Values[i] = ec.___Type_possibleTypes(ctx, field, obj)

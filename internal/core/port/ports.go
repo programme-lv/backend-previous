@@ -1,6 +1,8 @@
 package port
 
-import "github.com/programme-lv/backend/internal/core/domain"
+import (
+	"github.com/programme-lv/backend/internal/domain"
+)
 
 type UserRepository interface {
 	CreateUser(username, password, email, firstName, lastName string) error

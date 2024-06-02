@@ -7,7 +7,6 @@ package graphql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/mail"
@@ -18,41 +17,46 @@ import (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	requestLogger := r.Logger.With(slog.String("request_type", "login"),
-		slog.String("username", username))
-	requestLogger.Info("received login request")
+	user, err := r.UserQuerySrv.GetUserByUsername(username)
+	if err != nil {
 
-	user, err := database.SelectUserByUsername(r.PostgresDB, username)
-	if errors.Is(err, sql.ErrNoRows) {
-		requestLogger.Info("user not found")
-		return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
-	} else if err != nil {
-		requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
-		return nil, ErrInternalServer(getGQLReqLang(ctx))
+		return nil, err
 	}
 
-	requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
-
-	// Verify the password
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
-		requestLogger.Info("password is incorrect")
-		return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
 	}
-
-	// Set the user ID in the session
-	r.SessionManager.Put(ctx, "user_id", user.ID)
-
-	requestLogger.Info("login successful")
-
-	return &User{
-		ID:        fmt.Sprintf("%d", user.ID),
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		IsAdmin:   user.IsAdmin,
-	}, nil
+	//user, err := database.SelectUserByUsername(r.PostgresDB, username)
+	//if errors.Is(err, sql.ErrNoRows) {
+	//	requestLogger.Info("user not found")
+	//	return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
+	//} else if err != nil {
+	//	requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
+	//	return nil, ErrInternalServer(getGQLReqLang(ctx))
+	//}
+	//
+	//requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
+	//
+	//// Verify the password
+	//err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+	//if err != nil {
+	//	requestLogger.Info("password is incorrect")
+	//	return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
+	//}
+	//
+	//// Set the user ID in the session
+	//r.SessionManager.Put(ctx, "user_id", user.ID)
+	//
+	//requestLogger.Info("login successful")
+	//
+	//return &User{
+	//	ID:        fmt.Sprintf("%d", user.ID),
+	//	Username:  user.Username,
+	//	Email:     user.Email,
+	//	FirstName: user.FirstName,
+	//	LastName:  user.LastName,
+	//	IsAdmin:   user.IsAdmin,
+	//}, nil
 }
 
 // Register is the resolver for the register field.

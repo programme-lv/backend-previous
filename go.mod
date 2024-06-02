@@ -28,6 +28,7 @@ require (
 	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
 	google.golang.org/grpc v1.62.1
+	github.com/nicksnyder/go-i18n/v2 v2.4.0
 )
 
 require (
