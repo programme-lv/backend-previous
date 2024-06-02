@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"fmt"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
@@ -9,11 +8,25 @@ import (
 type PublicI18NError struct {
 	I18NMessageID string
 	Translations  *map[language.Tag]string
+	Language      *string
 	TemplateData  *map[string]interface{}
 }
 
 func (e *PublicI18NError) Error() string {
-	return fmt.Sprintf("i18n error: %s, template data: %v", e.I18NMessageID, e.TemplateData)
+	if e.Language != nil {
+		return e.Localize(*e.Language)
+	} else {
+		return e.Localize("en")
+	}
+}
+
+func (e *PublicI18NError) WithLanguage(lang string) *PublicI18NError {
+	return &PublicI18NError{
+		I18NMessageID: e.I18NMessageID,
+		Translations:  e.Translations,
+		Language:      &lang,
+		TemplateData:  e.TemplateData,
+	}
 }
 
 func (e *PublicI18NError) Localize(langs ...string) string {
@@ -58,5 +71,33 @@ func NewErrorPasswordTooShort(minLength int) *PublicI18NError {
 		I18NMessageID: errorPasswordTooShortID,
 		Translations:  &errorPasswordTooShortTranslations,
 		TemplateData:  &map[string]interface{}{"min_length": minLength},
+	}
+}
+
+const errorNotLoggedInID = "err_not_logged_in"
+
+var errorNotLoggedInTranslations = map[language.Tag]string{
+	language.English: "user is not logged in",
+	language.Latvian: "lietotājs nav pieslēdzies",
+}
+
+func NewErrorNotLoggedIn() *PublicI18NError {
+	return &PublicI18NError{
+		I18NMessageID: errorNotLoggedInID,
+		Translations:  &errorNotLoggedInTranslations,
+	}
+}
+
+const errorInternalServerID = "err_internal_server"
+
+var errorInternalServerTranslations = map[language.Tag]string{
+	language.English: "internal server error",
+	language.Latvian: "iekšējā servera kļūda",
+}
+
+func NewErrorInternalServer() *PublicI18NError {
+	return &PublicI18NError{
+		I18NMessageID: errorInternalServerID,
+		Translations:  &errorInternalServerTranslations,
 	}
 }

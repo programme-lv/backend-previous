@@ -6,164 +6,98 @@ package graphql
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
-	"log"
-	"net/mail"
-
-	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/exp/slog"
+	"errors"
+	"github.com/programme-lv/backend/internal/domain"
 )
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	user, err := r.UserQuerySrv.GetUserByUsername(username)
-	if err != nil {
+	r.Logger.Info("Login attempt", "username", username, "action", "login")
 
-		return nil, err
+	user, err := r.UserSrv.Login(username, password)
+	if err != nil {
+		var i18nErr *domain.PublicI18NError
+		if errors.As(err, &i18nErr) {
+			r.Logger.Warn("Login failed due to public error", "username", username, "error", i18nErr.Error(), "action", "login")
+			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+		}
+		r.Logger.Error("Login failed due to internal server error", "username", username, "error", err.Error(), "action", "login")
+		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
-	if err != nil {
-	}
-	//user, err := database.SelectUserByUsername(r.PostgresDB, username)
-	//if errors.Is(err, sql.ErrNoRows) {
-	//	requestLogger.Info("user not found")
-	//	return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
-	//} else if err != nil {
-	//	requestLogger.Error("failed to get user from database", slog.String("error", err.Error()))
-	//	return nil, ErrInternalServer(getGQLReqLang(ctx))
-	//}
-	//
-	//requestLogger = requestLogger.With(slog.Int64("user_id", user.ID))
-	//
-	//// Verify the password
-	//err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
-	//if err != nil {
-	//	requestLogger.Info("password is incorrect")
-	//	return nil, ErrUsernameOrPasswordIncorrect(getGQLReqLang(ctx))
-	//}
-	//
-	//// Set the user ID in the session
-	//r.SessionManager.Put(ctx, "user_id", user.ID)
-	//
-	//requestLogger.Info("login successful")
-	//
-	//return &User{
-	//	ID:        fmt.Sprintf("%d", user.ID),
-	//	Username:  user.Username,
-	//	Email:     user.Email,
-	//	FirstName: user.FirstName,
-	//	LastName:  user.LastName,
-	//	IsAdmin:   user.IsAdmin,
-	//}, nil
+	r.Logger.Info("Login successful", "username", username, "action", "login")
+
+	r.AuthState.PutUserIDIntoCtx(ctx, user.ID)
+	return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
-	requestLogger := r.Logger.With(slog.String("request_type", "register"),
-		slog.String("username", username), slog.String("email", email), slog.String("first_name", firstName), slog.String("last_name", lastName))
-	requestLogger.Info("received register request")
+	r.Logger.Info("Registration attempt", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
 
-	// validate registration data
-	if username == "" || password == "" {
-		return nil, ErrUsernameOrPasswordEmpty(getGQLReqLang(ctx))
-	}
-	if len(password) < 8 {
-		return nil, ErrPasswordTooShort(getGQLReqLang(ctx), 8)
-	}
-	if len(password) > 32 {
-		return nil, ErrPasswordTooLong(getGQLReqLang(ctx), 32)
-	}
-	if len(username) < 3 {
-		return nil, ErrUsernameTooShort(getGQLReqLang(ctx), 3)
-	}
-	if len(username) > 15 {
-		return nil, ErrUsernameTooLong(getGQLReqLang(ctx), 15)
-	}
-
-	usernameExists, err := database.DoesUserExistByUsername(r.PostgresDB, username)
+	user, err := r.UserSrv.Register(username, password, email, firstName, lastName)
 	if err != nil {
-		return nil, ErrInternalServer(getGQLReqLang(ctx))
-	}
-	if usernameExists {
-		return nil, ErrUserWithThatUsernameExists(getGQLReqLang(ctx))
-	}
-
-	emailExists, err := database.DoesUserExistByEmail(r.PostgresDB, email)
-	if err != nil {
-		return nil, err
-	}
-	if emailExists {
-		return nil, ErrUserWithThatEmailExists(getGQLReqLang(ctx))
+		var i18nErr *domain.PublicI18NError
+		if errors.As(err, &i18nErr) {
+			r.Logger.Warn("Registration failed due to public error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", i18nErr.Error(), "action", "register")
+			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+		}
+		r.Logger.Error("Registration failed due to internal server error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", err.Error(), "action", "register")
+		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
 	}
 
-	// validate email
-	_, err = mail.ParseAddress(email)
-	if err != nil {
-		return nil, ErrInvalidEmail(getGQLReqLang(ctx))
-	}
+	r.Logger.Info("Registration successful", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
 
-	hashedPassword, err := r.HashPassword(password)
-	if err != nil {
-		return nil, ErrInternalServer(getGQLReqLang(ctx))
-	}
-
-	err = database.CreateUser(r.PostgresDB, username, hashedPassword, email, firstName, lastName)
-	if err != nil {
-		return nil, ErrInternalServer(getGQLReqLang(ctx))
-	}
-
-	user, err := database.SelectUserByUsername(r.PostgresDB, username)
-	if err != nil {
-		return nil, ErrInternalServer(getGQLReqLang(ctx))
-	}
-
-	return &User{
-		ID:        fmt.Sprintf("%d", user.ID),
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		IsAdmin:   user.IsAdmin,
-	}, nil
+	return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	// Delete the user ID from the sessiong
-	userId, ok := r.SessionManager.Pop(ctx, "user_id").(int64)
+	r.Logger.Info("Logout attempt", "action", "logout")
 
-	if ok {
-		log.Println("User", userId, "logged out")
-		return true, nil
-	} else {
-		log.Println("User attempted to log out without being logged in")
-		return false, fmt.Errorf("not logged in")
+	userID, err := r.AuthState.PopUserIDFromCtx(ctx)
+	if err != nil {
+		var i18nErr *domain.PublicI18NError
+		if errors.As(err, &i18nErr) {
+			r.Logger.Warn("Logout failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "logout")
+			return false, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+		}
+		r.Logger.Error("Logout failed due to internal server error", "userID", userID, "error", err.Error(), "action", "logout")
+		return false, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
 	}
+
+	r.Logger.Info("Logout successful", "userID", userID, "action", "logout")
+
+	return true, nil
 }
 
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
-	// Get the user ID from the session
-	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
-	if !ok {
-		return nil, fmt.Errorf("not logged in")
+	r.Logger.Info("Whoami query attempt", "action", "whoami")
+
+	userID, err := r.AuthState.GetUserIDFromCtx(ctx)
+	if err != nil {
+		var i18nErr *domain.PublicI18NError
+		if errors.As(err, &i18nErr) {
+			r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
+			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+		}
+		r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
+		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
 	}
 
-	// Get the user from the database
-	var user database.User
-	err := r.PostgresDB.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
+	user, err := r.UserSrv.GetUserByID(userID)
+	if err != nil {
+		var i18nErr *domain.PublicI18NError
+		if errors.As(err, &i18nErr) {
+			r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
+			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+		}
+		r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
+		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
 	}
 
-	return &User{
-		ID:        fmt.Sprintf("%d", user.ID),
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		IsAdmin:   user.IsAdmin,
-	}, nil
+	r.Logger.Info("Whoami query successful", "userID", userID, "action", "whoami")
+
+	return mapDomainUserObjToGQLUserObj(user), nil
 }

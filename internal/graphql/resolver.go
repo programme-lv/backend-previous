@@ -1,7 +1,7 @@
 package graphql
 
 import (
-	"github.com/programme-lv/backend/internal/domain"
+	"github.com/programme-lv/backend/internal"
 	"log/slog"
 
 	"github.com/alexedwards/scs/v2"
@@ -21,7 +21,8 @@ type AuthDirectorConn struct {
 }
 
 type Resolver struct {
-	UserQuerySrv   domain.UserService
+	UserSrv        internal.UserService
+	AuthState      internal.AuthSessionManager
 	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
