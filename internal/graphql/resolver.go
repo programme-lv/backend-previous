@@ -2,12 +2,12 @@ package graphql
 
 import (
 	"github.com/programme-lv/backend/internal"
+	"github.com/programme-lv/backend/internal/database/dospaces"
 	"log/slog"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/programme-lv/backend/internal/dospaces"
 	"github.com/programme-lv/director/msg"
 )
 

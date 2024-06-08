@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/programme-lv/backend/internal/database/dospaces"
 	"github.com/programme-lv/backend/internal/repository"
 	"github.com/programme-lv/backend/internal/service"
 	"io"
@@ -23,7 +24,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/programme-lv/backend/internal/dospaces"
 	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/services/submissions"

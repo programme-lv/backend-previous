@@ -37,7 +37,7 @@ func (s *UserService) Login(username, password string) (*domain.User, error) {
 		}
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.EncPasswd), []byte(password))
 	if err != nil {
 		return nil, domain.NewErrorUsernameOrPasswordIncorrect()
 	}

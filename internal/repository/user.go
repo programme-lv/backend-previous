@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/programme-lv/backend/internal"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/domain"
 	"time"
 )

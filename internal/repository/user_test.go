@@ -3,13 +3,14 @@ package repository_test
 import (
 	"context"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/programme-lv/backend/internal"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/programme-lv/backend/internal"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -17,6 +18,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/programme-lv/backend/internal/repository"
+	"github.com/programme-lv/backend/internal/user"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -78,7 +80,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestUserRepoPostgreSQLImpl_CreateUserGetByID(t *testing.T) {
-	var repo internal.UserRepo = repository.NewUserRepoPostgreSQLImpl(db)
+	var repo user.Repo = repository.NewUserRepoPostgreSQLImpl(db)
 	repoTx, err := repo.BeginTx(context.Background())
 	if err != nil {
 		t.Fatalf("Could not begin transaction: %s", err)
@@ -177,7 +179,7 @@ func TestUserRepoPostgreSQLImpl_CreateUserGetByUsername(t *testing.T) {
 		t.Fatalf("Expected ID to be %d, got %d", userID, user.ID)
 	}
 
-	if bcrypt.CompareHashAndPassword(user.HashedPassword, []byte(password)) != nil {
+	if bcrypt.CompareHashAndPassword(user.EncPasswd, []byte(password)) != nil {
 		t.Fatalf("Password does not match")
 	}
 
