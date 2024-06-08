@@ -6,5 +6,6 @@ type User struct {
 	Email     string
 	FirstName string
 	LastName  string
+	EncPasswd []byte
 	IsAdmin   bool
 }
