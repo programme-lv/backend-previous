@@ -17,10 +17,21 @@ type AuthSessionManager interface {
 	PopUserIDFromCtx(ctx context.Context) (int64, error)
 }
 
-type UserRepo interface {
+type UserRepoBase interface {
 	DoesUserExistByUsername(username string) (bool, error)
 	DoesUserExistByEmail(email string) (bool, error)
 	CreateUser(username string, hashedPassword []byte, email, firstName, lastName string) (int64, error)
 	GetUserByID(id int64) (*domain.User, error)
 	GetUserByUsername(username string) (*domain.User, error)
+}
+
+type UserRepo interface {
+	UserRepoBase
+	BeginTx(ctx context.Context) (UserRepoTx, error)
+}
+
+type UserRepoTx interface {
+	UserRepoBase
+	Commit() error
+	Rollback() error
 }

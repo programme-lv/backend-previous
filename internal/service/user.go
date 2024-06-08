@@ -11,10 +11,17 @@ import (
 
 type UserService struct {
 	userRepo internal.UserRepo
-	logger   slog.Logger
+	logger   *slog.Logger
 }
 
 var _ internal.UserService = &UserService{}
+
+func NewUserService(userRepo internal.UserRepo, logger *slog.Logger) *UserService {
+	return &UserService{
+		userRepo: userRepo,
+		logger:   logger,
+	}
+}
 
 func (s *UserService) Login(username, password string) (*domain.User, error) {
 	user, err := s.userRepo.GetUserByUsername(username)

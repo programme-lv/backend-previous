@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/programme-lv/backend/internal/repository"
+	"github.com/programme-lv/backend/internal/service"
 	"io"
 	"log/slog"
 	"net/http"
@@ -103,8 +105,11 @@ func main() {
 	}
 	log.Info("successfully tested connection to tester")
 
+	userRepo := repository.NewUserRepoPostgreSQLImpl(sqlxDb)
+	userSrv := service.NewUserService(userRepo, slog.Default())
+
 	resolver := &graphql.Resolver{
-		UserSrv:        nil,
+		UserSrv:        userSrv,
 		AuthState:      nil,
 		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
