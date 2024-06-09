@@ -30,13 +30,6 @@ func newErrorUsernameOrPasswordIncorrect() i18nerror.I18NError {
 	}, nil)
 }
 
-func newErrorInternalServer() i18nerror.I18NError {
-	return i18nerror.New("err_internal_server", map[language.Tag]string{
-		language.English: "internal server error",
-		language.Latvian: "iekšējā servera kļūda",
-	}, nil)
-}
-
 func newErrorUsernameOrPasswordEmpty() i18nerror.I18NError {
 	return i18nerror.New("err_username_or_password_empty", map[language.Tag]string{
 		language.English: "username or password is empty",

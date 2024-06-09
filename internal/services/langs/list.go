@@ -5,10 +5,10 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/domain"
 )
 
-func ListEnabledProgrammingLanguages(db qrm.Queryable) ([]objects.ProgrammingLanguage, error) {
+func ListEnabledProgrammingLanguages(db qrm.Queryable) ([]domain.ProgrammingLanguage, error) {
 	stmt := postgres.SELECT(table.ProgrammingLanguages.AllColumns).
 		FROM(table.ProgrammingLanguages).
 		WHERE(table.ProgrammingLanguages.Enabled.EQ(postgres.Bool(true)))
@@ -19,9 +19,9 @@ func ListEnabledProgrammingLanguages(db qrm.Queryable) ([]objects.ProgrammingLan
 		return nil, err
 	}
 
-	res := make([]objects.ProgrammingLanguage, 0)
+	res := make([]domain.ProgrammingLanguage, 0)
 	for _, lang := range langs {
-		res = append(res, objects.ProgrammingLanguage{
+		res = append(res, domain.ProgrammingLanguage{
 			ID:                lang.ID,
 			Name:              lang.FullName,
 			CodeFilename:      lang.CodeFilename,
