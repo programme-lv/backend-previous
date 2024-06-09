@@ -193,16 +193,16 @@ func NewErrorInvalidEmail() *PublicI18NError {
 	}
 }
 
-const errorUsernameOrPasswordIncorrectID = "err_username_or_password_incorrect"
-
-var errorUsernameOrPasswordIncorrectTranslations = map[language.Tag]string{
-	language.English: "username or password is incorrect",
-	language.Latvian: "lietotājvārds vai parole ir nepareiza",
-}
-
-func NewErrorUsernameOrPasswordIncorrect() *PublicI18NError {
-	return &PublicI18NError{
-		I18NMessageID: errorUsernameOrPasswordIncorrectID,
-		Translations:  &errorUsernameOrPasswordIncorrectTranslations,
-	}
-}
+//const errorUsernameOrPasswordIncorrectID = "err_username_or_password_incorrect"
+//
+//var errorUsernameOrPasswordIncorrectTranslations = map[language.Tag]string{
+//	language.English: "username or password is incorrect",
+//	language.Latvian: "lietotājvārds vai parole ir nepareiza",
+//}
+//
+//func NewErrorUsernameOrPasswordIncorrect() *PublicI18NError {
+//	return &PublicI18NError{
+//		I18NMessageID: errorUsernameOrPasswordIncorrectID,
+//		Translations:  &errorUsernameOrPasswordIncorrectTranslations,
+//	}
+//}
