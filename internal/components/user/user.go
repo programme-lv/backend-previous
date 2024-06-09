@@ -39,7 +39,7 @@ func (s service) Login(username, password string) (*domain.User, error) {
 	usernameExists, err := s.repo.DoesUserExistByUsername(username)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if user exists by username: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	if !usernameExists {
@@ -49,7 +49,7 @@ func (s service) Login(username, password string) (*domain.User, error) {
 	user, err := s.repo.GetUserByUsername(username)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("getting user by username: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.EncPasswd), []byte(password))
@@ -94,7 +94,7 @@ func (s service) Register(username, password, email, firstName, lastName string)
 	usernameExists, err := s.repo.DoesUserExistByUsername(username)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if user exists by username: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	if usernameExists {
@@ -104,7 +104,7 @@ func (s service) Register(username, password, email, firstName, lastName string)
 	emailExists, err := s.repo.DoesUserExistByEmail(email)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if user exists by email: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	if emailExists {
@@ -114,19 +114,19 @@ func (s service) Register(username, password, email, firstName, lastName string)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("hashing password: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	userID, err := s.repo.CreateUser(username, hashedPassword, email, firstName, lastName)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("creating user: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	return user, nil
@@ -136,7 +136,7 @@ func (s service) GetUserByID(id int64) (*domain.User, error) {
 	userExists, err := s.repo.DoesUserExistByID(id)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if user exists by ID: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	if !userExists {
@@ -146,7 +146,7 @@ func (s service) GetUserByID(id int64) (*domain.User, error) {
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	return user, nil
@@ -156,7 +156,7 @@ func (s service) GetUserByUsername(username string) (*domain.User, error) {
 	userExists, err := s.repo.DoesUserExistByUsername(username)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if user exists by username: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	if !userExists {
@@ -166,7 +166,7 @@ func (s service) GetUserByUsername(username string) (*domain.User, error) {
 	user, err := s.repo.GetUserByUsername(username)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("getting user by username: %v", err))
-		return nil, newErrorInternalServer()
+		return nil, domain.NewErrorInternalServer()
 	}
 
 	return user, nil
