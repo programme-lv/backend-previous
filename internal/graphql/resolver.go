@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/programme-lv/director/msg"
 )
@@ -22,7 +21,6 @@ type AuthDirectorConn struct {
 
 type Resolver struct {
 	UserSrv        user.Service
-	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	TestURLs       *dospaces.DOSpacesS3ObjStorage

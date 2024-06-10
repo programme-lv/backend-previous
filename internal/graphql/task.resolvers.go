@@ -6,287 +6,306 @@ package graphql
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-
-	"github.com/programme-lv/backend/internal/services/tasks"
-	"github.com/programme-lv/backend/internal/services/users"
-	"github.com/ztrue/tracerr"
 )
 
 // CreateTask is the resolver for the createTask field.
 func (r *mutationResolver) CreateTask(ctx context.Context, name string, code string) (*Task, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement CreateTask endpoint
+	panic("not implemented")
 
-	// name must be between 1 and 100 characters
-	if len(name) < 1 || len(name) > 100 {
-		return nil, fmt.Errorf("name must be between 1 and 100 characters")
-	}
-
-	if len(code) < 1 || len(code) > 50 {
-		return nil, fmt.Errorf("code must be between 1 and 50 characters")
-	}
-
-	// code can only contain lowercase letters and digits
-	for _, c := range code {
-		if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
-			return nil, fmt.Errorf("code can only contain lowercase letters and digits")
-		}
-	}
-
-	taskID, err := tasks.CreateTask(r.PostgresDB, name, code, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-	if err != nil {
-		return nil, err
-	}
-
-	task, err := internalTaskToGQLTask(taskObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// name must be between 1 and 100 characters
+	//if len(name) < 1 || len(name) > 100 {
+	//	return nil, fmt.Errorf("name must be between 1 and 100 characters")
+	//}
+	//
+	//if len(code) < 1 || len(code) > 50 {
+	//	return nil, fmt.Errorf("code must be between 1 and 50 characters")
+	//}
+	//
+	//// code can only contain lowercase letters and digits
+	//for _, c := range code {
+	//	if !((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+	//		return nil, fmt.Errorf("code can only contain lowercase letters and digits")
+	//	}
+	//}
+	//
+	//taskID, err := tasks.CreateTask(r.PostgresDB, name, code, user.ID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//task, err := internalTaskToGQLTask(taskObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return task, nil
 }
 
 // UpdateCurrentTaskVersionStatementByTaskID is the resolver for the updateCurrentTaskVersionStatementByTaskID field.
 func (r *mutationResolver) UpdateCurrentTaskVersionStatementByTaskID(ctx context.Context, taskID string, statement StatementInput) (*TaskVersion, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement UpdateCurrentTaskVersionStatementByTaskID endpoint
+	panic("not implemented")
 
-	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	if !canEdit {
-		return nil, fmt.Errorf("user does not have permission to edit this task version")
-	}
-
-	input := tasks.UpdateTaskVStatementInput{
-		Story:  statement.Story,
-		Input:  statement.Input,
-		Output: statement.Output,
-		Notes:  statement.Notes,
-	}
-
-	err = tasks.UpdateCurrentTaskVersionStatement(r.PostgresDB, taskIDInt64, input)
-	if err != nil {
-		tracerr.PrintSourceColor(err)
-		return nil, err
-	}
-
-	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := internalTaskVToGQLTaskV(taskVObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if !canEdit {
+	//	return nil, fmt.Errorf("user does not have permission to edit this task version")
+	//}
+	//
+	//input := tasks.UpdateTaskVStatementInput{
+	//	Story:  statement.Story,
+	//	Input:  statement.Input,
+	//	Output: statement.Output,
+	//	Notes:  statement.Notes,
+	//}
+	//
+	//err = tasks.UpdateCurrentTaskVersionStatement(r.PostgresDB, taskIDInt64, input)
+	//if err != nil {
+	//	tracerr.PrintSourceColor(err)
+	//	return nil, err
+	//}
+	//
+	//taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//res, err := internalTaskVToGQLTaskV(taskVObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return res, nil
 }
 
 // UpdateCurrentTaskVersionNameAndCodeByTaskID is the resolver for the updateCurrentTaskVersionNameAndCodeByTaskID field.
 func (r *mutationResolver) UpdateCurrentTaskVersionNameAndCodeByTaskID(ctx context.Context, taskID string, name string, code string) (*TaskVersion, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement UpdateCurrentTaskVersionNameAndCodeByTaskID endpoint
+	panic("not implemented")
 
-	taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	if !canEdit {
-		return nil, fmt.Errorf("user does not have permission to edit this task version")
-	}
-
-	err = tasks.UpdateCurrentTaskVersionNameAndCode(r.PostgresDB, taskIDInt64, name, code)
-	if err != nil {
-		return nil, err
-	}
-
-	taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := internalTaskVToGQLTaskV(taskVObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskIDInt64, err := strconv.ParseInt(taskID, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if !canEdit {
+	//	return nil, fmt.Errorf("user does not have permission to edit this task version")
+	//}
+	//
+	//err = tasks.UpdateCurrentTaskVersionNameAndCode(r.PostgresDB, taskIDInt64, name, code)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskVObj, err := tasks.GetCurrentTaskVersionByTaskID(r.PostgresDB, taskIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//res, err := internalTaskVToGQLTaskV(taskVObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return res, nil
 }
 
 // DeleteTask is the resolver for the deleteTask field.
 func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return false, err
-	}
+	// TODO: implement DeleteTask endpoint
+	panic("not implemented")
 
-	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
-	if err != nil {
-		return false, err
-	}
-
-	canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDint64)
-	if err != nil {
-		return false, err
-	}
-
-	if !canEdit {
-		return false, fmt.Errorf("user does not have permission to delete this task")
-	}
-
-	err = tasks.DeleteTask(r.PostgresDB, taskIDint64)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDint64)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//if !canEdit {
+	//	return false, fmt.Errorf("user does not have permission to delete this task")
+	//}
+	//
+	//err = tasks.DeleteTask(r.PostgresDB, taskIDint64)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//return true, nil
 }
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	taskIDs, err := tasks.GetPublishedTaskIDs(r.PostgresDB)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement ListPublishedTasks endpoint
+	panic("not implemented")
 
-	var res []*Task = make([]*Task, 0)
-	for _, taskID := range taskIDs {
-		taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-		if err != nil {
-			return nil, err
-		}
-
-		if taskObj.Current == nil {
-			continue
-		}
-
-		task, err := internalTaskToGQLTask(taskObj)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, task)
-	}
-
-	return res, nil
+	//taskIDs, err := tasks.GetPublishedTaskIDs(r.PostgresDB)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//var res []*Task = make([]*Task, 0)
+	//for _, taskID := range taskIDs {
+	//	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	if taskObj.Current == nil {
+	//		continue
+	//	}
+	//
+	//	task, err := internalTaskToGQLTask(taskObj)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	res = append(res, task)
+	//}
+	//
+	//return res, nil
 }
 
 // GetTaskByTaskID is the resolver for the getTaskByTaskID field.
 func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Task, error) {
-	taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement GetTaskByTaskID endpoint
+	panic("not implemented")
 
-	// TODO: disallow getting unpublished tasks
-
-	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskIDint64, 2, 2)
-	if err != nil {
-		return nil, err
-	}
-
-	task, err := internalTaskToGQLTask(taskObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
+	//taskIDint64, err := strconv.ParseInt(taskID, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// TODO: disallow getting unpublished tasks
+	//
+	//taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskIDint64, 2, 2)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//task, err := internalTaskToGQLTask(taskObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return task, nil
 }
 
 // GetTaskByPublishedTaskCode is the resolver for the getTaskByPublishedTaskCode field.
 func (r *queryResolver) GetTaskByPublishedTaskCode(ctx context.Context, code string) (*Task, error) {
-	taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, code)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement GetTaskByPublishedTaskCode endpoint
+	panic("not implemented")
 
-	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-	if err != nil {
-		return nil, err
-	}
-
-	task, err := internalTaskToGQLTask(taskObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
+	//taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, code)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//task, err := internalTaskToGQLTask(taskObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return task, nil
 }
 
 // ListEditableTasks is the resolver for the listEditableTasks field.
 func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	var res []*Task = make([]*Task, 0)
-	for _, taskID := range taskIds {
-		taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-		if err != nil {
-			tracerr.PrintSourceColor(err)
-			return nil, err
-		}
-
-		if taskObj.Current == nil {
-			continue
-		}
-
-		task, err := internalTaskToGQLTask(taskObj)
-		if err != nil {
-			return nil, err
-		}
-
-		res = append(res, task)
-	}
-
-	return res, nil
+	// TODO: implement ListEditableTasks endpoint
+	panic("not implemented")
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, user.ID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//var res []*Task = make([]*Task, 0)
+	//for _, taskID := range taskIds {
+	//	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
+	//	if err != nil {
+	//		tracerr.PrintSourceColor(err)
+	//		return nil, err
+	//	}
+	//
+	//	if taskObj.Current == nil {
+	//		continue
+	//	}
+	//
+	//	task, err := internalTaskToGQLTask(taskObj)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	res = append(res, task)
+	//}
+	//
+	//return res, nil
 }
 
 // ListSolvedPublishedTaskCodesByUsername is the resolver for the listSolvedPublishedTaskCodesByUsername field.
 func (r *queryResolver) ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error) {
-	userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
-	if err != nil {
-		return nil, err
-	}
-
-	taskCodes, err := tasks.ListSolvedPublishedTaskCodesByUserID(r.PostgresDB, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return taskCodes, nil
+	// TODO: implement ListSolvedPublishedTaskCodesByUsername endpoint
+	panic("not implemented")
+	//userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskCodes, err := tasks.ListSolvedPublishedTaskCodesByUserID(r.PostgresDB, userID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return taskCodes, nil
 }
