@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/programme-lv/backend/config"
+	"github.com/programme-lv/backend/internal/components/evaluation"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
-	"github.com/rs/zerolog/log"
 	"io"
 	"log/slog"
 	"net/http"
@@ -26,19 +26,18 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/programme-lv/backend/internal/graphql"
-	"github.com/programme-lv/backend/internal/services/submissions"
 	"github.com/programme-lv/director/msg"
 
 	"github.com/gomodule/redigo/redis"
 )
 
-const defaultPort = "3001"
-
 var logger *slog.Logger
 
 func main() {
-	conf := loadConfigFromEnvFile()
 	logger = newColorfulLogger()
+
+	conf := loadConfigFromEnvFile()
+	logger.Info(fmt.Sprintf("%+v", conf))
 
 	pgDB := connectToPostgres(conf.Postgres.Host, conf.Postgres.User, conf.Postgres.Password,
 		conf.Postgres.DBName, conf.Postgres.SSLMode, conf.Postgres.Port)
@@ -53,7 +52,6 @@ func main() {
 
 	gqlResolver := &graphql.Resolver{
 		UserSrv:        userSrv,
-		PostgresDB:     pgDB,
 		SessionManager: sessions,
 		Logger:         logger,
 		TestURLs:       spaces,
@@ -81,7 +79,7 @@ func main() {
 	logger.Error("http listener has returned an error", "error", err)
 }
 
-func testTestURLs(urls submissions.TestDownloadURLProvider) error {
+func testTestURLs(urls evaluation.TestDownloadURLProvider) error {
 	url, err := urls.GetTestDownloadURL("test")
 	if err != nil {
 		return err
@@ -92,7 +90,12 @@ func testTestURLs(urls submissions.TestDownloadURLProvider) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			logger.Error("could not close response body", "error", err)
+		}
+	}(resp.Body)
 
 	// compare the value to "test"
 	buf := make([]byte, 4)
@@ -111,7 +114,8 @@ func testTestURLs(urls submissions.TestDownloadURLProvider) error {
 func testConnToDirector(conn *grpc.ClientConn, directorAuthKey string) error {
 	c := msg.NewDirectorClient(conn)
 	md := metadata.New(map[string]string{"authorization": directorAuthKey})
-	ctx2, _ := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	ctx2, f := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	defer f()
 	ctx := metadata.NewOutgoingContext(ctx2, md)
 	cc, err := c.EvaluateSubmission(ctx, &msg.EvaluationRequest{})
 	if err != nil {
@@ -151,7 +155,7 @@ func loadConfigFromEnvFile() *config.Config {
 }
 
 func connectToPostgres(host, user, password, dbname, sslmode string, port int) *sqlx.DB {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
+	connStr := fmt.Sprintf("host=%s port=%v user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
 
 	logger.Info("connecting to PostgreSQL", "connection_string", connStr)
 	db, err := sqlx.Connect("postgres", connStr)
@@ -169,7 +173,7 @@ func initRedisAuthSessionStore(redisHost string, redisPort int) *scs.SessionMana
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
 		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", fmt.Sprintf("%s:%s", redisHost, redisPort))
+			return redis.Dial("tcp", fmt.Sprintf("%s:%v", redisHost, redisPort))
 		},
 	}
 
@@ -209,7 +213,6 @@ func intS3Store(endpoint, key, secret, bucket string) *dospaces.DOSpacesS3ObjSto
 
 	if err = testTestURLs(spacesConn); err != nil {
 		logger.Error("could not download test file", "error", err)
-		log.Error().Msgf("could not download test file: %v", err)
 		panic(err)
 	}
 	logger.Info("successfully connected to DO Spaces")

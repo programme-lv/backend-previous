@@ -6,98 +6,107 @@ package graphql
 
 import (
 	"context"
-	"errors"
-	"github.com/programme-lv/backend/internal/domain"
 )
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	r.Logger.Info("Login attempt", "username", username, "action", "login")
+	// TODO: implement Login endpoint
+	panic("not implemented")
 
-	user, err := r.UserSrv.Login(username, password)
-	if err != nil {
-		var i18nErr *domain.PublicI18NError
-		if errors.As(err, &i18nErr) {
-			r.Logger.Warn("Login failed due to public error", "username", username, "error", i18nErr.Error(), "action", "login")
-			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
-		}
-		r.Logger.Error("Login failed due to internal server error", "username", username, "error", err.Error(), "action", "login")
-		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
-	}
-
-	r.Logger.Info("Login successful", "username", username, "action", "login")
-
-	r.AuthState.PutUserIDIntoCtx(ctx, user.ID)
-	return mapDomainUserObjToGQLUserObj(user), nil
+	//r.Logger.Info("Login attempt", "username", username, "action", "login")
+	//
+	//user, err := r.UserSrv.Login(username, password)
+	//if err != nil {
+	//	var i18nErr *domain.PublicI18NError
+	//	if errors.As(err, &i18nErr) {
+	//		r.Logger.Warn("Login failed due to public error", "username", username, "error", i18nErr.Error(), "action", "login")
+	//		return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+	//	}
+	//	r.Logger.Error("Login failed due to internal server error", "username", username, "error", err.Error(), "action", "login")
+	//	return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
+	//}
+	//
+	//r.Logger.Info("Login successful", "username", username, "action", "login")
+	//
+	//r.AuthState.PutUserIDIntoCtx(ctx, user.ID)
+	//return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
-	r.Logger.Info("Registration attempt", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
+	// TODO: implement Register endpoint
+	panic("not implemented")
 
-	user, err := r.UserSrv.Register(username, password, email, firstName, lastName)
-	if err != nil {
-		var i18nErr *domain.PublicI18NError
-		if errors.As(err, &i18nErr) {
-			r.Logger.Warn("Registration failed due to public error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", i18nErr.Error(), "action", "register")
-			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
-		}
-		r.Logger.Error("Registration failed due to internal server error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", err.Error(), "action", "register")
-		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
-	}
-
-	r.Logger.Info("Registration successful", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
-
-	return mapDomainUserObjToGQLUserObj(user), nil
+	//r.Logger.Info("Registration attempt", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
+	//
+	//user, err := r.UserSrv.Register(username, password, email, firstName, lastName)
+	//if err != nil {
+	//	var i18nErr *domain.PublicI18NError
+	//	if errors.As(err, &i18nErr) {
+	//		r.Logger.Warn("Registration failed due to public error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", i18nErr.Error(), "action", "register")
+	//		return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+	//	}
+	//	r.Logger.Error("Registration failed due to internal server error", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "error", err.Error(), "action", "register")
+	//	return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
+	//}
+	//
+	//r.Logger.Info("Registration successful", "username", username, "email", email, "firstName", firstName, "lastName", lastName, "action", "register")
+	//
+	//return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	r.Logger.Info("Logout attempt", "action", "logout")
-
-	userID, err := r.AuthState.PopUserIDFromCtx(ctx)
-	if err != nil {
-		var i18nErr *domain.PublicI18NError
-		if errors.As(err, &i18nErr) {
-			r.Logger.Warn("Logout failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "logout")
-			return false, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
-		}
-		r.Logger.Error("Logout failed due to internal server error", "userID", userID, "error", err.Error(), "action", "logout")
-		return false, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
-	}
-
-	r.Logger.Info("Logout successful", "userID", userID, "action", "logout")
-
-	return true, nil
+	// TODO: implement Logout endpoint
+	panic("not implemented")
+	//r.Logger.Info("Logout attempt", "action", "logout")
+	//
+	//userID, err := r.AuthState.PopUserIDFromCtx(ctx)
+	//if err != nil {
+	//	var i18nErr *domain.PublicI18NError
+	//	if errors.As(err, &i18nErr) {
+	//		r.Logger.Warn("Logout failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "logout")
+	//		return false, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+	//	}
+	//	r.Logger.Error("Logout failed due to internal server error", "userID", userID, "error", err.Error(), "action", "logout")
+	//	return false, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
+	//}
+	//
+	//r.Logger.Info("Logout successful", "userID", userID, "action", "logout")
+	//
+	//return true, nil
 }
 
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
-	r.Logger.Info("Whoami query attempt", "action", "whoami")
+	// TODO: implement Whoami endpoint
+	panic("not implemented")
 
-	userID, err := r.AuthState.GetUserIDFromCtx(ctx)
-	if err != nil {
-		var i18nErr *domain.PublicI18NError
-		if errors.As(err, &i18nErr) {
-			r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
-			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
-		}
-		r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
-		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
-	}
-
-	user, err := r.UserSrv.GetUserByID(userID)
-	if err != nil {
-		var i18nErr *domain.PublicI18NError
-		if errors.As(err, &i18nErr) {
-			r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
-			return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
-		}
-		r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
-		return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
-	}
-
-	r.Logger.Info("Whoami query successful", "userID", userID, "action", "whoami")
-
-	return mapDomainUserObjToGQLUserObj(user), nil
+	//r.Logger.Info("Whoami query attempt", "action", "whoami")
+	//
+	//userID, err := r.AuthState.GetUserIDFromCtx(ctx)
+	//if err != nil {
+	//	var i18nErr *domain.PublicI18NError
+	//	if errors.As(err, &i18nErr) {
+	//		r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
+	//		return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+	//	}
+	//	r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
+	//	return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
+	//}
+	//
+	//user, err := r.UserSrv.GetUserByID(userID)
+	//if err != nil {
+	//	var i18nErr *domain.PublicI18NError
+	//	if errors.As(err, &i18nErr) {
+	//		r.Logger.Warn("Whoami query failed due to public error", "userID", userID, "error", i18nErr.Error(), "action", "whoami")
+	//		return nil, i18nErr.WithLanguage(getGQLRequestLanguage(ctx))
+	//	}
+	//	r.Logger.Error("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
+	//	return nil, domain.NewErrorInternalServer().WithLanguage(getGQLRequestLanguage(ctx))
+	//}
+	//
+	//r.Logger.Info("Whoami query successful", "userID", userID, "action", "whoami")
+	//
+	//return mapDomainUserObjToGQLUserObj(user), nil
 }

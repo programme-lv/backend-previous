@@ -1,21 +1,21 @@
 package dospaces
 
 import (
-	"log/slog"
+	"github.com/programme-lv/backend/config"
+	"github.com/stretchr/testify/assert"
 	"testing"
-
-	"github.com/programme-lv/backend/internal/environment"
 )
 
 func TestGetPresignedURL(t *testing.T) {
-	config := environment.ReadEnvConfig(slog.Default())
+	conf, err := config.LoadConfig(".env")
+	assert.Nil(t, err)
 
 	s3ConnParams := DOSpacesConnParams{
-		AccessKey: config.DOSpacesKey,
-		SecretKey: config.DOSpacesSecret,
+		AccessKey: conf.S3.Key,
+		SecretKey: conf.S3.Secret,
 		Region:    "fra1",
-		Endpoint:  config.S3Endpoint,
-		Bucket:    config.S3Bucket,
+		Endpoint:  conf.S3.Endpoint,
+		Bucket:    conf.S3.Bucket,
 	}
 	urls, err := NewDOSpacesConn(s3ConnParams)
 	if err != nil {

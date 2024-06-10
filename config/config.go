@@ -16,7 +16,7 @@ type Config struct {
 		Password string `toml:"password"`
 		DBName   string `toml:"dbname"`
 		SSLMode  string `toml:"sslmode"`
-	} `toml:"database"`
+	} `toml:"postgres"`
 	Redis struct {
 		Host string `toml:"host"`
 		Port int    `toml:"port"`

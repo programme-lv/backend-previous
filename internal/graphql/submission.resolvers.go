@@ -6,220 +6,223 @@ package graphql
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"reflect"
-	"strconv"
-	"time"
-
-	"github.com/programme-lv/backend/internal/services/langs"
-	"github.com/programme-lv/backend/internal/services/submissions"
-	"github.com/programme-lv/backend/internal/services/tasks"
-	"github.com/programme-lv/backend/internal/services/users"
 )
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error) {
-	user, err := r.GetUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement EnqueueSubmissionForPublishedTaskCodeStableTaskVersion endpoint
+	panic("not implemented")
 
-	programmingLang, err := langs.FindLanguageByID(r.PostgresDB, languageID)
-	if err != nil {
-		return nil, err
-	}
-
-	taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, taskCode)
-	if err != nil {
-		return nil, err
-	}
-
-	submissionID, err := submissions.CreateSubmission(r.PostgresDB, submissions.CreateSubmissionParams{
-		UserID:            user.ID,
-		TaskID:            taskID,
-		ProgrammingLangID: programmingLang.ID,
-		Submission:        submissionCode,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	stableTaskVersID, err := tasks.GetStableTaskVerssionIDByTaskID(r.PostgresDB, taskID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = submissions.EvaluateSubmission(r.PostgresDB, submissionID, stableTaskVersID,
-		r.TestURLs, submissions.TestingDirectorConn{
-			GRPCClient: r.DirectorConn.GRPCClient,
-			Password:   r.DirectorConn.Password,
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submissionID)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return gqlSubm, nil
+	//user, err := r.GetUserFromContext(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//programmingLang, err := langs.FindLanguageByID(r.PostgresDB, languageID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, taskCode)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//submissionID, err := submissions.CreateSubmission(r.PostgresDB, submissions.CreateSubmissionParams{
+	//	UserID:            user.ID,
+	//	TaskID:            taskID,
+	//	ProgrammingLangID: programmingLang.ID,
+	//	Submission:        submissionCode,
+	//})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//stableTaskVersID, err := tasks.GetStableTaskVerssionIDByTaskID(r.PostgresDB, taskID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//err = submissions.EvaluateSubmission(r.PostgresDB, submissionID, stableTaskVersID,
+	//	r.TestURLs, submissions.TestingDirectorConn{
+	//		GRPCClient: r.DirectorConn.GRPCClient,
+	//		Password:   r.DirectorConn.Password,
+	//	})
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submissionID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return gqlSubm, nil
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
 func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*SubmissionOverview, error) {
-	// load all non-hidden task submRecords
-	submRecords, err := submissions.ListVisibleTaskSubmissionRowsWithEvaluation(r.PostgresDB)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement ListPublicSubmissions endpoint
+	panic("not implemented")
 
-	var gqlSubms []*SubmissionOverview = make([]*SubmissionOverview, 0, len(submRecords))
-	for _, subm := range submRecords {
-		task, err := tasks.GetTaskObjByTaskID(r.PostgresDB, subm.TaskID, 0, 1)
-		if err != nil {
-			return nil, err
-		}
-		user, err := users.GetUserObj(r.PostgresDB, subm.UserID)
-		if err != nil {
-			return nil, err
-		}
-		lang, err := langs.GetLangObj(r.PostgresDB, subm.ProgrammingLangID)
-		if err != nil {
-			return nil, err
-		}
-		if subm.VisibleEvalID == nil {
-			return nil, fmt.Errorf("submission %d has no visible evaluation", subm.ID)
-		}
-		evalObj, err := submissions.GetEvaluationObj(r.PostgresDB, *subm.VisibleEvalID, false)
-		if err != nil {
-			return nil, err
-		}
-		var possibleScore int = 100
-		if evalObj.PossibleScore != nil {
-			possibleScore = int(*evalObj.PossibleScore)
-		}
-		marshalledCreatedAt, err := subm.CreatedAt.MarshalText()
-		if err != nil {
-			return nil, err
-		}
-		gqlSubm := &SubmissionOverview{
-			ID:         fmt.Sprint(subm.ID),
-			Submission: subm.Submission,
-			Task: &TaskOverview{
-				TaskID: strconv.FormatInt(task.ID, 10),
-				Name:   task.Stable.Name,
-				Code:   task.Stable.Code,
-			},
-			Language: &ProgrammingLanguage{
-				ID:       fmt.Sprint(lang.ID),
-				FullName: lang.Name,
-				MonacoID: lang.MonacoID,
-				Enabled:  lang.Enabled,
-			},
-			Evaluation: &ShallowEvaluation{
-				ID:            fmt.Sprint(evalObj.ID),
-				Status:        evalObj.StatusID,
-				TotalScore:    int(evalObj.ReceivedScore),
-				PossibleScore: &possibleScore,
-			},
-			Username:  user.Username,
-			CreatedAt: string(marshalledCreatedAt),
-		}
-
-		gqlSubms = append(gqlSubms, gqlSubm)
-	}
-
-	return gqlSubms, nil
+	//submRecords, err := submissions.ListVisibleTaskSubmissionRowsWithEvaluation(r.PostgresDB)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//var gqlSubms []*SubmissionOverview = make([]*SubmissionOverview, 0, len(submRecords))
+	//for _, subm := range submRecords {
+	//	task, err := tasks.GetTaskObjByTaskID(r.PostgresDB, subm.TaskID, 0, 1)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	user, err := users.GetUserObj(r.PostgresDB, subm.UserID)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	lang, err := langs.GetLangObj(r.PostgresDB, subm.ProgrammingLangID)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	if subm.VisibleEvalID == nil {
+	//		return nil, fmt.Errorf("submission %d has no visible evaluation", subm.ID)
+	//	}
+	//	evalObj, err := submissions.GetEvaluationObj(r.PostgresDB, *subm.VisibleEvalID, false)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	var possibleScore int = 100
+	//	if evalObj.PossibleScore != nil {
+	//		possibleScore = int(*evalObj.PossibleScore)
+	//	}
+	//	marshalledCreatedAt, err := subm.CreatedAt.MarshalText()
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	gqlSubm := &SubmissionOverview{
+	//		ID:         fmt.Sprint(subm.ID),
+	//		Submission: subm.Submission,
+	//		Task: &TaskOverview{
+	//			TaskID: strconv.FormatInt(task.ID, 10),
+	//			Name:   task.Stable.Name,
+	//			Code:   task.Stable.Code,
+	//		},
+	//		Language: &ProgrammingLanguage{
+	//			ID:       fmt.Sprint(lang.ID),
+	//			FullName: lang.Name,
+	//			MonacoID: lang.MonacoID,
+	//			Enabled:  lang.Enabled,
+	//		},
+	//		Evaluation: &ShallowEvaluation{
+	//			ID:            fmt.Sprint(evalObj.ID),
+	//			Status:        evalObj.StatusID,
+	//			TotalScore:    int(evalObj.ReceivedScore),
+	//			PossibleScore: &possibleScore,
+	//		},
+	//		Username:  user.Username,
+	//		CreatedAt: string(marshalledCreatedAt),
+	//	}
+	//
+	//	gqlSubms = append(gqlSubms, gqlSubm)
+	//}
+	//
+	//return gqlSubms, nil
 }
 
 // GetSubmission is the resolver for the getSubmission field.
 func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
-	submIDInt64, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement GetSubmission endpoint
+	panic("not implemented")
 
-	submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return gqlSubm, nil
+	//submIDInt64, err := strconv.ParseInt(id, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return gqlSubm, nil
 }
 
 // OnNewPublicSubmission is the resolver for the onNewPublicSubmission field.
 func (r *subscriptionResolver) OnNewPublicSubmission(ctx context.Context) (<-chan *SubmissionOverview, error) {
-	panic(fmt.Errorf("not implemented: OnNewPublicSubmission - onNewPublicSubmission"))
+	// TODO: implement OnNewPublicSubmission endpoint
+	panic("not implemented")
+	//panic(fmt.Errorf("not implemented: OnNewPublicSubmission - onNewPublicSubmission"))
 }
 
 // OnSubmissionUpdate is the resolver for the onSubmissionUpdate field.
 func (r *subscriptionResolver) OnSubmissionUpdate(ctx context.Context, submissionID string) (<-chan *Submission, error) {
-	submIDInt64, err := strconv.ParseInt(submissionID, 10, 64)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement OnSubmissionUpdate endpoint
+	panic("not implemented")
 
-	log.Println("submIDInt64 1", submIDInt64)
-
-	previousSubmObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
-	if err != nil {
-		return nil, err
-	}
-	prevSubmObjGQL, err := internalSubmissionToGQLSubmission(previousSubmObj)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println("submIDInt64 2", submIDInt64)
-	ticker := time.NewTicker(100 * time.Millisecond)
-	quit := make(chan struct{})
-	res := make(chan *Submission)
-	go func() {
-		res <- prevSubmObjGQL
-		for {
-			select {
-			case <-ticker.C:
-				submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
-				if err != nil {
-					log.Println("err for submIDInt64", submIDInt64, err)
-					close(res)
-					return
-				}
-				// check if the submission has changed
-				if !reflect.DeepEqual(submObj, previousSubmObj) {
-					gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
-					if err != nil {
-						log.Println("err for submIDInt64", submIDInt64, err)
-						close(res)
-						return
-					}
-
-					log.Println("gqlSubm", gqlSubm)
-					res <- gqlSubm
-					previousSubmObj = submObj
-				}
-			case <-quit:
-				log.Println("quit for submIDInt64", submIDInt64)
-				ticker.Stop()
-				return
-			case <-ctx.Done():
-				log.Println("ctx.Done() for submIDInt64", submIDInt64)
-				ticker.Stop()
-				return
-			}
-		}
-	}()
-	return res, nil
+	//submIDInt64, err := strconv.ParseInt(submissionID, 10, 64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//log.Println("submIDInt64 1", submIDInt64)
+	//
+	//previousSubmObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//prevSubmObjGQL, err := internalSubmissionToGQLSubmission(previousSubmObj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//log.Println("submIDInt64 2", submIDInt64)
+	//ticker := time.NewTicker(100 * time.Millisecond)
+	//quit := make(chan struct{})
+	//res := make(chan *Submission)
+	//go func() {
+	//	res <- prevSubmObjGQL
+	//	for {
+	//		select {
+	//		case <-ticker.C:
+	//			submObj, err := submissions.GetSubmissionObject(r.PostgresDB, submIDInt64)
+	//			if err != nil {
+	//				log.Println("err for submIDInt64", submIDInt64, err)
+	//				close(res)
+	//				return
+	//			}
+	//			// check if the submission has changed
+	//			if !reflect.DeepEqual(submObj, previousSubmObj) {
+	//				gqlSubm, err := internalSubmissionToGQLSubmission(submObj)
+	//				if err != nil {
+	//					log.Println("err for submIDInt64", submIDInt64, err)
+	//					close(res)
+	//					return
+	//				}
+	//
+	//				log.Println("gqlSubm", gqlSubm)
+	//				res <- gqlSubm
+	//				previousSubmObj = submObj
+	//			}
+	//		case <-quit:
+	//			log.Println("quit for submIDInt64", submIDInt64)
+	//			ticker.Stop()
+	//			return
+	//		case <-ctx.Done():
+	//			log.Println("ctx.Done() for submIDInt64", submIDInt64)
+	//			ticker.Stop()
+	//			return
+	//		}
+	//	}
+	//}()
+	//return res, nil
 }

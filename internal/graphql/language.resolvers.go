@@ -6,22 +6,23 @@ package graphql
 
 import (
 	"context"
-
-	"github.com/programme-lv/backend/internal/services/langs"
 )
 
 // ListLanguages is the resolver for the listLanguages field.
 func (r *queryResolver) ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
-	languages, err := langs.ListEnabledProgrammingLanguages(r.PostgresDB)
-	if err != nil {
-		return nil, err
-	}
+	// TODO: implement ListLanguages endpoint
+	panic("not implemented")
 
-	// convert to graphql type
-	var gqlLangs []*ProgrammingLanguage
-	for _, lang := range languages {
-		gqlLangs = append(gqlLangs, internalProgrammingLanguageToGraphQL(&lang))
-	}
-
-	return gqlLangs, nil
+	//languages, err := langs.ListEnabledProgrammingLanguages(r.PostgresDB)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// convert to graphql type
+	//var gqlLangs []*ProgrammingLanguage
+	//for _, lang := range languages {
+	//	gqlLangs = append(gqlLangs, internalProgrammingLanguageToGraphQL(&lang))
+	//}
+	//
+	//return gqlLangs, nil
 }

@@ -1,28 +1,11 @@
 package graphql
 
 import (
-	"context"
 	"fmt"
+	"github.com/programme-lv/backend/internal/domain"
 
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/services/objects"
-	"github.com/programme-lv/backend/internal/services/users"
 	"golang.org/x/crypto/bcrypt"
 )
-
-func (r *Resolver) GetUserFromContext(ctx context.Context) (*model.Users, error) {
-	userID, ok := r.SessionManager.Get(ctx, "user_id").(int64)
-	if !ok {
-		return nil, fmt.Errorf("user is not logged in")
-	}
-
-	user, err := users.FindUserByID(r.PostgresDB, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
 
 func (r *Resolver) HashPassword(password string) (string, error) {
 	var hashedPassword []byte
@@ -30,7 +13,7 @@ func (r *Resolver) HashPassword(password string) (string, error) {
 	return string(hashedPassword), err
 }
 
-func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, error) {
+func internalTaskVToGQLTaskV(taskVersion *domain.TaskVersion) (*TaskVersion, error) {
 	if taskVersion == nil {
 		return nil, nil
 	}
@@ -40,7 +23,7 @@ func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, er
 		return nil, err
 	}
 
-	description, err := internalDescriptionToGQLDescription(taskVersion.Description)
+	description, err := internalDescriptionToGQLDescription(taskVersion.Statement)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +44,7 @@ func internalTaskVToGQLTaskV(taskVersion *objects.TaskVersion) (*TaskVersion, er
 	return &res, nil
 }
 
-func internalDescriptionToGQLDescription(description *objects.Description) (*Description, error) {
+func internalDescriptionToGQLDescription(description *domain.Statement) (*Description, error) {
 	if description == nil {
 		return nil, nil
 	}
@@ -84,7 +67,7 @@ func internalDescriptionToGQLDescription(description *objects.Description) (*Des
 	return &res, nil
 }
 
-func internalTaskToGQLTask(task *objects.Task) (*Task, error) {
+func internalTaskToGQLTask(task *domain.Task) (*Task, error) {
 	currentTaskVersion, err := internalTaskVToGQLTaskV(task.Current)
 	if err != nil {
 		return nil, err
@@ -109,7 +92,7 @@ func internalTaskToGQLTask(task *objects.Task) (*Task, error) {
 	return &res, nil
 }
 
-func internalSubmissionToGQLSubmission(submission *objects.TaskSubmission) (*Submission, error) {
+func internalSubmissionToGQLSubmission(submission *domain.TaskSubmission) (*Submission, error) {
 	marshalledCreatedAt, err := submission.CreatedAt.MarshalText()
 	if err != nil {
 		return nil, err
@@ -145,7 +128,7 @@ func internalSubmissionToGQLSubmission(submission *objects.TaskSubmission) (*Sub
 	return &res, nil
 }
 
-func internalEvalObjToGQLEvaluation(eval *objects.Evaluation) (*Evaluation, error) {
+func internalEvalObjToGQLEvaluation(eval *domain.Evaluation) (*Evaluation, error) {
 	var possibleScoreInt32 *int
 	if eval.PossibleScore != nil {
 		possibleScoreInt32 = new(int)
@@ -177,7 +160,7 @@ func internalEvalObjToGQLEvaluation(eval *objects.Evaluation) (*Evaluation, erro
 	return &res, nil
 }
 
-func internalRDataToGQLRData(data *objects.RuntimeData) *RuntimeData {
+func internalRDataToGQLRData(data *domain.RuntimeData) *RuntimeData {
 	if data == nil {
 		return nil
 	}
@@ -208,7 +191,7 @@ func internalRDataToGQLRData(data *objects.RuntimeData) *RuntimeData {
 	return res
 }
 
-func internalProgrammingLanguageToGraphQL(lang *objects.ProgrammingLanguage) *ProgrammingLanguage {
+func internalProgrammingLanguageToGraphQL(lang *domain.ProgrammingLanguage) *ProgrammingLanguage {
 	return &ProgrammingLanguage{
 		ID:       lang.ID,
 		FullName: lang.Name,
