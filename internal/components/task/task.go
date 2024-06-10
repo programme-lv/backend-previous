@@ -1,6 +1,11 @@
 package task
 
-import "github.com/programme-lv/backend/internal/domain"
+import (
+	"fmt"
+	"github.com/programme-lv/backend/internal/components/user"
+	"github.com/programme-lv/backend/internal/domain"
+	"log/slog"
+)
 
 type Service interface {
 	// ListPublishedTasks returns a list of all tasks that have been published.
@@ -13,7 +18,7 @@ type Service interface {
 	// current and the stable version populated. Method is accessible only
 	// to the task creator or an administrator since it may contain sensitive information.
 	// For retrieving user facing information use GetPublicTaskVersionByPublishedCode.
-	GetTaskByID(taskID int64) (*domain.Task, error)
+	GetTaskByID(actingUserID, taskID int64) (*domain.Task, error)
 
 	// GetPublicTaskVersionByPublishedCode finds the task with the published code
 	// and returns its "STABLE" version. This method is used to retrieve user facing
@@ -46,3 +51,85 @@ type Service interface {
 	// hiding it from future queries.
 	DeleteTask(actingUserID int64, taskID int64) error
 }
+
+type taskRepo interface {
+	GetUserByID(userID int64) (*domain.User, error)
+
+	ListPublishedTasks() ([]*domain.Task, error)
+	GetTaskByID(taskID int64) (*domain.Task, error)
+	GetPublishedTask(taskPublishedCode string) (*domain.Task, error)
+	MarkAsDeleted(taskID int64) error
+
+	// UpdateStatement duplicates the current task version, creates a new statement
+	// and updates the task version with the new statement. All in one transaction.
+	UpdateStatement(taskID int64, statement *domain.Statement) error
+
+	// UpdateTaskNameAndCode duplicates the current task version, creates a new task version
+	// and updates the task version with the new name and code. All in one transaction.
+	UpdateTaskNameAndCode(taskID int64, taskName string, taskCode string) error
+}
+
+type service struct {
+	logger  *slog.Logger
+	userSrv user.Service
+	repo    taskRepo
+}
+
+func (s service) ListPublishedTasks() ([]*domain.Task, error) {
+	return s.repo.ListPublishedTasks()
+}
+
+func (s service) GetTaskByID(actingUserID, taskID int64) (*domain.Task, error) {
+	actingUser, err := s.userSrv.GetUserByID(actingUserID)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		return nil, err
+	}
+	task, err := s.repo.GetTaskByID(taskID)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("getting task by ID: %v", err))
+		return nil, err
+	}
+	if task.OwnerID != actingUser.ID && !actingUser.IsAdmin {
+		return nil, err
+
+	}
+	return s.repo.GetTaskByID(taskID)
+}
+
+func (s service) GetPublicTaskVersionByPublishedCode(taskPublishedCode string) (*domain.TaskVersion, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) ListEditableTasks(actingUserID int64) ([]*domain.Task, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) ListUserSolvedTasks(actingUserID int64) ([]*domain.Task, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) CreateTask(actingUserID int64, taskCode string, taskName string) (*domain.Task, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) UpdateTaskStatement(actingUserID int64, taskID int64, statement *domain.Statement) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) UpdateTaskNameAndCode(actingUserID int64, taskID int64, taskName string, taskCode string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s service) DeleteTask(actingUserID int64, taskID int64) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+var _ Service = service{}

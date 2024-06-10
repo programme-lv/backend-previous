@@ -54,11 +54,11 @@ func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth 
 	}
 
 	taskObj := domain.Task{
-		ID:          task.ID,
-		CreatedByID: task.CreatedByID,
-		Current:     currTaskVers,
-		Stable:      stableTaskVers,
-		CreatedAt:   task.CreatedAt,
+		ID:        task.ID,
+		OwnerID:   task.CreatedByID,
+		Current:   currTaskVers,
+		Stable:    stableTaskVers,
+		CreatedAt: task.CreatedAt,
 	}
 
 	return &taskObj, nil

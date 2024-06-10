@@ -23,8 +23,8 @@ type TaskVersion struct {
 
 // Task represents a task that can be solved by a user. It is a collection of task versions.
 type Task struct {
-	ID          int64
-	CreatedByID int64
+	ID      int64
+	OwnerID int64
 
 	// Current is the newest / latest version of the task.
 	// Accessible only by the creator / owner of the task.
