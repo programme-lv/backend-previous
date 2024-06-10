@@ -30,11 +30,6 @@ type Service interface {
 	// In the future task edit permission sharing may be implemented.
 	ListEditableTasks(actingUserID int64) ([]*domain.Task, error)
 
-	// ListUserSolvedTasks returns a list of all tasks that the user has solved.
-	// As of now the user is considered to have solved the task if they have submitted
-	// a solution that has maximum score.
-	ListUserSolvedTasks(actingUserID int64) ([]*domain.Task, error)
-
 	// CreateTask creates a new task with the given name and code.
 	// All unprovided fields are set to their default values such as an example statement.
 	CreateTask(actingUserID int64, taskCode string, taskName string) (*domain.Task, error)
@@ -53,11 +48,14 @@ type Service interface {
 }
 
 type taskRepo interface {
-	GetUserByID(userID int64) (*domain.User, error)
-
-	ListPublishedTasks() ([]*domain.Task, error)
 	GetTaskByID(taskID int64) (*domain.Task, error)
+
+	ListAllTasks() ([]*domain.Task, error)
+	ListPublishedTasks() ([]*domain.Task, error)
+
+	DoesTaskWithPublishedCodeExist(taskPublishedCode string) (bool, error)
 	GetPublishedTask(taskPublishedCode string) (*domain.Task, error)
+
 	MarkAsDeleted(taskID int64) error
 
 	// UpdateStatement duplicates the current task version, creates a new statement
@@ -91,25 +89,56 @@ func (s service) GetTaskByID(actingUserID, taskID int64) (*domain.Task, error) {
 		return nil, err
 	}
 	if task.OwnerID != actingUser.ID && !actingUser.IsAdmin {
-		return nil, err
+		return nil, newErrorUserDoesNotHaveEditAccessToTask()
 
 	}
 	return s.repo.GetTaskByID(taskID)
 }
 
 func (s service) GetPublicTaskVersionByPublishedCode(taskPublishedCode string) (*domain.TaskVersion, error) {
-	//TODO implement me
-	panic("implement me")
+	exists, err := s.repo.DoesTaskWithPublishedCodeExist(taskPublishedCode)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("checking if task with published code exists: %v", err))
+		return nil, err
+	}
+	if !exists {
+		return nil, newErrorTaskNotFound()
+	}
+
+	task, err := s.repo.GetPublishedTask(taskPublishedCode)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("getting published task: %v", err))
+		return nil, err
+	}
+
+	if task.Stable == nil {
+		return nil, newErrorNoStableVersion()
+	}
+
+	return task.Stable, nil
 }
 
 func (s service) ListEditableTasks(actingUserID int64) ([]*domain.Task, error) {
-	//TODO implement me
-	panic("implement me")
-}
+	tasks, err := s.repo.ListAllTasks()
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("listing all tasks: %v", err))
+		return nil, err
+	}
 
-func (s service) ListUserSolvedTasks(actingUserID int64) ([]*domain.Task, error) {
-	//TODO implement me
-	panic("implement me")
+	actingUser, err := s.userSrv.GetUserByID(actingUserID)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		return nil, err
+	}
+
+	editableTasks := make([]*domain.Task, 0)
+	for _, task := range tasks {
+		if task.OwnerID == actingUser.ID || actingUser.IsAdmin {
+			editableTasks = append(editableTasks, task)
+		}
+	}
+
+	return editableTasks, nil
 }
 
 func (s service) CreateTask(actingUserID int64, taskCode string, taskName string) (*domain.Task, error) {
