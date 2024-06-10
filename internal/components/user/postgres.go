@@ -22,6 +22,9 @@ func (u userRepoPostgresImpl) DoesUserExistByID(id int64) (bool, error) {
 	var record model.Users
 	err := stmt.Query(u.db, &record)
 	if err != nil {
+		if err.Error() == qrm.ErrNoRows.Error() {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -37,6 +40,9 @@ func (u userRepoPostgresImpl) DoesUserExistByUsername(username string) (bool, er
 	var record model.Users
 	err := stmt.Query(u.db, &record)
 	if err != nil {
+		if err.Error() == qrm.ErrNoRows.Error() {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -52,6 +58,9 @@ func (u userRepoPostgresImpl) DoesUserExistByEmail(email string) (bool, error) {
 	var record model.Users
 	err := stmt.Query(u.db, &record)
 	if err != nil {
+		if err.Error() == qrm.ErrNoRows.Error() {
+			return false, nil
+		}
 		return false, err
 	}
 
@@ -125,5 +134,6 @@ func mapUserTableRowToUserDomainObject(record model.Users) *domain.User {
 		CreatedAt: record.CreatedAt,
 		UpdatedAt: record.UpdatedAt,
 		IsAdmin:   record.IsAdmin,
+		EncPasswd: []byte(record.HashedPassword),
 	}
 }

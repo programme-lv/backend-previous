@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/components/evaluation"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
+	mygraphql "github.com/programme-lv/backend/internal/graphql"
+
 	"io"
 	"log/slog"
 	"net/http"
@@ -25,7 +28,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/director/msg"
 
 	"github.com/gomodule/redigo/redis"
@@ -35,9 +37,9 @@ var logger *slog.Logger
 
 func main() {
 	logger = newColorfulLogger()
+	slog.SetDefault(logger)
 
 	conf := loadConfigFromEnvFile()
-	logger.Info(fmt.Sprintf("%+v", conf))
 
 	pgDB := connectToPostgres(conf.Postgres.Host, conf.Postgres.User, conf.Postgres.Password,
 		conf.Postgres.DBName, conf.Postgres.SSLMode, conf.Postgres.Port)
@@ -50,19 +52,20 @@ func main() {
 
 	userSrv := user.NewService(pgDB)
 
-	gqlResolver := &graphql.Resolver{
+	gqlResolver := &mygraphql.Resolver{
 		UserSrv:        userSrv,
 		SessionManager: sessions,
 		Logger:         logger,
 		TestURLs:       spaces,
-		DirectorConn: &graphql.AuthDirectorConn{
+		DirectorConn: &mygraphql.AuthDirectorConn{
 			GRPCClient: director,
 			Password:   conf.Director.AuthKey,
 		},
 	}
 
-	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: gqlResolver}))
+	srv := handler.NewDefaultServer(mygraphql.NewExecutableSchema(mygraphql.Config{Resolvers: gqlResolver}))
 	srv.AddTransport(&transport.Websocket{})
+	srv.AroundOperations(timeElapsedMiddleware)
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -77,6 +80,18 @@ func main() {
 	logger.Info("listening on", "address", address)
 	err := http.ListenAndServe(address, nil)
 	logger.Error("http listener has returned an error", "error", err)
+}
+
+func timeElapsedMiddleware(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+	oc := graphql.GetOperationContext(ctx)
+	start := time.Now()
+	nxt := next(ctx)
+	return func(ctxInner context.Context) *graphql.Response {
+		res := nxt(ctxInner)
+		logger.Info("time elapsed", "operation", oc.OperationName, "time", time.Since(start))
+		return res
+
+	}
 }
 
 func testTestURLs(urls evaluation.TestDownloadURLProvider) error {
@@ -157,7 +172,7 @@ func loadConfigFromEnvFile() *config.Config {
 func connectToPostgres(host, user, password, dbname, sslmode string, port int) *sqlx.DB {
 	connStr := fmt.Sprintf("host=%s port=%v user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
 
-	logger.Info("connecting to PostgreSQL", "connection_string", connStr)
+	logger.Info("connecting to PostgreSQL")
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		logger.Error("could not connect to PostgreSQL", "error", err)
@@ -177,19 +192,37 @@ func initRedisAuthSessionStore(redisHost string, redisPort int) *scs.SessionMana
 		},
 	}
 
+	conn, err := redisPool.Dial()
+	if err != nil {
+		logger.Error("could not connect to Redis", "error", err)
+		panic(err)
+	}
+	defer func(conn redis.Conn) {
+		err = conn.Close()
+		if err != nil {
+			logger.Error("could not close connection to Redis", "error", err)
+		}
+	}(conn)
+
+	// Set a test value
+	_, err = conn.Do("SET", "test_key", "test_value")
+	if err != nil {
+		logger.Error("could not set value in Redis", "error", err)
+	}
+
+	// Get the test value
+	value, err := redis.String(conn.Do("GET", "test_key"))
+	if err != nil {
+		logger.Error("could not get value from Redis", "error", err)
+	}
+
+	if value != "test_value" {
+		logger.Error("unexpected value from Redis", "value", value)
+	}
+
 	sessions := scs.New()
 	sessions.Lifetime = 24 * time.Hour
 	sessions.Store = redisstore.New(redisPool)
-
-	dial, err := redisPool.Dial()
-	if err != nil {
-		return nil
-	}
-	err = dial.Close()
-	if err != nil {
-		logger.Error("could not close connection to Redis", "error", err)
-		panic(err)
-	}
 
 	logger.Info("successfully connected to Redis")
 

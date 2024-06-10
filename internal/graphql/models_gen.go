@@ -42,12 +42,12 @@ type ExecutionResult struct {
 	Stderr string `json:"stderr"`
 }
 
-type Metadata struct {
-	Authors []string `json:"authors,omitempty"`
-	Origin  *string  `json:"origin,omitempty"`
+type Mutation struct {
 }
 
-type Mutation struct {
+type Origin struct {
+	Authors []string `json:"authors,omitempty"`
+	Source  *string  `json:"source,omitempty"`
 }
 
 type ProgrammingLanguage struct {
@@ -131,7 +131,7 @@ type TaskVersion struct {
 	Name        string       `json:"name"`
 	Description *Description `json:"description,omitempty"`
 	Constraints *Constraints `json:"constraints"`
-	Metadata    *Metadata    `json:"metadata"`
+	Origin      *Origin      `json:"origin,omitempty"`
 	CreatedAt   string       `json:"createdAt"`
 }
 
