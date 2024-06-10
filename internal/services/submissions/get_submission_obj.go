@@ -7,14 +7,14 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/services/langs"
-	"github.com/programme-lv/backend/internal/services/objects"
 	"github.com/programme-lv/backend/internal/services/tasks"
 	"github.com/programme-lv/backend/internal/services/users"
 )
 
-func GetSubmissionObject(db qrm.DB, submissionID int64) (*objects.TaskSubmission, error) {
-	res := objects.TaskSubmission{
+func GetSubmissionObject(db qrm.DB, submissionID int64) (*domain.TaskSubmission, error) {
+	res := domain.TaskSubmission{
 		ID:          0,
 		Author:      &objects.User{},
 		Language:    &objects.ProgrammingLanguage{},

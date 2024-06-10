@@ -7,14 +7,14 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/domain"
 	"github.com/ztrue/tracerr"
 )
 
 // 0 - no version
 // 1 - version without description
 // 2 - full version
-func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth int) (*objects.Task, error) {
+func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth int) (*domain.Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))
 
 	var task model.Tasks
@@ -23,7 +23,7 @@ func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth 
 		return nil, tracerr.Wrap(err)
 	}
 
-	var currTaskVers *objects.TaskVersion = nil
+	var currTaskVers *domain.TaskVersion = nil
 	if task.CurrentVersionID != nil {
 		if currVersDepth == 2 {
 			currTaskVers, err = GetTaskVersionObjByTaskVersionID(db, *task.CurrentVersionID, true)
@@ -53,7 +53,7 @@ func GetTaskObjByTaskID(db qrm.DB, taskID int64, currVersDepth, stableVersDepth 
 		}
 	}
 
-	taskObj := objects.Task{
+	taskObj := domain.Task{
 		ID:          task.ID,
 		CreatedByID: task.CreatedByID,
 		Current:     currTaskVers,

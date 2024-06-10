@@ -5,10 +5,10 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/domain"
 )
 
-func GetStableTaskVersionObjectByTaskID(db qrm.DB, taskID int64) (*objects.TaskVersion, error) {
+func GetStableTaskVersionObjectByTaskID(db qrm.DB, taskID int64) (*domain.TaskVersion, error) {
 	stmt := postgres.SELECT(table.TaskVersions.AllColumns).FROM(
 		table.Tasks.INNER_JOIN(table.TaskVersions, table.TaskVersions.ID.EQ(table.Tasks.StableVersionID)),
 	).WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID)))

@@ -12,7 +12,7 @@ type TaskVersion struct {
 	Code   string
 	Name   string
 
-	Description *Description
+	Statement *Statement
 
 	TimeLimitMs   int64
 	MemoryLimitKb int64
@@ -35,9 +35,9 @@ type Task struct {
 	CreatedAt time.Time
 }
 
-// Description is a set of sections that describe the task. The sections are formatted in Markdown.
+// Statement is a set of sections that describe the task. The sections are formatted in Markdown.
 // Notes are an optional field that can be used to provide additional information to the task.
-type Description struct {
+type Statement struct {
 	ID       int64
 	Story    string
 	Input    string

@@ -7,11 +7,11 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/domain"
 )
 
-func GetEvaluationObj(db qrm.DB, evalID int64, fillTests bool) (*objects.Evaluation, error) {
-	res := objects.Evaluation{
+func GetEvaluationObj(db qrm.DB, evalID int64, fillTests bool) (*domain.Evaluation, error) {
+	res := domain.Evaluation{
 		ID:             evalID,
 		TaskVersionID:  0,
 		StatusID:       "",

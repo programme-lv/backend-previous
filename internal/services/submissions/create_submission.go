@@ -2,7 +2,7 @@ package submissions
 
 import (
 	"github.com/go-jet/jet/qrm"
-	"github.com/programme-lv/backend/internal/database/postgres/proglv/public/table"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 )
 
 type CreateSubmissionParams struct {

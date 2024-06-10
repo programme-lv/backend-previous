@@ -5,15 +5,15 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/services/objects"
+	"github.com/programme-lv/backend/internal/domain"
 )
 
-func GetLangObj(db qrm.DB, langID string) (*objects.ProgrammingLanguage, error) {
+func GetLangObj(db qrm.DB, langID string) (*domain.ProgrammingLanguage, error) {
 	langRecord, err := selectLangRecord(db, langID)
 	if err != nil {
 		return nil, err
 	}
-	res := objects.ProgrammingLanguage{
+	res := domain.ProgrammingLanguage{
 		ID:                langID,
 		Name:              "",
 		CodeFilename:      "",

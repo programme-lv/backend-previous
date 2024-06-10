@@ -1,7 +1,7 @@
 package submissions
 
 import (
-	"github.com/programme-lv/backend/internal/database/postgres/proglv/public/table"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"log/slog"
 
 	"github.com/go-jet/jet/v2/postgres"

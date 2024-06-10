@@ -271,35 +271,35 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Constraints.TimeLimitMs(childComplexity), true
 
-	case "Description.examples":
+	case "Statement.examples":
 		if e.complexity.Description.Examples == nil {
 			break
 		}
 
 		return e.complexity.Description.Examples(childComplexity), true
 
-	case "Description.input":
+	case "Statement.input":
 		if e.complexity.Description.Input == nil {
 			break
 		}
 
 		return e.complexity.Description.Input(childComplexity), true
 
-	case "Description.notes":
+	case "Statement.notes":
 		if e.complexity.Description.Notes == nil {
 			break
 		}
 
 		return e.complexity.Description.Notes(childComplexity), true
 
-	case "Description.output":
+	case "Statement.output":
 		if e.complexity.Description.Output == nil {
 			break
 		}
 
 		return e.complexity.Description.Output(childComplexity), true
 
-	case "Description.story":
+	case "Statement.story":
 		if e.complexity.Description.Story == nil {
 			break
 		}
@@ -1252,14 +1252,14 @@ type TaskVersion {
     code: String!
     name: String!
 
-    description: Description
+    description: Statement
     constraints: Constraints!
     metadata: Metadata!
 
     createdAt: String!
 }
 
-type Description {
+type Statement {
     story: String!
     input: String!
     output: String!
@@ -1934,7 +1934,7 @@ func (ec *executionContext) _Description_story(ctx context.Context, field graphq
 
 func (ec *executionContext) fieldContext_Description_story(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Description",
+		Object:     "Statement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1978,7 +1978,7 @@ func (ec *executionContext) _Description_input(ctx context.Context, field graphq
 
 func (ec *executionContext) fieldContext_Description_input(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Description",
+		Object:     "Statement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2022,7 +2022,7 @@ func (ec *executionContext) _Description_output(ctx context.Context, field graph
 
 func (ec *executionContext) fieldContext_Description_output(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Description",
+		Object:     "Statement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2063,7 +2063,7 @@ func (ec *executionContext) _Description_examples(ctx context.Context, field gra
 
 func (ec *executionContext) fieldContext_Description_examples(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Description",
+		Object:     "Statement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2110,7 +2110,7 @@ func (ec *executionContext) _Description_notes(ctx context.Context, field graphq
 
 func (ec *executionContext) fieldContext_Description_notes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Description",
+		Object:     "Statement",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -6058,7 +6058,7 @@ func (ec *executionContext) fieldContext_TaskVersion_description(ctx context.Con
 			case "notes":
 				return ec.fieldContext_Description_notes(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Description", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Statement", field.Name)
 		},
 	}
 	return fc, nil
@@ -8759,7 +8759,7 @@ func (ec *executionContext) _Constraints(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var descriptionImplementors = []string{"Description"}
+var descriptionImplementors = []string{"Statement"}
 
 func (ec *executionContext) _Description(ctx context.Context, sel ast.SelectionSet, obj *Description) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, descriptionImplementors)
@@ -8769,7 +8769,7 @@ func (ec *executionContext) _Description(ctx context.Context, sel ast.SelectionS
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Description")
+			out.Values[i] = graphql.MarshalString("Statement")
 		case "story":
 			out.Values[i] = ec._Description_story(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

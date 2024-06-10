@@ -10,7 +10,7 @@ import (
 	set "github.com/deckarep/golang-set/v2"
 	"github.com/go-jet/jet/qrm"
 	"github.com/go-jet/jet/v2/postgres"
-	"github.com/programme-lv/backend/internal/database/postgres/proglv/public/table"
+	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/director/msg"
 	"google.golang.org/grpc/metadata"
 )

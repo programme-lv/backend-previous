@@ -70,7 +70,7 @@ type TaskVersion {
 
     description: Description
     constraints: Constraints!
-    metadata: Metadata!
+    origin: Origin
 
     createdAt: String!
 }
@@ -89,9 +89,9 @@ type Constraints {
     memoryLimitKb: Int!
 }
 
-type Metadata {
+type Origin {
     authors: [String!]
-    origin: String
+    source: String
 }
 
 type Example {

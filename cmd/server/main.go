@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/programme-lv/backend/internal/database/dospaces"
-	"github.com/programme-lv/backend/internal/repository"
 	"github.com/programme-lv/backend/internal/service"
 	"io"
 	"log/slog"
