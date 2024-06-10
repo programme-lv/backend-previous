@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/programme-lv/backend/config"
+	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
+	"github.com/rs/zerolog/log"
 	"io"
 	"log/slog"
 	"net/http"
@@ -32,95 +34,51 @@ import (
 
 const defaultPort = "3001"
 
+var logger *slog.Logger
+
 func main() {
 	conf := loadConfigFromEnvFile()
-	logger := newColorfulLogger()
-	pgDB := mustConnectToPostgres()
-	logger.Info("connecting to database...")
-	sqlxDb := sqlx.MustConnect("postgres", conf.SqlxConnString)
-	defer func(sqlxDb *sqlx.DB) {
-		err := sqlxDb.Close()
-		if err != nil {
-			logger.Error("could not close database connection", "error", err)
-		}
-	}(sqlxDb)
-	logger.Info("successfully connected to database")
+	logger = newColorfulLogger()
 
-	redisPool := &redis.Pool{
-		MaxIdle: 10,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", conf.RedisConnString)
-		},
-	}
+	pgDB := connectToPostgres(conf.Postgres.Host, conf.Postgres.User, conf.Postgres.Password,
+		conf.Postgres.DBName, conf.Postgres.SSLMode, conf.Postgres.Port)
 
-	sessions := scs.New()
-	sessions.Lifetime = 24 * time.Hour
-	sessions.Store = redisstore.New(redisPool)
+	sessions := initRedisAuthSessionStore(conf.Redis.Host, conf.Redis.Port)
 
-	logger.Info("connecting to DigitalOcean Spaces...")
-	spacesConnParams := dospaces.DOSpacesConnParams{
-		AccessKey: conf.DOSpacesKey,
-		SecretKey: conf.DOSpacesSecret,
-		Region:    "fra1",
-		Endpoint:  conf.S3Endpoint,
-		Bucket:    conf.S3Bucket,
-	}
-	spacesConn, err := dospaces.NewDOSpacesConn(spacesConnParams)
-	if err != nil {
-		panic(err)
-	}
+	spaces := intS3Store(conf.S3.Endpoint, conf.S3.Key, conf.S3.Secret, conf.S3.Bucket)
 
-	if err := testTestURLs(spacesConn); err != nil {
-		logger.Error("could not download test file", "error", err)
-		panic(err)
-	}
-	logger.Info("successfully connected to DO Spaces")
+	director := connectToTestDirector(conf.Director.Endpoint, conf.Director.AuthKey)
 
-	logger.Info("connecting to \"director\" gRPC service...")
-	gConn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
-	if err != nil {
-		logger.Error("could not connect to director", "error", err)
-		panic(err)
-		// logger.Fatalf("did not connect: %v", err)
-	}
-	defer gConn.Close()
-	logger.Info("successfully connected to \"director\" gRPC service")
+	userSrv := user.NewService(pgDB)
 
-	logger.Info("testing connection to tester")
-	err = testConnToDirector(gConn, conf.DirectorAuthKey)
-	if err != nil {
-		logger.Error("could not test connection to tester", "error", err)
-		panic(err)
-	}
-	logger.Info("successfully tested connection to tester")
-
-	userRepo := repository.NewUserRepoPostgreSQLImpl(sqlxDb)
-	userSrv := service.NewUserService(userRepo, slog.Default())
-
-	resolver := &graphql.Resolver{
+	gqlResolver := &graphql.Resolver{
 		UserSrv:        userSrv,
-		AuthState:      nil,
-		PostgresDB:     sqlxDb,
+		PostgresDB:     pgDB,
 		SessionManager: sessions,
 		Logger:         logger,
-		// SubmissionRMQ:  rmqConn,
-		TestURLs: spacesConn,
+		TestURLs:       spaces,
 		DirectorConn: &graphql.AuthDirectorConn{
-			GRPCClient: msg.NewDirectorClient(gConn),
-			Password:   conf.DirectorAuthKey,
+			GRPCClient: director,
+			Password:   conf.Director.AuthKey,
 		},
 	}
 
-	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: resolver}))
-	srv.AddTransport(&transport.Websocket{}) // <---- This is the important part!
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello world :)"))
-	})
+	srv := handler.NewDefaultServer(graphql.NewExecutableSchema(graphql.Config{Resolvers: gqlResolver}))
+	srv.AddTransport(&transport.Websocket{})
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
-	logger.Info("Listening on", "port", defaultPort)
-	logger.Error(http.ListenAndServe(":"+defaultPort, nil).Error())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("Hello world :)"))
+		if err != nil {
+			logger.Error("could not write response", "error", err)
+			return
+		}
+	})
+
+	address := fmt.Sprintf(":%v", conf.Server.Port)
+	logger.Info("listening on", "address", address)
+	err := http.ListenAndServe(address, nil)
+	logger.Error("http listener has returned an error", "error", err)
 }
 
 func testTestURLs(urls submissions.TestDownloadURLProvider) error {
@@ -182,17 +140,107 @@ func newColorfulLogger() *slog.Logger {
 	return slog.New(tint.NewHandler(os.Stdout, opts))
 }
 
-func loadConfigFromEnvFile() *config.EnvConfig {
-	conf := config.ReadEnvConfig(slog.Default())
+func loadConfigFromEnvFile() *config.Config {
+	conf, err := config.LoadConfig(".env")
+	if err != nil {
+		logger.Error("could not load config", "error", err)
+		panic(err)
+	}
 	conf.Print()
 	return conf
 }
 
-func connectToPostgres(host, port, user, password, dbname string) *sqlx.DB {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, "disable")
+func connectToPostgres(host, user, password, dbname, sslmode string, port int) *sqlx.DB {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
+
+	logger.Info("connecting to PostgreSQL", "connection_string", connStr)
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
+		logger.Error("could not connect to PostgreSQL", "error", err)
 		panic(err)
 	}
+	logger.Info("successfully connected to PostgreSQL")
+
 	return db
+}
+
+func initRedisAuthSessionStore(redisHost string, redisPort int) *scs.SessionManager {
+	logger.Info("connecting to Redis to store sessions...")
+	redisPool := &redis.Pool{
+		MaxIdle: 10,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", fmt.Sprintf("%s:%s", redisHost, redisPort))
+		},
+	}
+
+	sessions := scs.New()
+	sessions.Lifetime = 24 * time.Hour
+	sessions.Store = redisstore.New(redisPool)
+
+	dial, err := redisPool.Dial()
+	if err != nil {
+		return nil
+	}
+	err = dial.Close()
+	if err != nil {
+		logger.Error("could not close connection to Redis", "error", err)
+		panic(err)
+	}
+
+	logger.Info("successfully connected to Redis")
+
+	return sessions
+}
+
+func intS3Store(endpoint, key, secret, bucket string) *dospaces.DOSpacesS3ObjStorage {
+	logger.Info("connecting to DigitalOcean Spaces...")
+	spacesConnParams := dospaces.DOSpacesConnParams{
+		AccessKey: key,
+		SecretKey: secret,
+		Region:    "fra1",
+		Endpoint:  endpoint,
+		Bucket:    bucket,
+	}
+	spacesConn, err := dospaces.NewDOSpacesConn(spacesConnParams)
+	if err != nil {
+		logger.Error("could not connect to DO Spaces", "error", err)
+		panic(err)
+	}
+
+	if err = testTestURLs(spacesConn); err != nil {
+		logger.Error("could not download test file", "error", err)
+		log.Error().Msgf("could not download test file: %v", err)
+		panic(err)
+	}
+	logger.Info("successfully connected to DO Spaces")
+
+	return spacesConn
+}
+
+func connectToTestDirector(endpoint, authKey string) msg.DirectorClient {
+	logger.Info("connecting to \"director\" gRPC service...")
+	gConn, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
+	if err != nil {
+		logger.Error("could not connect to director", "error", err)
+		panic(err)
+		// logger.Fatalf("did not connect: %v", err)
+	}
+	defer func(gConn *grpc.ClientConn) {
+		err := gConn.Close()
+		if err != nil {
+			logger.Error("could not close connection to director", "error", err)
+			panic(err)
+		}
+	}(gConn)
+	logger.Info("successfully connected to \"director\" gRPC service")
+
+	logger.Info("testing connection to tester")
+	err = testConnToDirector(gConn, authKey)
+	if err != nil {
+		logger.Error("could not test connection to tester", "error", err)
+		panic(err)
+	}
+	logger.Info("successfully tested connection to tester")
+
+	return msg.NewDirectorClient(gConn)
 }

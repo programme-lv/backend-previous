@@ -25,7 +25,6 @@ type Resolver struct {
 	PostgresDB     *sqlx.DB
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
-	// SubmissionRMQ  *amqp.Connection
-	TestURLs     *dospaces.DOSpacesS3ObjStorage
-	DirectorConn *AuthDirectorConn
+	TestURLs       *dospaces.DOSpacesS3ObjStorage
+	DirectorConn   *AuthDirectorConn
 }

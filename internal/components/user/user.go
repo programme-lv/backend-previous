@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
@@ -29,7 +30,9 @@ type service struct {
 	logger *slog.Logger
 }
 
-func NewService(repo userRepo) Service {
+func NewService(db qrm.DB) Service {
+	repo := userRepoPostgresImpl{db: db}
+
 	//create a logger that prefixes with user service
 	logger := slog.Default().With("service", "user")
 	return &service{repo: repo, logger: logger}
