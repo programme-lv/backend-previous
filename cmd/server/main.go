@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/database/dospaces"
-	"github.com/programme-lv/backend/internal/service"
 	"io"
 	"log/slog"
 	"net/http"
@@ -23,7 +23,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/programme-lv/backend/internal/environment"
 	"github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/services/submissions"
 	"github.com/programme-lv/director/msg"
@@ -34,27 +33,18 @@ import (
 const defaultPort = "3001"
 
 func main() {
-	opts := &tint.Options{
-		Level: slog.LevelDebug,
-	}
-	log := slog.New(tint.NewHandler(os.Stdout, opts))
-	slog.SetDefault(log)
-
-	conf := environment.ReadEnvConfig(log)
-	conf.Print()
-
-	log.Info("connecting to database...")
+	conf := loadConfigFromEnvFile()
+	logger := newColorfulLogger()
+	pgDB := mustConnectToPostgres()
+	logger.Info("connecting to database...")
 	sqlxDb := sqlx.MustConnect("postgres", conf.SqlxConnString)
-	defer sqlxDb.Close()
-	log.Info("successfully connected to database")
-
-	// log.Info("connecting to RabbitMQ...")
-	// rmqConn, err := amqp.Dial(conf.AMQPConnString)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer rmqConn.Close()
-	// log.Info("successfully connected to RabbitMQ")
+	defer func(sqlxDb *sqlx.DB) {
+		err := sqlxDb.Close()
+		if err != nil {
+			logger.Error("could not close database connection", "error", err)
+		}
+	}(sqlxDb)
+	logger.Info("successfully connected to database")
 
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
@@ -67,7 +57,7 @@ func main() {
 	sessions.Lifetime = 24 * time.Hour
 	sessions.Store = redisstore.New(redisPool)
 
-	log.Info("connecting to DigitalOcean Spaces...")
+	logger.Info("connecting to DigitalOcean Spaces...")
 	spacesConnParams := dospaces.DOSpacesConnParams{
 		AccessKey: conf.DOSpacesKey,
 		SecretKey: conf.DOSpacesSecret,
@@ -81,28 +71,28 @@ func main() {
 	}
 
 	if err := testTestURLs(spacesConn); err != nil {
-		log.Error("could not download test file", "error", err)
+		logger.Error("could not download test file", "error", err)
 		panic(err)
 	}
-	log.Info("successfully connected to DO Spaces")
+	logger.Info("successfully connected to DO Spaces")
 
-	log.Info("connecting to \"director\" gRPC service...")
+	logger.Info("connecting to \"director\" gRPC service...")
 	gConn, err := grpc.Dial(conf.DirectorEndpoint, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
 	if err != nil {
-		log.Error("could not connect to director", "error", err)
+		logger.Error("could not connect to director", "error", err)
 		panic(err)
-		// log.Fatalf("did not connect: %v", err)
+		// logger.Fatalf("did not connect: %v", err)
 	}
 	defer gConn.Close()
-	log.Info("successfully connected to \"director\" gRPC service")
+	logger.Info("successfully connected to \"director\" gRPC service")
 
-	log.Info("testing connection to tester")
+	logger.Info("testing connection to tester")
 	err = testConnToDirector(gConn, conf.DirectorAuthKey)
 	if err != nil {
-		log.Error("could not test connection to tester", "error", err)
+		logger.Error("could not test connection to tester", "error", err)
 		panic(err)
 	}
-	log.Info("successfully tested connection to tester")
+	logger.Info("successfully tested connection to tester")
 
 	userRepo := repository.NewUserRepoPostgreSQLImpl(sqlxDb)
 	userSrv := service.NewUserService(userRepo, slog.Default())
@@ -112,7 +102,7 @@ func main() {
 		AuthState:      nil,
 		PostgresDB:     sqlxDb,
 		SessionManager: sessions,
-		Logger:         log,
+		Logger:         logger,
 		// SubmissionRMQ:  rmqConn,
 		TestURLs: spacesConn,
 		DirectorConn: &graphql.AuthDirectorConn{
@@ -129,8 +119,8 @@ func main() {
 	})
 	http.Handle("/query", sessions.LoadAndSave(srv))
 
-	log.Info("Listening on", "port", defaultPort)
-	log.Error(http.ListenAndServe(":"+defaultPort, nil).Error())
+	logger.Info("Listening on", "port", defaultPort)
+	logger.Error(http.ListenAndServe(":"+defaultPort, nil).Error())
 }
 
 func testTestURLs(urls submissions.TestDownloadURLProvider) error {
@@ -183,4 +173,26 @@ func testConnToDirector(conn *grpc.ClientConn, directorAuthKey string) error {
 	}
 
 	return nil
+}
+
+func newColorfulLogger() *slog.Logger {
+	opts := &tint.Options{
+		Level: slog.LevelDebug,
+	}
+	return slog.New(tint.NewHandler(os.Stdout, opts))
+}
+
+func loadConfigFromEnvFile() *config.EnvConfig {
+	conf := config.ReadEnvConfig(slog.Default())
+	conf.Print()
+	return conf
+}
+
+func connectToPostgres(host, port, user, password, dbname string) *sqlx.DB {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, "disable")
+	db, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	return db
 }

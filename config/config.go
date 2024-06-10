@@ -1,89 +1,76 @@
-package config
+package main
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
-	"reflect"
-
-	"github.com/jedib0t/go-pretty/table"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/spf13/viper"
+	"github.com/BurntSushi/toml"
+	"log"
 )
 
-type EnvConfig struct {
-	SqlxConnString   string `mapstructure:"SQLX_CONN_STRING"`
-	AMQPConnString   string `mapstructure:"AMQP_CONN_STRING"`
-	RedisConnString  string `mapstructure:"REDIS_CONN_STRING"`
-	S3Endpoint       string `mapstructure:"S3_ENDPOINT"`
-	S3Bucket         string `mapstructure:"S3_BUCKET"`
-	DOSpacesKey      string `mapstructure:"DO_SPACES_KEY"`
-	DOSpacesSecret   string `mapstructure:"DO_SPACES_SECRET"`
-	DirectorEndpoint string `mapstructure:"DIRECTOR_ENDPOINT"`
-	DirectorAuthKey  string `mapstructure:"DIRECTOR_AUTH_KEY"`
+type Config struct {
+	Server struct {
+		Port int `toml:"port"`
+	} `toml:"server"`
+	Database struct {
+		Host     string `toml:"host"`
+		Port     int    `toml:"port"`
+		User     string `toml:"user"`
+		Password string `toml:"password"`
+		DBName   string `toml:"dbname"`
+		SSLMode  string `toml:"sslmode"`
+	} `toml:"database"`
+	AMQP struct {
+		User     string `toml:"user"`
+		Password string `toml:"password"`
+		Host     string `toml:"host"`
+		Port     int    `toml:"port"`
+	} `toml:"amqp"`
+	Redis struct {
+		Host string `toml:"host"`
+		Port int    `toml:"port"`
+	} `toml:"redis"`
+	S3 struct {
+		Endpoint string `toml:"endpoint"`
+		Bucket   string `toml:"bucket"`
+		Key      string `toml:"key"`
+		Secret   string `toml:"secret"`
+	} `toml:"s3"`
+	Director struct {
+		Endpoint string `toml:"endpoint"`
+		AuthKey  string `toml:"auth_key"`
+	} `toml:"director"`
 }
 
-func ReadEnvConfig(log *slog.Logger) *EnvConfig {
-	config := getDefaultConfig()
-
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env") // Ideally, this should be determined based on the config file extension
-	viper.AddConfigPath(".")   // Look for config in the working directory
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Warn("No config file found")
-		} else {
-			log.Error("Error reading config file", err)
-		}
+func loadConfig(path string) (*Config, error) {
+	var config Config
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		return nil, err
 	}
+	return &config, nil
+}
 
-	viper.AutomaticEnv()
-	viper.BindEnv("SQLX_CONN_STRING")
-	viper.BindEnv("AMQP_CONN_STRING")
-	viper.BindEnv("REDIS_CONN_STRING")
-	viper.BindEnv("S3_ENDPOINT")
-	viper.BindEnv("S3_BUCKET")
-	viper.BindEnv("DO_SPACES_KEY")
-	viper.BindEnv("DO_SPACES_SECRET")
-	viper.BindEnv("DIRECTOR_ENDPOINT")
-	viper.BindEnv("DIRECTOR_AUTH_KEY")
-
-	err := viper.Unmarshal(&config)
+func main() {
+	config, err := loadConfig("config.toml")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Error loading config file: %s", err)
 	}
 
-	return config
-}
-
-func ConnectToPostgresByEnvConf() (*sqlx.DB, error) {
-	config := ReadEnvConfig(slog.Default())
-	return sqlx.Connect("postgres", config.SqlxConnString)
-}
-
-func getDefaultConfig() *EnvConfig {
-	return &EnvConfig{
-		SqlxConnString: "host=localhost port=5432 user=proglv password=proglv dbname=proglv sslmode=disable",
-	}
-}
-
-func (c *EnvConfig) Print() {
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(table.StyleLight)
-	t.SetTitle("Environment Configuration")
-	t.AppendHeader(table.Row{"field name", "value"})
-	v := reflect.ValueOf(*c)
-	typeOfS := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		strRepresentation := fmt.Sprintf("%v", v.Field(i).Interface())
-		LENGTH_LIMIT := 50
-		if len(strRepresentation) > LENGTH_LIMIT {
-			strRepresentation = strRepresentation[:LENGTH_LIMIT] + "..."
-		}
-		t.AppendRow(table.Row{typeOfS.Field(i).Name, strRepresentation})
-	}
-	t.Render()
+	fmt.Printf("Server Port: %d\n", config.Server.Port)
+	fmt.Printf("Database Host: %s\n", config.Database.Host)
+	fmt.Printf("Database Port: %d\n", config.Database.Port)
+	fmt.Printf("Database User: %s\n", config.Database.User)
+	fmt.Printf("Database Password: %s\n", config.Database.Password)
+	fmt.Printf("Database Name: %s\n", config.Database.DBName)
+	fmt.Printf("Database SSLMode: %s\n", config.Database.SSLMode)
+	fmt.Printf("AMQP User: %s\n", config.AMQP.User)
+	fmt.Printf("AMQP Password: %s\n", config.AMQP.Password)
+	fmt.Printf("AMQP Host: %s\n", config.AMQP.Host)
+	fmt.Printf("AMQP Port: %d\n", config.AMQP.Port)
+	fmt.Printf("Redis Host: %s\n", config.Redis.Host)
+	fmt.Printf("Redis Port: %d\n", config.Redis.Port)
+	fmt.Printf("S3 Endpoint: %s\n", config.S3.Endpoint)
+	fmt.Printf("S3 Bucket: %s\n", config.S3.Bucket)
+	fmt.Printf("S3 Key: %s\n", config.S3.Key)
+	fmt.Printf("S3 Secret: %s\n", config.S3.Secret)
+	fmt.Printf("Director Endpoint: %s\n", config.Director.Endpoint)
+	fmt.Printf("Director Auth Key: %s\n", config.Director.AuthKey)
 }
