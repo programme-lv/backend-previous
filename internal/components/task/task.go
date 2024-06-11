@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/domain"
 	"log/slog"
@@ -71,6 +72,14 @@ type service struct {
 	logger  *slog.Logger
 	userSrv user.Service
 	repo    taskRepo
+}
+
+func NewService(userSrv user.Service, db qrm.DB) Service {
+	return service{
+		logger:  slog.Default().With("service", "task"),
+		userSrv: userSrv,
+		repo:    postgresTaskRepoImpl{db: db},
+	}
 }
 
 func (s service) ListPublishedTasks() ([]*domain.Task, error) {

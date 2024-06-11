@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/components/evaluation"
+	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"
@@ -51,9 +52,11 @@ func main() {
 	director := connectToTestDirector(conf.Director.Endpoint, conf.Director.AuthKey)
 
 	userSrv := user.NewService(pgDB)
+	taskSrv := task.NewService(userSrv, pgDB)
 
 	gqlResolver := &mygraphql.Resolver{
 		UserSrv:        userSrv,
+		TaskSrv:        taskSrv,
 		SessionManager: sessions,
 		Logger:         logger,
 		TestURLs:       spaces,

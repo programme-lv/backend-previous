@@ -178,8 +178,7 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool,
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	// TODO: implement ListPublishedTasks endpoint
-	panic("not implemented")
+	r.Logger.Info("list published tasks request")
 
 	//taskIDs, err := tasks.GetPublishedTaskIDs(r.PostgresDB)
 	//if err != nil {
