@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/components/evaluation"
 	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"
-
 	"io"
 	"log/slog"
 	"net/http"
@@ -86,15 +86,39 @@ func main() {
 }
 
 func timeElapsedMiddleware(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-	oc := graphql.GetOperationContext(ctx)
+	id := uuid.New()
+	reqLogger := logger.With("request_id", id)
+	rawQuery := graphql.GetOperationContext(ctx).RawQuery
+	//rawQuery = strings.Replace(rawQuery, "\n", "", -1)
+	//rawQuery = strings.Replace(rawQuery, "\t", "", -1)
+	//rawQuery = strings.Replace(rawQuery, " ", "", -1)
+	rawQuery = shortenStr(rawQuery)
+	reqLogger.Info("received request", "query", rawQuery)
 	start := time.Now()
 	nxt := next(ctx)
 	return func(ctxInner context.Context) *graphql.Response {
 		res := nxt(ctxInner)
-		logger.Info("time elapsed", "operation", oc.OperationName, "time", time.Since(start))
+		elapsed := time.Since(start)
+		reqLogger.Info("request completed", "elapsed", elapsed)
 		return res
 
 	}
+}
+
+func shortenStr(str string) string {
+	res := ""
+
+	for i := 0; i < len(str); i++ {
+		if str[i] != ' ' {
+			res += string(str[i])
+		} else {
+			if i == 0 || str[i] != str[i-1] {
+				res += string(str[i])
+			}
+		}
+	}
+
+	return res
 }
 
 func testTestURLs(urls evaluation.TestDownloadURLProvider) error {

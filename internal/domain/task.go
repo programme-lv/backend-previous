@@ -42,7 +42,7 @@ type Statement struct {
 	Story    string
 	Input    string
 	Output   string
-	Examples []Example
+	Examples []*Example
 	Notes    *string
 }
 

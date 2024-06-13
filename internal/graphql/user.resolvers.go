@@ -10,8 +10,6 @@ import (
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*User, error) {
-	r.Logger.Info("login request", "username", username, "password", "********")
-
 	user, err := r.UserSrv.Login(username, password)
 	if err != nil {
 		r.Logger.Warn("login failed", "error", err)
@@ -20,41 +18,29 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	}
 	r.SessionManager.Put(ctx, "user_id", user.ID)
 
-	r.Logger.Info("login successful", "username", username, "duration")
-
 	return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, username string, password string, email string, firstName string, lastName string) (*User, error) {
-	r.Logger.Info("register request", "username", username, "email", email)
-
 	user, err := r.UserSrv.Register(username, password, email, firstName, lastName)
 	if err != nil {
 		r.Logger.Warn("register failed", "error", err)
 		return nil, smartError(ctx, err)
 	}
 
-	r.Logger.Info("register successful", "username", username, "email", email)
-
 	return mapDomainUserObjToGQLUserObj(user), nil
 }
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	r.Logger.Info("logout request")
-
 	r.SessionManager.Remove(ctx, "user_id")
-
-	r.Logger.Info("logout successful")
 
 	return true, nil
 }
 
 // Whoami is the resolver for the whoami field.
 func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
-	r.Logger.Info("Whoami query attempt", "action", "whoami")
-
 	userID := r.SessionManager.GetInt64(ctx, "user_id")
 	if userID == 0 {
 		r.Logger.Warn("Whoami query failed due to unauthorized user", "action", "whoami")
@@ -66,8 +52,6 @@ func (r *queryResolver) Whoami(ctx context.Context) (*User, error) {
 		r.Logger.Warn("Whoami query failed due to internal server error", "userID", userID, "error", err.Error(), "action", "whoami")
 		return nil, smartError(ctx, err)
 	}
-
-	r.Logger.Info("Whoami query successful", "userID", userID, "action", "whoami")
 
 	return mapDomainUserObjToGQLUserObj(user), nil
 }

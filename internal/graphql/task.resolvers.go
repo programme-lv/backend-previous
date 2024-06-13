@@ -205,6 +205,7 @@ func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error)
 	//}
 	//
 	//return res, nil
+	return nil, nil
 }
 
 // GetTaskByTaskID is the resolver for the getTaskByTaskID field.
