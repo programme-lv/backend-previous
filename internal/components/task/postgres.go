@@ -166,7 +166,7 @@ func (p postgresTaskRepoImpl) ListAllTasks() ([]*domain.Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks)
 
 	var records []model.Tasks
-	err := stmt.Query(p.db, records)
+	err := stmt.Query(p.db, &records)
 	if err != nil {
 		if err.Error() == qrm.ErrNoRows.Error() {
 			return nil, nil
@@ -187,8 +187,27 @@ func (p postgresTaskRepoImpl) ListAllTasks() ([]*domain.Task, error) {
 }
 
 func (p postgresTaskRepoImpl) ListPublishedTasks() ([]*domain.Task, error) {
-	// TODO implement me
-	panic("implement me")
+	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks.
+		INNER_JOIN(table.PublishedTaskCodes, table.PublishedTaskCodes.TaskID.EQ(table.Tasks.ID)))
+	var records []model.Tasks
+	err := stmt.Query(p.db, &records)
+	if err != nil {
+		if err.Error() == qrm.ErrNoRows.Error() {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	tasks := make([]*domain.Task, 0)
+	for _, record := range records {
+		task, errMappingTask := p.mapTaskTableRowToTaskDomainObject(&record)
+		if errMappingTask != nil {
+			return nil, errMappingTask
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
 }
 
 func (p postgresTaskRepoImpl) DoesTaskWithPublishedCodeExist(taskPublishedCode string) (bool, error) {

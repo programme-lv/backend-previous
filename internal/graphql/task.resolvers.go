@@ -178,34 +178,20 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool,
 
 // ListPublishedTasks is the resolver for the listPublishedTasks field.
 func (r *queryResolver) ListPublishedTasks(ctx context.Context) ([]*Task, error) {
-	r.Logger.Info("list published tasks request")
-
-	//taskIDs, err := tasks.GetPublishedTaskIDs(r.PostgresDB)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//var res []*Task = make([]*Task, 0)
-	//for _, taskID := range taskIDs {
-	//	taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	if taskObj.Current == nil {
-	//		continue
-	//	}
-	//
-	//	task, err := internalTaskToGQLTask(taskObj)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	res = append(res, task)
-	//}
-	//
-	//return res, nil
-	return nil, nil
+	tasks, err := r.TaskSrv.ListPublishedTasks()
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+	gqlTasks := make([]*Task, 0, len(tasks))
+	for _, task := range tasks {
+		gqlTaskObj, errMappingToGQL := mapDomainTaskObjToGQLTask(task)
+		if errMappingToGQL != nil {
+			r.Logger.Error("could not map domain task object to gql task object", "error", errMappingToGQL)
+			return nil, newErrorInternalServer()
+		}
+		gqlTasks = append(gqlTasks, gqlTaskObj)
+	}
+	return gqlTasks, nil
 }
 
 // GetTaskByTaskID is the resolver for the getTaskByTaskID field.

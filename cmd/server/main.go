@@ -37,6 +37,8 @@ import (
 var logger *slog.Logger
 
 func main() {
+	//defer profile.Start().Stop()
+
 	logger = newColorfulLogger()
 	slog.SetDefault(logger)
 

@@ -69,7 +69,7 @@ func internalDescriptionToGQLDescription(description *domain.Statement) (*Descri
 	return &res, nil
 }
 
-func internalTaskToGQLTask(task *domain.Task) (*Task, error) {
+func mapDomainTaskObjToGQLTask(task *domain.Task) (*Task, error) {
 	currentTaskVersion, err := internalTaskVToGQLTaskV(task.Current)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func internalSubmissionToGQLSubmission(submission *domain.TaskSubmission) (*Subm
 		CreatedAt:  string(marshalledCreatedAt),
 	}
 
-	GQLTask, err := internalTaskToGQLTask(submission.Task)
+	GQLTask, err := mapDomainTaskObjToGQLTask(submission.Task)
 	if err != nil {
 		return nil, err
 	}
