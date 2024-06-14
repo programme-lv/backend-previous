@@ -281,17 +281,23 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 
 // ListSolvedPublishedTaskCodesByUsername is the resolver for the listSolvedPublishedTaskCodesByUsername field.
 func (r *queryResolver) ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error) {
-	// TODO: implement ListSolvedPublishedTaskCodesByUsername endpoint
-	panic("not implemented")
-	//userID, err := users.GetUserIDByUsername(r.PostgresDB, username)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//taskCodes, err := tasks.ListSolvedPublishedTaskCodesByUserID(r.PostgresDB, userID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//return taskCodes, nil
+	userID := r.SessionManager.GetInt64(ctx, "user_id")
+	if userID == 0 {
+		return nil, newErrorUnauthorized()
+	}
+
+	tasks, err := r.SubmSrv.ListUserSolvedPublishedTasks(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	taskCodes := make([]string, 0, len(tasks))
+	for _, task := range tasks {
+		if task.Stable == nil {
+			continue
+		}
+		taskCodes = append(taskCodes, task.Stable.Code)
+	}
+
+	return taskCodes, nil
 }

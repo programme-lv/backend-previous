@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/programme-lv/backend/internal/components/submission"
 	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
@@ -23,6 +24,7 @@ type AuthDirectorConn struct {
 type Resolver struct {
 	UserSrv        user.Service
 	TaskSrv        task.Service
+	SubmSrv        submission.Service
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	TestURLs       *dospaces.DOSpacesS3ObjStorage

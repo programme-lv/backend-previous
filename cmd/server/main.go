@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/components/evaluation"
+	"github.com/programme-lv/backend/internal/components/submission"
 	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
@@ -55,10 +56,12 @@ func main() {
 
 	userSrv := user.NewService(pgDB)
 	taskSrv := task.NewService(userSrv, pgDB)
+	submSrv := submission.NewService(pgDB, taskSrv)
 
 	gqlResolver := &mygraphql.Resolver{
 		UserSrv:        userSrv,
 		TaskSrv:        taskSrv,
+		SubmSrv:        submSrv,
 		SessionManager: sessions,
 		Logger:         logger,
 		TestURLs:       spaces,
@@ -101,9 +104,12 @@ func timeElapsedMiddleware(ctx context.Context, next graphql.OperationHandler) g
 	return func(ctxInner context.Context) *graphql.Response {
 		res := nxt(ctxInner)
 		elapsed := time.Since(start)
-		reqLogger.Info("request completed", "elapsed", elapsed)
+		resJson, err := res.Data.MarshalJSON()
+		if err != nil {
+			panic(err)
+		}
+		reqLogger.Info("request completed", "elapsed", elapsed, "result", string(resJson), "errors", fmt.Sprintf("%+v", res.Errors.Unwrap()))
 		return res
-
 	}
 }
 

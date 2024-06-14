@@ -16,6 +16,8 @@ type Service interface {
 	// and that are published. As of now the user is considered to have solved the task
 	// if they have submitted a solution that has maximum score.
 	ListUserSolvedPublishedTasks(userID int64) ([]*domain.Task, error)
+
+	//ListSubmissionsWithMaxScore(userID int64) ([]*domain.TaskSubmission, error)
 }
 
 type service struct {
@@ -26,9 +28,9 @@ type service struct {
 
 var _ Service = &service{}
 
-func NewService(db *sqlx.DB) Service {
+func NewService(db *sqlx.DB, taskSrv task.Service) Service {
 	logger := slog.Default().With("service", "submission")
-	return &service{db: db, logger: logger}
+	return &service{db: db, logger: logger, taskSrv: taskSrv}
 }
 
 func (s *service) ListUserSolvedPublishedTasks(userID int64) ([]*domain.Task, error) {

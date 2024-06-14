@@ -7,6 +7,7 @@ import (
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/domain"
+	"log"
 )
 
 type postgresTaskRepoImpl struct {
@@ -148,11 +149,15 @@ func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.T
 	var stable *domain.TaskVersion
 	if taskRow.StableVersionID != nil {
 		var err error
-		current, err = p.GetTaskVersionByID(*taskRow.StableVersionID)
+		stable, err = p.GetTaskVersionByID(*taskRow.StableVersionID)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	log.Printf("taskRow: %+v", taskRow)
+	log.Printf("current: %+v", current)
+	log.Printf("stable: %+v", stable)
 	return &domain.Task{
 		ID:        taskRow.ID,
 		OwnerID:   taskRow.CreatedByID,
