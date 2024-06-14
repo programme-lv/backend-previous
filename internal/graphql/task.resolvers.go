@@ -221,25 +221,17 @@ func (r *queryResolver) GetTaskByTaskID(ctx context.Context, taskID string) (*Ta
 
 // GetTaskByPublishedTaskCode is the resolver for the getTaskByPublishedTaskCode field.
 func (r *queryResolver) GetTaskByPublishedTaskCode(ctx context.Context, code string) (*Task, error) {
-	// TODO: implement GetTaskByPublishedTaskCode endpoint
-	panic("not implemented")
+	task, err := r.TaskSrv.GetTaskByPublishedCode(code)
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
 
-	//taskID, err := tasks.GetTaskIDByPublishedTaskCode(r.PostgresDB, code)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//taskObj, err := tasks.GetTaskObjByTaskID(r.PostgresDB, taskID, 2, 2)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//task, err := internalTaskToGQLTask(taskObj)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//return task, nil
+	gqlTaskObj, errMappingToGQL := mapDomainTaskObjToGQLTask(task)
+	if errMappingToGQL != nil {
+		r.Logger.Error("could not map domain task object to gql task object", "error", errMappingToGQL)
+		return nil, newErrorInternalServer()
+	}
+	return gqlTaskObj, nil
 }
 
 // ListEditableTasks is the resolver for the listEditableTasks field.

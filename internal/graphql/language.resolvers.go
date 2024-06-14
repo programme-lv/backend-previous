@@ -10,19 +10,15 @@ import (
 
 // ListLanguages is the resolver for the listLanguages field.
 func (r *queryResolver) ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error) {
-	// TODO: implement ListLanguages endpoint
-	panic("not implemented")
+	languages, err := r.Languages.ListProgrammingLanguages()
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
 
-	//languages, err := langs.ListEnabledProgrammingLanguages(r.PostgresDB)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//// convert to graphql type
-	//var gqlLangs []*ProgrammingLanguage
-	//for _, lang := range languages {
-	//	gqlLangs = append(gqlLangs, internalProgrammingLanguageToGraphQL(&lang))
-	//}
-	//
-	//return gqlLangs, nil
+	gqlLanguages := make([]*ProgrammingLanguage, len(languages))
+	for i := 0; i < len(languages); i++ {
+		gqlLanguages[i] = internalProgrammingLanguageToGraphQL(languages[i])
+	}
+
+	return gqlLanguages, nil
 }

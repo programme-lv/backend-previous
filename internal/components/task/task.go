@@ -18,13 +18,11 @@ type Service interface {
 	// GetTaskByID returns the task with the given ID with both the
 	// current and the stable version populated. Method is accessible only
 	// to the task creator or an administrator since it may contain sensitive information.
-	// For retrieving user facing information use GetPublicTaskVersionByPublishedCode.
 	GetTaskByID(actingUserID, taskID int64) (*domain.Task, error)
 
-	// GetPublicTaskVersionByPublishedCode finds the task with the published code
-	// and returns its "STABLE" version. This method is used to retrieve user facing
-	// information about a task. It is accessible to all users.
-	GetPublicTaskVersionByPublishedCode(taskPublishedCode string) (*domain.TaskVersion, error)
+	// GetTaskByPublishedCode finds the task with the published code
+	// This method is used to retrieve user facing information about a task.
+	GetTaskByPublishedCode(taskPublishedCode string) (*domain.Task, error)
 
 	// ListEditableTasks returns a list of all tasks that the user can edit.
 	// An administrator can edit all tasks, while others can only edit tasks they have created.
@@ -104,7 +102,7 @@ func (s service) GetTaskByID(actingUserID, taskID int64) (*domain.Task, error) {
 	return s.repo.GetTaskByID(taskID)
 }
 
-func (s service) GetPublicTaskVersionByPublishedCode(taskPublishedCode string) (*domain.TaskVersion, error) {
+func (s service) GetTaskByPublishedCode(taskPublishedCode string) (*domain.Task, error) {
 	exists, err := s.repo.DoesTaskWithPublishedCodeExist(taskPublishedCode)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("checking if task with published code exists: %v", err))
@@ -120,11 +118,7 @@ func (s service) GetPublicTaskVersionByPublishedCode(taskPublishedCode string) (
 		return nil, err
 	}
 
-	if task.Stable == nil {
-		return nil, newErrorNoStableVersion()
-	}
-
-	return task.Stable, nil
+	return task, nil
 }
 
 func (s service) ListEditableTasks(actingUserID int64) ([]*domain.Task, error) {

@@ -216,13 +216,36 @@ func (p postgresTaskRepoImpl) ListPublishedTasks() ([]*domain.Task, error) {
 }
 
 func (p postgresTaskRepoImpl) DoesTaskWithPublishedCodeExist(taskPublishedCode string) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+	stmt := postgres.SELECT(postgres.COUNT(table.PublishedTaskCodes.TaskID).AS("count")).
+		FROM(table.PublishedTaskCodes).
+		WHERE(table.PublishedTaskCodes.TaskCode.EQ(postgres.String(taskPublishedCode)))
+
+	var record struct {
+		Count int
+	}
+	err := stmt.Query(p.db, &record)
+	if err != nil {
+		return false, err
+	}
+
+	return record.Count > 0, nil
 }
 
 func (p postgresTaskRepoImpl) GetPublishedTask(taskPublishedCode string) (*domain.Task, error) {
-	//TODO implement me
-	panic("implement me")
+	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks.
+		INNER_JOIN(table.PublishedTaskCodes, table.PublishedTaskCodes.TaskID.EQ(table.Tasks.ID))).
+		WHERE(table.PublishedTaskCodes.TaskCode.EQ(postgres.String(taskPublishedCode)))
+
+	var record model.Tasks
+	err := stmt.Query(p.db, &record)
+	if err != nil {
+		if err.Error() == qrm.ErrNoRows.Error() {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return p.mapTaskTableRowToTaskDomainObject(&record)
 }
 
 func (p postgresTaskRepoImpl) MarkAsDeleted(taskID int64) error {

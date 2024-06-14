@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/components/evaluation"
+	"github.com/programme-lv/backend/internal/components/proglang"
 	"github.com/programme-lv/backend/internal/components/submission"
 	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
@@ -57,8 +58,10 @@ func main() {
 	userSrv := user.NewService(pgDB)
 	taskSrv := task.NewService(userSrv, pgDB)
 	submSrv := submission.NewService(pgDB, taskSrv)
+	languages := proglang.NewService(pgDB)
 
 	gqlResolver := &mygraphql.Resolver{
+		Languages:      languages,
 		UserSrv:        userSrv,
 		TaskSrv:        taskSrv,
 		SubmSrv:        submSrv,
@@ -98,7 +101,7 @@ func timeElapsedMiddleware(ctx context.Context, next graphql.OperationHandler) g
 	//rawQuery = strings.Replace(rawQuery, "\t", "", -1)
 	//rawQuery = strings.Replace(rawQuery, " ", "", -1)
 	rawQuery = shortenStr(rawQuery)
-	reqLogger.Info("received request", "query", rawQuery)
+	reqLogger.Info("received request", "query", rawQuery, "variables", fmt.Sprintf("%+v", graphql.GetOperationContext(ctx).Variables))
 	start := time.Now()
 	nxt := next(ctx)
 	return func(ctxInner context.Context) *graphql.Response {

@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/programme-lv/backend/internal/components/proglang"
 	"github.com/programme-lv/backend/internal/components/submission"
 	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/components/user"
@@ -22,6 +23,7 @@ type AuthDirectorConn struct {
 }
 
 type Resolver struct {
+	Languages      proglang.Service
 	UserSrv        user.Service
 	TaskSrv        task.Service
 	SubmSrv        submission.Service
