@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/pkg/errors"
-	"github.com/programme-lv/backend/internal/comm/i18nerror"
+	"github.com/programme-lv/backend/internal/common/i18nerror"
 	"golang.org/x/text/language"
 )
 

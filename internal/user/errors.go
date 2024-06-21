@@ -1,7 +1,7 @@
 package user
 
 import (
-	"github.com/programme-lv/backend/internal/comm/i18nerror"
+	"github.com/programme-lv/backend/internal/common/i18nerror"
 	"golang.org/x/text/language"
 )
 

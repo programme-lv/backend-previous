@@ -3,6 +3,7 @@ package graphql
 import (
 	"fmt"
 	"github.com/programme-lv/backend/internal/domain"
+	"github.com/programme-lv/backend/internal/eval"
 )
 
 func mapDomainUserObjToGQLUserObj(user *domain.User) *User {
@@ -94,7 +95,7 @@ func mapDomainTaskObjToGQLTask(task *domain.Task) (*Task, error) {
 	return &res, nil
 }
 
-func internalSubmissionToGQLSubmission(submission *domain.TaskSubmission) (*Submission, error) {
+func internalSubmissionToGQLSubmission(submission *eval.TaskSubmission) (*Submission, error) {
 	marshalledCreatedAt, err := submission.CreatedAt.MarshalText()
 	if err != nil {
 		return nil, err
@@ -130,7 +131,7 @@ func internalSubmissionToGQLSubmission(submission *domain.TaskSubmission) (*Subm
 	return &res, nil
 }
 
-func internalEvalObjToGQLEvaluation(eval *domain.Evaluation) (*Evaluation, error) {
+func internalEvalObjToGQLEvaluation(eval *eval.Evaluation) (*Evaluation, error) {
 	var possibleScoreInt32 *int
 	if eval.PossibleScore != nil {
 		possibleScoreInt32 = new(int)
@@ -162,7 +163,7 @@ func internalEvalObjToGQLEvaluation(eval *domain.Evaluation) (*Evaluation, error
 	return &res, nil
 }
 
-func internalRDataToGQLRData(data *domain.RuntimeData) *RuntimeData {
+func internalRDataToGQLRData(data *eval.RuntimeData) *RuntimeData {
 	if data == nil {
 		return nil
 	}

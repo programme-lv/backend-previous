@@ -5,7 +5,6 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/domain"
 )
 
 type submRepoImpl struct {
@@ -17,7 +16,7 @@ func (s submRepoImpl) ListSolvedTaskIDs(userID int64) ([]int64, error) {
 	panic("implement me")
 }
 
-func (s submRepoImpl) ListPublicSubmissions() ([]*domain.TaskSubmission, error) {
+func (s submRepoImpl) ListPublicSubmissions() ([]*TaskSubmission, error) {
 	stmt := postgres.SELECT(table.TaskSubmissions.AllColumns).
 		FROM(table.TaskSubmissions).
 		WHERE(table.TaskSubmissions.Hidden.EQ(postgres.Bool(false)))
@@ -28,7 +27,7 @@ func (s submRepoImpl) ListPublicSubmissions() ([]*domain.TaskSubmission, error) 
 		return nil, err
 	}
 
-	domainTaskSubmissions := make([]*domain.TaskSubmission, 0, len(records))
+	domainTaskSubmissions := make([]*TaskSubmission, 0, len(records))
 	for _, record := range records {
 		taskSubmission, errMapping := s.mapTaskSubmissionTableRowToDomainObject(record)
 		if errMapping != nil {
@@ -39,8 +38,8 @@ func (s submRepoImpl) ListPublicSubmissions() ([]*domain.TaskSubmission, error) 
 	return domainTaskSubmissions, nil
 }
 
-func (s submRepoImpl) mapTaskSubmissionTableRowToDomainObject(record *model.TaskSubmissions) (*domain.TaskSubmission, error) {
-	res := domain.TaskSubmission{
+func (s submRepoImpl) mapTaskSubmissionTableRowToDomainObject(record *model.TaskSubmissions) (*TaskSubmission, error) {
+	res := TaskSubmission{
 		ID: record.ID,
 		//Author:      record.UserID, TODO
 		//Language:    record.ProgrammingLangID, TODO

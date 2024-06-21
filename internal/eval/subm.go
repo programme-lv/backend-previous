@@ -22,7 +22,7 @@ type Service interface {
 
 type submissionRepo interface {
 	ListSolvedTaskIDs(userID int64) ([]int64, error)
-	ListPublicSubmissions() ([]*domain.TaskSubmission, error)
+	ListPublicSubmissions() ([]*TaskSubmission, error)
 }
 
 type service struct {

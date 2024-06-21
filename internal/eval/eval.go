@@ -1,6 +1,9 @@
-package domain
+package eval
 
-import "time"
+import (
+	"github.com/programme-lv/backend/internal/domain"
+	"time"
+)
 
 type EvalTestRes struct {
 	ID           int64
@@ -28,10 +31,10 @@ type Evaluation struct {
 
 type TaskSubmission struct {
 	ID          int64
-	Author      *User
-	Language    *ProgrammingLanguage
+	Author      *domain.User
+	Language    *domain.ProgrammingLanguage
 	Content     string
-	Task        *Task
+	Task        *domain.Task
 	VisibleEval *Evaluation
 	Hidden      bool
 	CreatedAt   time.Time
