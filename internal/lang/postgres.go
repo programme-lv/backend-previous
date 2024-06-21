@@ -5,14 +5,13 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/domain"
 )
 
 type proglangRepoPostgresImpl struct {
 	db qrm.DB
 }
 
-func (p proglangRepoPostgresImpl) GetAllProgrammingLanguages() ([]*domain.ProgrammingLanguage, error) {
+func (p proglangRepoPostgresImpl) GetAllProgrammingLanguages() ([]*ProgrammingLanguage, error) {
 	stmt := postgres.SELECT(table.ProgrammingLanguages.AllColumns).
 		FROM(table.ProgrammingLanguages)
 
@@ -22,7 +21,7 @@ func (p proglangRepoPostgresImpl) GetAllProgrammingLanguages() ([]*domain.Progra
 		return nil, err
 	}
 
-	var languages []*domain.ProgrammingLanguage
+	var languages []*ProgrammingLanguage
 	for _, record := range records {
 		languages = append(languages, p.mapProgLangTableRowToDomainObject(record))
 	}
@@ -48,7 +47,7 @@ func (p proglangRepoPostgresImpl) DoesLanguageExistByID(id string) (bool, error)
 	return record.ID != "", nil
 }
 
-func (p proglangRepoPostgresImpl) GetProgrammingLanguageByID(id string) (*domain.ProgrammingLanguage, error) {
+func (p proglangRepoPostgresImpl) GetProgrammingLanguageByID(id string) (*ProgrammingLanguage, error) {
 	stmt := postgres.SELECT(table.ProgrammingLanguages.AllColumns).
 		FROM(table.ProgrammingLanguages).
 		WHERE(table.ProgrammingLanguages.ID.EQ(postgres.String(id)))
@@ -62,8 +61,8 @@ func (p proglangRepoPostgresImpl) GetProgrammingLanguageByID(id string) (*domain
 	return p.mapProgLangTableRowToDomainObject(record), nil
 }
 
-func (p proglangRepoPostgresImpl) mapProgLangTableRowToDomainObject(record model.ProgrammingLanguages) *domain.ProgrammingLanguage {
-	return &domain.ProgrammingLanguage{
+func (p proglangRepoPostgresImpl) mapProgLangTableRowToDomainObject(record model.ProgrammingLanguages) *ProgrammingLanguage {
+	return &ProgrammingLanguage{
 		ID:                record.ID,
 		Name:              record.FullName,
 		CodeFilename:      record.CodeFilename,

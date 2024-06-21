@@ -2,19 +2,18 @@ package lang
 
 import (
 	"github.com/go-jet/jet/v2/qrm"
-	"github.com/programme-lv/backend/internal/domain"
 	"log/slog"
 )
 
 type Service interface {
-	GetProgrammingLanguageByID(id string) (*domain.ProgrammingLanguage, error)
-	ListProgrammingLanguages() ([]*domain.ProgrammingLanguage, error)
+	GetProgrammingLanguageByID(id string) (*ProgrammingLanguage, error)
+	ListProgrammingLanguages() ([]*ProgrammingLanguage, error)
 }
 
 type progLangRepo interface {
 	DoesLanguageExistByID(id string) (bool, error)
-	GetProgrammingLanguageByID(id string) (*domain.ProgrammingLanguage, error)
-	GetAllProgrammingLanguages() ([]*domain.ProgrammingLanguage, error)
+	GetProgrammingLanguageByID(id string) (*ProgrammingLanguage, error)
+	GetAllProgrammingLanguages() ([]*ProgrammingLanguage, error)
 }
 
 type service struct {
@@ -24,7 +23,7 @@ type service struct {
 
 var _ Service = service{}
 
-func (s service) ListProgrammingLanguages() ([]*domain.ProgrammingLanguage, error) {
+func (s service) ListProgrammingLanguages() ([]*ProgrammingLanguage, error) {
 	languages, err := s.repo.GetAllProgrammingLanguages()
 	if err != nil {
 		s.logger.Error("getting all programming languages", err)
@@ -33,7 +32,7 @@ func (s service) ListProgrammingLanguages() ([]*domain.ProgrammingLanguage, erro
 	return languages, err
 }
 
-func (s service) GetProgrammingLanguageByID(id string) (*domain.ProgrammingLanguage, error) {
+func (s service) GetProgrammingLanguageByID(id string) (*ProgrammingLanguage, error) {
 	exists, err := s.repo.DoesLanguageExistByID(id)
 	if err != nil {
 		s.logger.Error("checking if language exists by id", err)

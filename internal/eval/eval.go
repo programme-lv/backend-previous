@@ -2,6 +2,7 @@ package eval
 
 import (
 	"github.com/programme-lv/backend/internal/domain"
+	"github.com/programme-lv/backend/internal/lang"
 	"time"
 )
 
@@ -32,7 +33,7 @@ type Evaluation struct {
 type TaskSubmission struct {
 	ID          int64
 	Author      *domain.User
-	Language    *domain.ProgrammingLanguage
+	Language    *lang.ProgrammingLanguage
 	Content     string
 	Task        *domain.Task
 	VisibleEval *Evaluation

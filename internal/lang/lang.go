@@ -1,4 +1,4 @@
-package domain
+package lang
 
 type ProgrammingLanguage struct {
 	ID                string

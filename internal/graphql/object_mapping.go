@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/eval"
+	"github.com/programme-lv/backend/internal/lang"
 )
 
 func mapDomainUserObjToGQLUserObj(user *domain.User) *User {
@@ -194,7 +195,7 @@ func internalRDataToGQLRData(data *eval.RuntimeData) *RuntimeData {
 	return res
 }
 
-func internalProgrammingLanguageToGraphQL(lang *domain.ProgrammingLanguage) *ProgrammingLanguage {
+func internalProgrammingLanguageToGraphQL(lang *lang.ProgrammingLanguage) *ProgrammingLanguage {
 	return &ProgrammingLanguage{
 		ID:       lang.ID,
 		FullName: lang.Name,
