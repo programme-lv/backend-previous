@@ -3,6 +3,7 @@ package eval
 import (
 	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/lang"
+	"github.com/programme-lv/backend/internal/task"
 	"time"
 )
 
@@ -35,7 +36,7 @@ type TaskSubmission struct {
 	Author      *domain.User
 	Language    *lang.ProgrammingLanguage
 	Content     string
-	Task        *domain.Task
+	Task        *task.Task
 	VisibleEval *Evaluation
 	Hidden      bool
 	CreatedAt   time.Time

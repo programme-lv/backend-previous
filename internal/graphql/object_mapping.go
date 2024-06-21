@@ -5,6 +5,7 @@ import (
 	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/eval"
 	"github.com/programme-lv/backend/internal/lang"
+	"github.com/programme-lv/backend/internal/task"
 )
 
 func mapDomainUserObjToGQLUserObj(user *domain.User) *User {
@@ -18,7 +19,7 @@ func mapDomainUserObjToGQLUserObj(user *domain.User) *User {
 	}
 }
 
-func internalTaskVToGQLTaskV(taskVersion *domain.TaskVersion) (*TaskVersion, error) {
+func internalTaskVToGQLTaskV(taskVersion *task.TaskVersion) (*TaskVersion, error) {
 	if taskVersion == nil {
 		return nil, nil
 	}
@@ -48,7 +49,7 @@ func internalTaskVToGQLTaskV(taskVersion *domain.TaskVersion) (*TaskVersion, err
 	return &res, nil
 }
 
-func internalDescriptionToGQLDescription(description *domain.Statement) (*Description, error) {
+func internalDescriptionToGQLDescription(description *task.Statement) (*Description, error) {
 	if description == nil {
 		return nil, nil
 	}
@@ -71,7 +72,7 @@ func internalDescriptionToGQLDescription(description *domain.Statement) (*Descri
 	return &res, nil
 }
 
-func mapDomainTaskObjToGQLTask(task *domain.Task) (*Task, error) {
+func mapDomainTaskObjToGQLTask(task *task.Task) (*Task, error) {
 	currentTaskVersion, err := internalTaskVToGQLTaskV(task.Current)
 	if err != nil {
 		return nil, err

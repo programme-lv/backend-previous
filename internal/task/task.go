@@ -1,167 +1,53 @@
 package task
 
-import (
-	"fmt"
-	"github.com/go-jet/jet/v2/qrm"
-	"github.com/programme-lv/backend/internal/domain"
-	"github.com/programme-lv/backend/internal/user"
-	"log/slog"
-)
+import "time"
 
-type Service interface {
-	// ListPublishedTasks returns a list of all tasks that have been published.
-	// Not all tasks have been published, furthermore there may exist unpublished
-	// tasks with the same name and code as published ones. A task can be published
-	// by an administrator. Usually it is quality checked and reviewed before being.
-	ListPublishedTasks() ([]*domain.Task, error)
+// TaskVersion is a snapshot of task development state at a certain point in time.
+// At the persistence layer, it is supposed to be read-only, i.e. it should not be modified after creation.
+// Modifications should be done by creating a new version. A version is considered
+// to be successor of another version if it has the same TaskID and its ID is greater.
+type TaskVersion struct {
+	ID     int64
+	TaskID int64
+	Code   string
+	Name   string
 
-	// GetTaskByID returns the task with the given ID with both the
-	// current and the stable version populated. Method is accessible only
-	// to the task creator or an administrator since it may contain sensitive information.
-	GetTaskByID(actingUserID, taskID int64) (*domain.Task, error)
+	Statement *Statement
 
-	// GetTaskByPublishedCode finds the task with the published code
-	// This method is used to retrieve user facing information about a task.
-	GetTaskByPublishedCode(taskPublishedCode string) (*domain.Task, error)
+	TimeLimitMs   int64
+	MemoryLimitKb int64
 
-	// ListEditableTasks returns a list of all tasks that the user can edit.
-	// An administrator can edit all tasks, while others can only edit tasks they have created.
-	// In the future task edit permission sharing may be implemented.
-	ListEditableTasks(actingUserID int64) ([]*domain.Task, error)
-
-	// CreateTask creates a new task with the given name and code.
-	// All unprovided fields are set to their default values such as an example statement.
-	CreateTask(actingUserID int64, taskCode string, taskName string) (*domain.Task, error)
-
-	// UpdateTaskStatement finds the "CURRENT" task version, duplicates it
-	// (creating a new task version) and updates the statement with the new one.
-	UpdateTaskStatement(actingUserID int64, taskID int64, statement *domain.Statement) error
-
-	// UpdateTaskNameAndCode finds the "CURRENT" task version, duplicates it
-	// (creating a new task version) and updates the name and code with the new ones.
-	UpdateTaskNameAndCode(actingUserID int64, taskID int64, taskName string, taskCode string) error
-
-	// DeleteTask updates the DeletedAt of the task to the current time
-	// hiding it from future queries.
-	DeleteTask(actingUserID int64, taskID int64) error
+	// CreatedAt  is the time when the new version was created, i.e. the time when the task was updated.
+	CreatedAt time.Time
 }
 
-type taskRepo interface {
-	GetTaskByID(taskID int64) (*domain.Task, error)
+// Task represents a task that can be solved by a user. It is a collection of task versions.
+type Task struct {
+	ID      int64
+	OwnerID int64
 
-	ListAllTasks() ([]*domain.Task, error)
-	ListPublishedTasks() ([]*domain.Task, error)
+	// Current is the newest / latest version of the task.
+	// Accessible only by the creator / owner of the task.
+	Current *TaskVersion
 
-	DoesTaskWithPublishedCodeExist(taskPublishedCode string) (bool, error)
-	GetPublishedTask(taskPublishedCode string) (*domain.Task, error)
+	Stable *TaskVersion
 
-	MarkAsDeleted(taskID int64) error
-
-	// UpdateStatement duplicates the current task version, creates a new statement
-	// and updates the task version with the new statement. All in one transaction.
-	UpdateStatement(taskID int64, statement *domain.Statement) error
-
-	// UpdateTaskNameAndCode duplicates the current task version, creates a new task version
-	// and updates the task version with the new name and code. All in one transaction.
-	UpdateTaskNameAndCode(taskID int64, taskName string, taskCode string) error
+	CreatedAt time.Time
 }
 
-type service struct {
-	logger  *slog.Logger
-	userSrv user.Service
-	repo    taskRepo
+// Statement is a set of sections that describe the task. The sections are formatted in Markdown.
+// Notes are an optional field that can be used to provide additional information to the task.
+type Statement struct {
+	ID       int64
+	Story    string
+	Input    string
+	Output   string
+	Examples []*Example
+	Notes    *string
 }
 
-func NewService(userSrv user.Service, db qrm.DB) Service {
-	return service{
-		logger:  slog.Default().With("service", "task"),
-		userSrv: userSrv,
-		repo:    postgresTaskRepoImpl{db: db},
-	}
+type Example struct {
+	ID     int64
+	Input  string
+	Answer string
 }
-
-func (s service) ListPublishedTasks() ([]*domain.Task, error) {
-	return s.repo.ListPublishedTasks()
-}
-
-func (s service) GetTaskByID(actingUserID, taskID int64) (*domain.Task, error) {
-	actingUser, err := s.userSrv.GetUserByID(actingUserID)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
-		return nil, err
-	}
-	task, err := s.repo.GetTaskByID(taskID)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting task by ID: %v", err))
-		return nil, err
-	}
-	if task.OwnerID != actingUser.ID && !actingUser.IsAdmin {
-		return nil, newErrorUserDoesNotHaveEditAccessToTask()
-
-	}
-	return s.repo.GetTaskByID(taskID)
-}
-
-func (s service) GetTaskByPublishedCode(taskPublishedCode string) (*domain.Task, error) {
-	exists, err := s.repo.DoesTaskWithPublishedCodeExist(taskPublishedCode)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("checking if task with published code exists: %v", err))
-		return nil, err
-	}
-	if !exists {
-		return nil, newErrorTaskNotFound()
-	}
-
-	task, err := s.repo.GetPublishedTask(taskPublishedCode)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting published task: %v", err))
-		return nil, err
-	}
-
-	return task, nil
-}
-
-func (s service) ListEditableTasks(actingUserID int64) ([]*domain.Task, error) {
-	tasks, err := s.repo.ListAllTasks()
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("listing all tasks: %v", err))
-		return nil, err
-	}
-
-	actingUser, err := s.userSrv.GetUserByID(actingUserID)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
-		return nil, err
-	}
-
-	editableTasks := make([]*domain.Task, 0)
-	for _, task := range tasks {
-		if task.OwnerID == actingUser.ID || actingUser.IsAdmin {
-			editableTasks = append(editableTasks, task)
-		}
-	}
-
-	return editableTasks, nil
-}
-
-func (s service) CreateTask(actingUserID int64, taskCode string, taskName string) (*domain.Task, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s service) UpdateTaskStatement(actingUserID int64, taskID int64, statement *domain.Statement) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s service) UpdateTaskNameAndCode(actingUserID int64, taskID int64, taskName string, taskCode string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s service) DeleteTask(actingUserID int64, taskID int64) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-var _ Service = service{}

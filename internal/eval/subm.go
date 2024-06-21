@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/task"
 	"log/slog"
 )
@@ -15,7 +14,7 @@ type Service interface {
 	// ListUserSolvedPublishedTasks returns a list of all tasks that the user has solved
 	// and that are published. As of now the user is considered to have solved the task
 	// if they have submitted a solution that has maximum score.
-	ListUserSolvedPublishedTasks(userID int64) ([]*domain.Task, error)
+	ListUserSolvedPublishedTasks(userID int64) ([]*task.Task, error)
 
 	//ListSubmissionsWithMaxScore(userID int64) ([]*domain.TaskSubmission, error)
 }
@@ -39,7 +38,7 @@ func NewService(db *sqlx.DB, taskSrv task.Service) Service {
 	return &service{db: db, logger: logger, taskSrv: taskSrv}
 }
 
-func (s *service) ListUserSolvedPublishedTasks(userID int64) ([]*domain.Task, error) {
+func (s *service) ListUserSolvedPublishedTasks(userID int64) ([]*task.Task, error) {
 	publishedTasks, err := s.taskSrv.ListPublishedTasks()
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("listing published tasks: %v", err))
@@ -51,7 +50,7 @@ func (s *service) ListUserSolvedPublishedTasks(userID int64) ([]*domain.Task, er
 		return nil, err
 	}
 
-	solvedPublishedTasks := make([]*domain.Task, 0, len(publishedTasks))
+	solvedPublishedTasks := make([]*task.Task, 0, len(publishedTasks))
 	for _, pTask := range publishedTasks {
 		for _, solvedTaskID := range solvedTaskIDs {
 			if pTask.ID == solvedTaskID {

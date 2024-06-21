@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/domain"
 	"log"
 )
 
@@ -14,7 +13,7 @@ type postgresTaskRepoImpl struct {
 	db qrm.DB
 }
 
-func (p postgresTaskRepoImpl) GetTaskByID(taskID int64) (*domain.Task, error) {
+func (p postgresTaskRepoImpl) GetTaskByID(taskID int64) (*Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks).
 		WHERE(table.Tasks.ID.EQ(postgres.Int64(taskID))).LIMIT(1)
 
@@ -30,7 +29,7 @@ func (p postgresTaskRepoImpl) GetTaskByID(taskID int64) (*domain.Task, error) {
 	return p.mapTaskTableRowToTaskDomainObject(&record)
 }
 
-func (p postgresTaskRepoImpl) GetTaskVersionByID(taskVersionID int64) (*domain.TaskVersion, error) {
+func (p postgresTaskRepoImpl) GetTaskVersionByID(taskVersionID int64) (*TaskVersion, error) {
 	stmt := postgres.SELECT(table.TaskVersions.AllColumns).FROM(table.TaskVersions).
 		WHERE(table.TaskVersions.ID.EQ(postgres.Int64(taskVersionID))).LIMIT(1)
 
@@ -46,7 +45,7 @@ func (p postgresTaskRepoImpl) GetTaskVersionByID(taskVersionID int64) (*domain.T
 	return p.mapTaskVersionTableRowToTaskVersionDomainObject(&record)
 }
 
-func (p postgresTaskRepoImpl) getStatement(statementID int64, exampleSetID int64) (*domain.Statement, error) {
+func (p postgresTaskRepoImpl) getStatement(statementID int64, exampleSetID int64) (*Statement, error) {
 	stmt := postgres.SELECT(table.MarkdownStatements.AllColumns).FROM(table.MarkdownStatements).
 		WHERE(table.MarkdownStatements.ID.EQ(postgres.Int64(statementID))).LIMIT(1)
 
@@ -64,7 +63,7 @@ func (p postgresTaskRepoImpl) getStatement(statementID int64, exampleSetID int64
 		return nil, err
 	}
 
-	res := &domain.Statement{
+	res := &Statement{
 		ID:       record.ID,
 		Story:    record.Story,
 		Input:    record.Input,
@@ -76,7 +75,7 @@ func (p postgresTaskRepoImpl) getStatement(statementID int64, exampleSetID int64
 	return res, nil
 }
 
-func (p postgresTaskRepoImpl) getStatementExamples(exampleSetID int64) ([]*domain.Example, error) {
+func (p postgresTaskRepoImpl) getStatementExamples(exampleSetID int64) ([]*Example, error) {
 	stmt := postgres.SELECT(table.StatementExamples.AllColumns).FROM(table.StatementExamples).
 		WHERE(table.StatementExamples.ExampleSetID.EQ(postgres.Int64(exampleSetID)))
 
@@ -89,9 +88,9 @@ func (p postgresTaskRepoImpl) getStatementExamples(exampleSetID int64) ([]*domai
 		return nil, err
 	}
 
-	res := make([]*domain.Example, 0)
+	res := make([]*Example, 0)
 	for _, r := range records {
-		res = append(res, &domain.Example{
+		res = append(res, &Example{
 			ID:     r.ID,
 			Input:  r.Input,
 			Answer: r.Answer,
@@ -101,17 +100,17 @@ func (p postgresTaskRepoImpl) getStatementExamples(exampleSetID int64) ([]*domai
 	return res, nil
 }
 
-func (p postgresTaskRepoImpl) GetTaskVersionStatement(taskVersionID int64) (*domain.Statement, error) {
+func (p postgresTaskRepoImpl) GetTaskVersionStatement(taskVersionID int64) (*Statement, error) {
 	// TODO: implement me
 	panic("implement me")
 }
 
-func (p postgresTaskRepoImpl) mapTaskVersionTableRowToTaskVersionDomainObject(taskVersionRow *model.TaskVersions) (*domain.TaskVersion, error) {
+func (p postgresTaskRepoImpl) mapTaskVersionTableRowToTaskVersionDomainObject(taskVersionRow *model.TaskVersions) (*TaskVersion, error) {
 	if taskVersionRow == nil {
 		return nil, nil
 	}
 
-	var statement *domain.Statement
+	var statement *Statement
 	if taskVersionRow.MdStatementID != nil {
 		if taskVersionRow.ExampleSetID == nil {
 			return nil, errors.New("task version has statement but no example set")
@@ -122,7 +121,7 @@ func (p postgresTaskRepoImpl) mapTaskVersionTableRowToTaskVersionDomainObject(ta
 			return nil, err
 		}
 	}
-	return &domain.TaskVersion{
+	return &TaskVersion{
 		ID:            taskVersionRow.ID,
 		TaskID:        taskVersionRow.TaskID,
 		Code:          taskVersionRow.ShortCode,
@@ -134,11 +133,11 @@ func (p postgresTaskRepoImpl) mapTaskVersionTableRowToTaskVersionDomainObject(ta
 	}, nil
 }
 
-func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.Tasks) (*domain.Task, error) {
+func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.Tasks) (*Task, error) {
 	if taskRow == nil {
 		return nil, nil
 	}
-	var current *domain.TaskVersion
+	var current *TaskVersion
 	if taskRow.CurrentVersionID != nil {
 		var err error
 		current, err = p.GetTaskVersionByID(*taskRow.CurrentVersionID)
@@ -146,7 +145,7 @@ func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.T
 			return nil, err
 		}
 	}
-	var stable *domain.TaskVersion
+	var stable *TaskVersion
 	if taskRow.StableVersionID != nil {
 		var err error
 		stable, err = p.GetTaskVersionByID(*taskRow.StableVersionID)
@@ -158,7 +157,7 @@ func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.T
 	log.Printf("taskRow: %+v", taskRow)
 	log.Printf("current: %+v", current)
 	log.Printf("stable: %+v", stable)
-	return &domain.Task{
+	return &Task{
 		ID:        taskRow.ID,
 		OwnerID:   taskRow.CreatedByID,
 		Current:   current,
@@ -167,7 +166,7 @@ func (p postgresTaskRepoImpl) mapTaskTableRowToTaskDomainObject(taskRow *model.T
 	}, nil
 }
 
-func (p postgresTaskRepoImpl) ListAllTasks() ([]*domain.Task, error) {
+func (p postgresTaskRepoImpl) ListAllTasks() ([]*Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks)
 
 	var records []model.Tasks
@@ -179,7 +178,7 @@ func (p postgresTaskRepoImpl) ListAllTasks() ([]*domain.Task, error) {
 		return nil, err
 	}
 
-	tasks := make([]*domain.Task, 0)
+	tasks := make([]*Task, 0)
 	for _, record := range records {
 		task, errMappingTask := p.mapTaskTableRowToTaskDomainObject(&record)
 		if errMappingTask != nil {
@@ -191,7 +190,7 @@ func (p postgresTaskRepoImpl) ListAllTasks() ([]*domain.Task, error) {
 	return tasks, nil
 }
 
-func (p postgresTaskRepoImpl) ListPublishedTasks() ([]*domain.Task, error) {
+func (p postgresTaskRepoImpl) ListPublishedTasks() ([]*Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks.
 		INNER_JOIN(table.PublishedTaskCodes, table.PublishedTaskCodes.TaskID.EQ(table.Tasks.ID)))
 	var records []model.Tasks
@@ -203,7 +202,7 @@ func (p postgresTaskRepoImpl) ListPublishedTasks() ([]*domain.Task, error) {
 		return nil, err
 	}
 
-	tasks := make([]*domain.Task, 0)
+	tasks := make([]*Task, 0)
 	for _, record := range records {
 		task, errMappingTask := p.mapTaskTableRowToTaskDomainObject(&record)
 		if errMappingTask != nil {
@@ -231,7 +230,7 @@ func (p postgresTaskRepoImpl) DoesTaskWithPublishedCodeExist(taskPublishedCode s
 	return record.Count > 0, nil
 }
 
-func (p postgresTaskRepoImpl) GetPublishedTask(taskPublishedCode string) (*domain.Task, error) {
+func (p postgresTaskRepoImpl) GetPublishedTask(taskPublishedCode string) (*Task, error) {
 	stmt := postgres.SELECT(table.Tasks.AllColumns).FROM(table.Tasks.
 		INNER_JOIN(table.PublishedTaskCodes, table.PublishedTaskCodes.TaskID.EQ(table.Tasks.ID))).
 		WHERE(table.PublishedTaskCodes.TaskCode.EQ(postgres.String(taskPublishedCode)))
@@ -253,7 +252,7 @@ func (p postgresTaskRepoImpl) MarkAsDeleted(taskID int64) error {
 	panic("implement me")
 }
 
-func (p postgresTaskRepoImpl) UpdateStatement(taskID int64, statement *domain.Statement) error {
+func (p postgresTaskRepoImpl) UpdateStatement(taskID int64, statement *Statement) error {
 	//TODO implement me
 	panic("implement me")
 }
