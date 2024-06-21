@@ -2,13 +2,13 @@ package graphql
 
 import (
 	"fmt"
-	"github.com/programme-lv/backend/internal/domain"
 	"github.com/programme-lv/backend/internal/eval"
 	"github.com/programme-lv/backend/internal/lang"
 	"github.com/programme-lv/backend/internal/task"
+	"github.com/programme-lv/backend/internal/user"
 )
 
-func mapDomainUserObjToGQLUserObj(user *domain.User) *User {
+func mapDomainUserObjToGQLUserObj(user *user.User) *User {
 	return &User{
 		ID:        fmt.Sprint(user.ID),
 		Username:  user.Username,

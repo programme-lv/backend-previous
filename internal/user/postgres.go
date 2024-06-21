@@ -5,7 +5,6 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
-	"github.com/programme-lv/backend/internal/domain"
 	"time"
 )
 
@@ -90,7 +89,7 @@ func (u userRepoPostgresImpl) CreateUser(username string, hashedPassword []byte,
 	return record.ID, nil
 }
 
-func (u userRepoPostgresImpl) GetUserByID(id int64) (*domain.User, error) {
+func (u userRepoPostgresImpl) GetUserByID(id int64) (*User, error) {
 	stmt := postgres.SELECT(table.Users.AllColumns).
 		FROM(table.Users).
 		WHERE(table.Users.ID.EQ(postgres.Int64(id)))
@@ -104,7 +103,7 @@ func (u userRepoPostgresImpl) GetUserByID(id int64) (*domain.User, error) {
 	return mapUserTableRowToUserDomainObject(record), nil
 }
 
-func (u userRepoPostgresImpl) GetUserByUsername(username string) (*domain.User, error) {
+func (u userRepoPostgresImpl) GetUserByUsername(username string) (*User, error) {
 	stmt := postgres.SELECT(table.Users.AllColumns).
 		FROM(table.Users).
 		WHERE(table.Users.Username.EQ(postgres.String(username)))
@@ -124,8 +123,8 @@ func newUserRepoPostgresImpl(db qrm.DB) *userRepoPostgresImpl {
 
 var _ userRepo = &userRepoPostgresImpl{}
 
-func mapUserTableRowToUserDomainObject(record model.Users) *domain.User {
-	return &domain.User{
+func mapUserTableRowToUserDomainObject(record model.Users) *User {
+	return &User{
 		ID:        record.ID,
 		Username:  record.Username,
 		Email:     record.Email,
