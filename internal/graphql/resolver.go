@@ -1,11 +1,11 @@
 package graphql
 
 import (
-	"github.com/programme-lv/backend/internal/components/proglang"
-	"github.com/programme-lv/backend/internal/components/submission"
-	"github.com/programme-lv/backend/internal/components/task"
-	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
+	"github.com/programme-lv/backend/internal/eval"
+	"github.com/programme-lv/backend/internal/lang"
+	"github.com/programme-lv/backend/internal/task"
+	"github.com/programme-lv/backend/internal/user"
 	"log/slog"
 
 	"github.com/alexedwards/scs/v2"
@@ -23,10 +23,10 @@ type AuthDirectorConn struct {
 }
 
 type Resolver struct {
-	Languages      proglang.Service
+	Languages      lang.Service
 	UserSrv        user.Service
 	TaskSrv        task.Service
-	SubmSrv        submission.Service
+	SubmSrv        eval.Service
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	TestURLs       *dospaces.DOSpacesS3ObjStorage

@@ -1,13 +1,13 @@
-package submission
+package eval
 
 import (
 	"fmt"
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/jmoiron/sqlx"
-	"github.com/programme-lv/backend/internal/components/task"
 	"github.com/programme-lv/backend/internal/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/database/proglv/public/table"
 	"github.com/programme-lv/backend/internal/domain"
+	"github.com/programme-lv/backend/internal/task"
 	"log/slog"
 )
 
@@ -20,7 +20,13 @@ type Service interface {
 	//ListSubmissionsWithMaxScore(userID int64) ([]*domain.TaskSubmission, error)
 }
 
+type submissionRepo interface {
+	ListSolvedTaskIDs(userID int64) ([]int64, error)
+	ListPublicSubmissions() ([]*domain.TaskSubmission, error)
+}
+
 type service struct {
+	repo    submissionRepo
 	db      *sqlx.DB
 	logger  *slog.Logger
 	taskSrv task.Service

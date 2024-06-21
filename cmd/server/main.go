@@ -7,13 +7,13 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
-	"github.com/programme-lv/backend/internal/components/evaluation"
-	"github.com/programme-lv/backend/internal/components/proglang"
-	"github.com/programme-lv/backend/internal/components/submission"
-	"github.com/programme-lv/backend/internal/components/task"
-	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/database/dospaces"
+	"github.com/programme-lv/backend/internal/eval"
+	submission2 "github.com/programme-lv/backend/internal/eval"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"
+	"github.com/programme-lv/backend/internal/lang"
+	"github.com/programme-lv/backend/internal/task"
+	"github.com/programme-lv/backend/internal/user"
 	"io"
 	"log/slog"
 	"net/http"
@@ -57,8 +57,8 @@ func main() {
 
 	userSrv := user.NewService(pgDB)
 	taskSrv := task.NewService(userSrv, pgDB)
-	submSrv := submission.NewService(pgDB, taskSrv)
-	languages := proglang.NewService(pgDB)
+	submSrv := eval.NewService(pgDB, taskSrv)
+	languages := lang.NewService(pgDB)
 
 	gqlResolver := &mygraphql.Resolver{
 		Languages:      languages,
@@ -132,7 +132,7 @@ func shortenStr(str string) string {
 	return res
 }
 
-func testTestURLs(urls evaluation.TestDownloadURLProvider) error {
+func testTestURLs(urls submission2.TestDownloadURLProvider) error {
 	url, err := urls.GetTestDownloadURL("test")
 	if err != nil {
 		return err

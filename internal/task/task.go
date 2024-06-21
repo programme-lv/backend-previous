@@ -3,8 +3,8 @@ package task
 import (
 	"fmt"
 	"github.com/go-jet/jet/v2/qrm"
-	"github.com/programme-lv/backend/internal/components/user"
 	"github.com/programme-lv/backend/internal/domain"
+	"github.com/programme-lv/backend/internal/user"
 	"log/slog"
 )
 

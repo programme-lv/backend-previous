@@ -1,7 +1,7 @@
 package task
 
 import (
-	"github.com/programme-lv/backend/internal/i18nerror"
+	"github.com/programme-lv/backend/internal/comm/i18nerror"
 	"golang.org/x/text/language"
 )
 

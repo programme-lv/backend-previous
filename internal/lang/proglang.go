@@ -1,4 +1,4 @@
-package proglang
+package lang
 
 import (
 	"github.com/go-jet/jet/v2/qrm"
@@ -57,6 +57,6 @@ var _ Service = service{}
 
 func NewService(db qrm.DB) Service {
 	repo := proglangRepoPostgresImpl{db: db}
-	logger := slog.Default().With("service", "proglang")
+	logger := slog.Default().With("service", "lang")
 	return &service{repo: repo, logger: logger}
 }

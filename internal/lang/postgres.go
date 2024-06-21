@@ -1,4 +1,4 @@
-package proglang
+package lang
 
 import (
 	"github.com/go-jet/jet/v2/postgres"
