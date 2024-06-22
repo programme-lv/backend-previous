@@ -20,6 +20,11 @@ extend type Query {
   listPublicSubmissions: [Submission]!
 
   getSubmission(id: ID!): Submission!
+
+  """
+  Returns a list of all published task codes for tasks that the user has solved.
+  """
+  listSolvedPublishedTaskCodesByUsername(username: String!): [String!]!
 }
 
 extend type Mutation {
@@ -74,8 +79,8 @@ type Evaluation {
 #}
 
 type RuntimeData {
-  timeMs: Int!
-  memoryKb: Int!
+  timeMs: Int! # milliseconds
+  memoryKb: Int! # kilobytes
   exitCode: Int!
   stdout: String!
   stderr: String!

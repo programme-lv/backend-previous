@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type EvalTestRes struct {
+type TestRes struct {
 	ID           int64
 	EvaluationID int64
 	EvalStatusID string
@@ -26,7 +26,7 @@ type Evaluation struct {
 
 	CheckerRunData *RuntimeData
 
-	TestResults []EvalTestRes
+	TestResults []TestRes
 
 	CreatedAt time.Time
 }
@@ -49,7 +49,7 @@ type RuntimeData struct {
 	Stderr *string
 
 	TimeMillis      *int64
-	MemoryKibibytes *int64
+	MemoryKilobytes *int64
 	TimeWallMillis  *int64
 
 	ExitCode *int64
