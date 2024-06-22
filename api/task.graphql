@@ -45,13 +45,6 @@ extend type Mutation {
     deleteTask(taskID: ID!): Boolean!
 }
 
-type TaskOverview {
-    taskID: ID!
-
-    name: String!
-    code: String!
-}
-
 # time is marshalled as RFC3339
 type Task {
     taskID: ID!

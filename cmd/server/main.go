@@ -7,7 +7,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
-	"github.com/programme-lv/backend/internal/database/dospaces"
+	"github.com/programme-lv/backend/internal/common/database/dospaces"
 	"github.com/programme-lv/backend/internal/eval"
 	submission2 "github.com/programme-lv/backend/internal/eval"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"

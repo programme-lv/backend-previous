@@ -1,7 +1,7 @@
 package graphql
 
 import (
-	"github.com/programme-lv/backend/internal/database/dospaces"
+	"github.com/programme-lv/backend/internal/common/database/dospaces"
 	"github.com/programme-lv/backend/internal/eval"
 	"github.com/programme-lv/backend/internal/lang"
 	"github.com/programme-lv/backend/internal/task"

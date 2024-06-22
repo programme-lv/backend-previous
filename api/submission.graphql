@@ -3,7 +3,7 @@ extend type Subscription {
   Subscribes to new public submissions for tasks with a published task code.
   Only submissions that are not hidden (like those by admins for testing) will be streamed.
   """
-  onNewPublicSubmission: SubmissionOverview!
+  onNewPublicSubmission: Submission!
 
   """
   Subscribes to updates on an existing submission, including changes to its evaluation status or scores.
@@ -17,7 +17,7 @@ extend type Query {
   Returns all visible (not hidden) submissions for tasks that have a published task code.
   An example of a hidden submission is a submission made by an admin for testing purposes.
   """
-  listPublicSubmissions: [SubmissionOverview!]!
+  listPublicSubmissions: [Submission]!
 
   getSubmission(id: ID!): Submission!
 }
@@ -30,27 +30,15 @@ extend type Mutation {
   ): Submission!
 }
 
-type SubmissionOverview {
-  id: ID!
-  submission: String!
-
-  task: TaskOverview!
-  language: ProgrammingLanguage!
-  evaluation: ShallowEvaluation!
-
-  username: String!
-
-  createdAt: String!
-}
-
 type Submission {
   id: ID!
-  task: Task!
-  language: ProgrammingLanguage!
-  submission: String!
-  evaluation: Evaluation!
-  username: String!
-  createdAt: String!
+  taskFullName: String!
+  taskCode: String!
+  authorUsername: String!
+  progLang: ProgrammingLanguage!
+  submissionCode: String!
+  evalResults: Evaluation!
+  createdAt: String! # RFC3339
 }
 
 type ShallowEvaluation {
@@ -68,7 +56,7 @@ type Evaluation {
   totalScore: Int!
   possibleScore: Int
 
-  runtimeStatistics: RuntimeStatistics
+#  runtimeStatistics: RuntimeStatistics
 
   """
   Some programming languages do not support compilation, so this field may be null.
@@ -78,12 +66,12 @@ type Evaluation {
   testResults: [TestResult!]!
 }
 
-type RuntimeStatistics {
-  avgTimeMs: Int!
-  maxTimeMs: Int!
-  avgMemoryKb: Int!
-  maxMemoryKb: Int!
-}
+#type RuntimeStatistics {
+#  avgTimeMs: Int!
+#  maxTimeMs: Int!
+#  avgMemoryKb: Int!
+#  maxMemoryKb: Int!
+#}
 
 type RuntimeData {
   timeMs: Int!
@@ -95,22 +83,22 @@ type RuntimeData {
 
 type TestResult {
   id: ID!
-  taskVTestID: ID!
-  userSubmRData: RuntimeData
+  testID: ID!
+  userProgramRData: RuntimeData
   checkerRData: RuntimeData
-  result: TestResultType!
+  finalVerdict: TestResultType!
 }
 
 enum TestResultType {
-  AC
-  PT
-  WA
-  PE
-  TLE
-  MLE
-  ILE
-  IG
-  RE
-  SV
-  ISE
+  AC # Accepted
+  PT # Partially correct
+  WA # Wrong answer
+  PE # Presentation error
+  TLE # Time limit exceeded
+  MLE # Memory limit exceeded
+  ILE # Idleness limit exceeded
+  IG # Ignored (doesn't impact final score)
+  RE # Runtime error
+  SV # Security violation
+  ISE # Internal server error
 }

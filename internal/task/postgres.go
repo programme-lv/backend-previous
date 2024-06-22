@@ -4,8 +4,8 @@ import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/pkg/errors"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/common/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/common/database/proglv/public/table"
 	"log"
 )
 

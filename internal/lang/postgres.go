@@ -3,8 +3,8 @@ package lang
 import (
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
-	"github.com/programme-lv/backend/internal/database/proglv/public/model"
-	"github.com/programme-lv/backend/internal/database/proglv/public/table"
+	"github.com/programme-lv/backend/internal/common/database/proglv/public/model"
+	"github.com/programme-lv/backend/internal/common/database/proglv/public/table"
 )
 
 type proglangRepoPostgresImpl struct {

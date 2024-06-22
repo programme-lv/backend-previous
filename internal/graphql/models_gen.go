@@ -22,11 +22,10 @@ type Description struct {
 }
 
 type Evaluation struct {
-	ID                string             `json:"id"`
-	Status            string             `json:"status"`
-	TotalScore        int                `json:"totalScore"`
-	PossibleScore     *int               `json:"possibleScore,omitempty"`
-	RuntimeStatistics *RuntimeStatistics `json:"runtimeStatistics,omitempty"`
+	ID            string `json:"id"`
+	Status        string `json:"status"`
+	TotalScore    int    `json:"totalScore"`
+	PossibleScore *int   `json:"possibleScore,omitempty"`
 	// Some programming languages do not support compilation, so this field may be null.
 	CompileRData *RuntimeData  `json:"compileRData,omitempty"`
 	TestResults  []*TestResult `json:"testResults"`
@@ -68,13 +67,6 @@ type RuntimeData struct {
 	Stderr   string `json:"stderr"`
 }
 
-type RuntimeStatistics struct {
-	AvgTimeMs   int `json:"avgTimeMs"`
-	MaxTimeMs   int `json:"maxTimeMs"`
-	AvgMemoryKb int `json:"avgMemoryKb"`
-	MaxMemoryKb int `json:"maxMemoryKb"`
-}
-
 type ShallowEvaluation struct {
 	ID            string `json:"id"`
 	Status        string `json:"status"`
@@ -90,23 +82,14 @@ type StatementInput struct {
 }
 
 type Submission struct {
-	ID         string               `json:"id"`
-	Task       *Task                `json:"task"`
-	Language   *ProgrammingLanguage `json:"language"`
-	Submission string               `json:"submission"`
-	Evaluation *Evaluation          `json:"evaluation"`
-	Username   string               `json:"username"`
-	CreatedAt  string               `json:"createdAt"`
-}
-
-type SubmissionOverview struct {
-	ID         string               `json:"id"`
-	Submission string               `json:"submission"`
-	Task       *TaskOverview        `json:"task"`
-	Language   *ProgrammingLanguage `json:"language"`
-	Evaluation *ShallowEvaluation   `json:"evaluation"`
-	Username   string               `json:"username"`
-	CreatedAt  string               `json:"createdAt"`
+	ID             string               `json:"id"`
+	TaskFullName   string               `json:"taskFullName"`
+	TaskCode       string               `json:"taskCode"`
+	AuthorUsername string               `json:"authorUsername"`
+	ProgLang       *ProgrammingLanguage `json:"progLang"`
+	SubmissionCode string               `json:"submissionCode"`
+	EvalResults    *Evaluation          `json:"evalResults"`
+	CreatedAt      string               `json:"createdAt"`
 }
 
 type Subscription struct {
@@ -117,12 +100,6 @@ type Task struct {
 	Current   *TaskVersion `json:"current"`
 	Stable    *TaskVersion `json:"stable,omitempty"`
 	CreatedAt string       `json:"createdAt"`
-}
-
-type TaskOverview struct {
-	TaskID string `json:"taskID"`
-	Name   string `json:"name"`
-	Code   string `json:"code"`
 }
 
 type TaskVersion struct {
@@ -143,11 +120,11 @@ type Test struct {
 }
 
 type TestResult struct {
-	ID            string         `json:"id"`
-	TaskVTestID   string         `json:"taskVTestID"`
-	UserSubmRData *RuntimeData   `json:"userSubmRData,omitempty"`
-	CheckerRData  *RuntimeData   `json:"checkerRData,omitempty"`
-	Result        TestResultType `json:"result"`
+	ID               string         `json:"id"`
+	TestID           string         `json:"testID"`
+	UserProgramRData *RuntimeData   `json:"userProgramRData,omitempty"`
+	CheckerRData     *RuntimeData   `json:"checkerRData,omitempty"`
+	FinalVerdict     TestResultType `json:"finalVerdict"`
 }
 
 type User struct {
