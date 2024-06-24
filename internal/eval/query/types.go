@@ -7,6 +7,7 @@ type Submission struct {
 	TaskFullName     string
 	TaskCode         string
 	AuthorUsername   string
+	ProgLangID       string
 	ProgLangFullName string
 	SubmissionCode   string
 	EvaluationRes    *Evaluation
@@ -19,4 +20,14 @@ type Evaluation struct {
 
 	TotalScore int64
 	MaxScore   *int64
+
+	CompileRData *RuntimeData
+}
+
+type RuntimeData struct {
+	TimeMillis int
+	MemoryKB   int
+	ExitCode   int
+	Stdout     string
+	Stderr     string
 }

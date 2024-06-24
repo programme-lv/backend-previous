@@ -198,7 +198,7 @@ func newColorfulLogger() *slog.Logger {
 }
 
 func loadConfigFromEnvFile() *config.Config {
-	conf, err := config.LoadConfig(".env")
+	conf, err := config.LoadConfig(".env.toml")
 	if err != nil {
 		logger.Error("could not load config", "error", err)
 		panic(err)

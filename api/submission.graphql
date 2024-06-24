@@ -40,7 +40,8 @@ type Submission {
   taskFullName: String!
   taskCode: String!
   authorUsername: String!
-  progLang: ProgrammingLanguage!
+  progLangID: ID!
+  progLangFullName: String!
   submissionCode: String!
   evalResults: Evaluation!
   createdAt: String! # RFC3339

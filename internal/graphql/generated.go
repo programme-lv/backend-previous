@@ -123,22 +123,16 @@ type ComplexityRoot struct {
 		TimeMs   func(childComplexity int) int
 	}
 
-	ShallowEvaluation struct {
-		ID            func(childComplexity int) int
-		PossibleScore func(childComplexity int) int
-		Status        func(childComplexity int) int
-		TotalScore    func(childComplexity int) int
-	}
-
 	Submission struct {
-		AuthorUsername func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		EvalResults    func(childComplexity int) int
-		ID             func(childComplexity int) int
-		ProgLang       func(childComplexity int) int
-		SubmissionCode func(childComplexity int) int
-		TaskCode       func(childComplexity int) int
-		TaskFullName   func(childComplexity int) int
+		AuthorUsername   func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		EvalResults      func(childComplexity int) int
+		ID               func(childComplexity int) int
+		ProgLangFullName func(childComplexity int) int
+		ProgLangID       func(childComplexity int) int
+		SubmissionCode   func(childComplexity int) int
+		TaskCode         func(childComplexity int) int
+		TaskFullName     func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -621,34 +615,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RuntimeData.TimeMs(childComplexity), true
 
-	case "ShallowEvaluation.id":
-		if e.complexity.ShallowEvaluation.ID == nil {
-			break
-		}
-
-		return e.complexity.ShallowEvaluation.ID(childComplexity), true
-
-	case "ShallowEvaluation.possibleScore":
-		if e.complexity.ShallowEvaluation.PossibleScore == nil {
-			break
-		}
-
-		return e.complexity.ShallowEvaluation.PossibleScore(childComplexity), true
-
-	case "ShallowEvaluation.status":
-		if e.complexity.ShallowEvaluation.Status == nil {
-			break
-		}
-
-		return e.complexity.ShallowEvaluation.Status(childComplexity), true
-
-	case "ShallowEvaluation.totalScore":
-		if e.complexity.ShallowEvaluation.TotalScore == nil {
-			break
-		}
-
-		return e.complexity.ShallowEvaluation.TotalScore(childComplexity), true
-
 	case "Submission.authorUsername":
 		if e.complexity.Submission.AuthorUsername == nil {
 			break
@@ -677,12 +643,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Submission.ID(childComplexity), true
 
-	case "Submission.progLang":
-		if e.complexity.Submission.ProgLang == nil {
+	case "Submission.progLangFullName":
+		if e.complexity.Submission.ProgLangFullName == nil {
 			break
 		}
 
-		return e.complexity.Submission.ProgLang(childComplexity), true
+		return e.complexity.Submission.ProgLangFullName(childComplexity), true
+
+	case "Submission.progLangID":
+		if e.complexity.Submission.ProgLangID == nil {
+			break
+		}
+
+		return e.complexity.Submission.ProgLangID(childComplexity), true
 
 	case "Submission.submissionCode":
 		if e.complexity.Submission.SubmissionCode == nil {
@@ -1220,18 +1193,11 @@ type Submission {
   taskFullName: String!
   taskCode: String!
   authorUsername: String!
-  progLang: ProgrammingLanguage!
+  progLangID: ID!
+  progLangFullName: String!
   submissionCode: String!
   evalResults: Evaluation!
   createdAt: String! # RFC3339
-}
-
-type ShallowEvaluation {
-  id: ID!
-  status: String!
-  
-  totalScore: Int!
-  possibleScore: Int
 }
 
 type Evaluation {
@@ -2932,8 +2898,10 @@ func (ec *executionContext) fieldContext_Mutation_enqueueSubmissionForPublishedT
 				return ec.fieldContext_Submission_taskCode(ctx, field)
 			case "authorUsername":
 				return ec.fieldContext_Submission_authorUsername(ctx, field)
-			case "progLang":
-				return ec.fieldContext_Submission_progLang(ctx, field)
+			case "progLangID":
+				return ec.fieldContext_Submission_progLangID(ctx, field)
+			case "progLangFullName":
+				return ec.fieldContext_Submission_progLangFullName(ctx, field)
 			case "submissionCode":
 				return ec.fieldContext_Submission_submissionCode(ctx, field)
 			case "evalResults":
@@ -3679,8 +3647,10 @@ func (ec *executionContext) fieldContext_Query_listPublicSubmissions(_ context.C
 				return ec.fieldContext_Submission_taskCode(ctx, field)
 			case "authorUsername":
 				return ec.fieldContext_Submission_authorUsername(ctx, field)
-			case "progLang":
-				return ec.fieldContext_Submission_progLang(ctx, field)
+			case "progLangID":
+				return ec.fieldContext_Submission_progLangID(ctx, field)
+			case "progLangFullName":
+				return ec.fieldContext_Submission_progLangFullName(ctx, field)
 			case "submissionCode":
 				return ec.fieldContext_Submission_submissionCode(ctx, field)
 			case "evalResults":
@@ -3741,8 +3711,10 @@ func (ec *executionContext) fieldContext_Query_getSubmission(ctx context.Context
 				return ec.fieldContext_Submission_taskCode(ctx, field)
 			case "authorUsername":
 				return ec.fieldContext_Submission_authorUsername(ctx, field)
-			case "progLang":
-				return ec.fieldContext_Submission_progLang(ctx, field)
+			case "progLangID":
+				return ec.fieldContext_Submission_progLangID(ctx, field)
+			case "progLangFullName":
+				return ec.fieldContext_Submission_progLangFullName(ctx, field)
 			case "submissionCode":
 				return ec.fieldContext_Submission_submissionCode(ctx, field)
 			case "evalResults":
@@ -4171,179 +4143,6 @@ func (ec *executionContext) fieldContext_RuntimeData_stderr(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _ShallowEvaluation_id(ctx context.Context, field graphql.CollectedField, obj *ShallowEvaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShallowEvaluation_id(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ShallowEvaluation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShallowEvaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ShallowEvaluation_status(ctx context.Context, field graphql.CollectedField, obj *ShallowEvaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShallowEvaluation_status(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ShallowEvaluation_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShallowEvaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ShallowEvaluation_totalScore(ctx context.Context, field graphql.CollectedField, obj *ShallowEvaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShallowEvaluation_totalScore(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalScore, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ShallowEvaluation_totalScore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShallowEvaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ShallowEvaluation_possibleScore(ctx context.Context, field graphql.CollectedField, obj *ShallowEvaluation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ShallowEvaluation_possibleScore(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PossibleScore, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_ShallowEvaluation_possibleScore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShallowEvaluation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Submission_id(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Submission_id(ctx, field)
 	if err != nil {
@@ -4520,8 +4319,8 @@ func (ec *executionContext) fieldContext_Submission_authorUsername(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Submission_progLang(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Submission_progLang(ctx, field)
+func (ec *executionContext) _Submission_progLangID(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Submission_progLangID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4534,7 +4333,7 @@ func (ec *executionContext) _Submission_progLang(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ProgLang, nil
+		return obj.ProgLangID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4546,29 +4345,63 @@ func (ec *executionContext) _Submission_progLang(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ProgrammingLanguage)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNProgrammingLanguage2ᚖgithubᚗcomᚋprogrammeᚑlvᚋbackendᚋinternalᚋgraphqlᚐProgrammingLanguage(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Submission_progLang(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Submission_progLangID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Submission",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ProgrammingLanguage_id(ctx, field)
-			case "fullName":
-				return ec.fieldContext_ProgrammingLanguage_fullName(ctx, field)
-			case "monacoID":
-				return ec.fieldContext_ProgrammingLanguage_monacoID(ctx, field)
-			case "enabled":
-				return ec.fieldContext_ProgrammingLanguage_enabled(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ProgrammingLanguage", field.Name)
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Submission_progLangFullName(ctx context.Context, field graphql.CollectedField, obj *Submission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Submission_progLangFullName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProgLangFullName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Submission_progLangFullName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Submission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4781,8 +4614,10 @@ func (ec *executionContext) fieldContext_Subscription_onNewPublicSubmission(_ co
 				return ec.fieldContext_Submission_taskCode(ctx, field)
 			case "authorUsername":
 				return ec.fieldContext_Submission_authorUsername(ctx, field)
-			case "progLang":
-				return ec.fieldContext_Submission_progLang(ctx, field)
+			case "progLangID":
+				return ec.fieldContext_Submission_progLangID(ctx, field)
+			case "progLangFullName":
+				return ec.fieldContext_Submission_progLangFullName(ctx, field)
 			case "submissionCode":
 				return ec.fieldContext_Submission_submissionCode(ctx, field)
 			case "evalResults":
@@ -4857,8 +4692,10 @@ func (ec *executionContext) fieldContext_Subscription_onSubmissionUpdate(ctx con
 				return ec.fieldContext_Submission_taskCode(ctx, field)
 			case "authorUsername":
 				return ec.fieldContext_Submission_authorUsername(ctx, field)
-			case "progLang":
-				return ec.fieldContext_Submission_progLang(ctx, field)
+			case "progLangID":
+				return ec.fieldContext_Submission_progLangID(ctx, field)
+			case "progLangFullName":
+				return ec.fieldContext_Submission_progLangFullName(ctx, field)
 			case "submissionCode":
 				return ec.fieldContext_Submission_submissionCode(ctx, field)
 			case "evalResults":
@@ -8662,57 +8499,6 @@ func (ec *executionContext) _RuntimeData(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var shallowEvaluationImplementors = []string{"ShallowEvaluation"}
-
-func (ec *executionContext) _ShallowEvaluation(ctx context.Context, sel ast.SelectionSet, obj *ShallowEvaluation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, shallowEvaluationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ShallowEvaluation")
-		case "id":
-			out.Values[i] = ec._ShallowEvaluation_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "status":
-			out.Values[i] = ec._ShallowEvaluation_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "totalScore":
-			out.Values[i] = ec._ShallowEvaluation_totalScore(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "possibleScore":
-			out.Values[i] = ec._ShallowEvaluation_possibleScore(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var submissionImplementors = []string{"Submission"}
 
 func (ec *executionContext) _Submission(ctx context.Context, sel ast.SelectionSet, obj *Submission) graphql.Marshaler {
@@ -8744,8 +8530,13 @@ func (ec *executionContext) _Submission(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "progLang":
-			out.Values[i] = ec._Submission_progLang(ctx, field, obj)
+		case "progLangID":
+			out.Values[i] = ec._Submission_progLangID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "progLangFullName":
+			out.Values[i] = ec._Submission_progLangFullName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

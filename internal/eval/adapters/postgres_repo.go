@@ -77,6 +77,16 @@ func (e EvaluationPostgresRepo) allTaskVersionRecords(ctx context.Context) ([]mo
 	return records, nil
 }
 
+func (e EvaluationPostgresRepo) allRuntimeDataRecords(ctx context.Context) ([]model.RuntimeData, error) {
+	stmt := postgres.SELECT(table.RuntimeData.AllColumns).FROM(table.RuntimeData)
+	var records []model.RuntimeData
+	err := stmt.QueryContext(ctx, e.db, &records)
+	if err != nil {
+		return nil, err
+	}
+	return records, nil
+}
+
 func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Submission, error) {
 	var err error
 
@@ -111,9 +121,9 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 		mapUserIDToUsername[userRecord.ID] = userRecord.Username
 	}
 
-	mapProgLangIDToFullName := make(map[string]string)
+	mapProgLangIDToProgLang := make(map[string]*model.ProgrammingLanguages)
 	for _, programmingLanguageRecord := range programmingLanguageRecords {
-		mapProgLangIDToFullName[programmingLanguageRecord.ID] = programmingLanguageRecord.FullName
+		mapProgLangIDToProgLang[programmingLanguageRecord.ID] = &programmingLanguageRecord
 	}
 
 	var taskRecords []model.Tasks
@@ -136,6 +146,17 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 		mapTaskVersionIDToTaskVersion[taskVersionRecord.ID] = &taskVersionRecord
 	}
 
+	var runtimeDataRecords []model.RuntimeData
+	runtimeDataRecords, err = e.allRuntimeDataRecords(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mapEvalIDToRuntimeData := make(map[int64]*model.RuntimeData)
+	for _, runtimeDataRecord := range runtimeDataRecords {
+		mapEvalIDToRuntimeData[runtimeDataRecord.ID] = &runtimeDataRecord
+	}
+
 	var submissions []query.Submission
 	for _, submission := range submissionRecords {
 		task, taskFound := mapTaskIDToTask[submission.TaskID]
@@ -150,7 +171,7 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 			continue
 		}
 
-		progLangFullName, progLangFound := mapProgLangIDToFullName[submission.ProgrammingLangID]
+		progLang, progLangFound := mapProgLangIDToProgLang[submission.ProgrammingLangID]
 		if !progLangFound {
 			continue
 		}
@@ -160,10 +181,23 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 			visibleEval, evalFound := mapEvalIDToEvaluation[*submission.VisibleEvalID]
 			if evalFound {
 				evaluationRes = &query.Evaluation{
-					ID:         visibleEval.ID,
-					Status:     visibleEval.EvalStatusID,
-					TotalScore: visibleEval.EvalTotalScore,
-					MaxScore:   visibleEval.EvalPossibleScore,
+					ID:           visibleEval.ID,
+					Status:       visibleEval.EvalStatusID,
+					TotalScore:   visibleEval.EvalTotalScore,
+					MaxScore:     visibleEval.EvalPossibleScore,
+					CompileRData: nil,
+				}
+				if visibleEval.CompilationDataID != nil {
+					compileData, compileDataFound := mapEvalIDToRuntimeData[*visibleEval.CompilationDataID]
+					if compileDataFound {
+						evaluationRes.CompileRData = &query.RuntimeData{
+							TimeMillis: int(*compileData.TimeMillis),
+							MemoryKB:   int(*compileData.MemoryKibibytes),
+							ExitCode:   int(*compileData.ExitCode),
+							Stdout:     *compileData.Stdout,
+							Stderr:     *compileData.Stderr,
+						}
+					}
 				}
 			} else {
 				continue
@@ -180,7 +214,8 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 			TaskFullName:     taskVersion.FullName,
 			TaskCode:         taskVersion.ShortCode,
 			AuthorUsername:   username,
-			ProgLangFullName: progLangFullName,
+			ProgLangID:       progLang.ID,
+			ProgLangFullName: progLang.FullName,
 			SubmissionCode:   submission.Submission,
 			EvaluationRes:    evaluationRes,
 			CreatedAt:        submission.CreatedAt,

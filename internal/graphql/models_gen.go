@@ -67,13 +67,6 @@ type RuntimeData struct {
 	Stderr   string `json:"stderr"`
 }
 
-type ShallowEvaluation struct {
-	ID            string `json:"id"`
-	Status        string `json:"status"`
-	TotalScore    int    `json:"totalScore"`
-	PossibleScore *int   `json:"possibleScore,omitempty"`
-}
-
 type StatementInput struct {
 	Story  *string `json:"story,omitempty"`
 	Input  *string `json:"input,omitempty"`
@@ -82,14 +75,15 @@ type StatementInput struct {
 }
 
 type Submission struct {
-	ID             string               `json:"id"`
-	TaskFullName   string               `json:"taskFullName"`
-	TaskCode       string               `json:"taskCode"`
-	AuthorUsername string               `json:"authorUsername"`
-	ProgLang       *ProgrammingLanguage `json:"progLang"`
-	SubmissionCode string               `json:"submissionCode"`
-	EvalResults    *Evaluation          `json:"evalResults"`
-	CreatedAt      string               `json:"createdAt"`
+	ID               string      `json:"id"`
+	TaskFullName     string      `json:"taskFullName"`
+	TaskCode         string      `json:"taskCode"`
+	AuthorUsername   string      `json:"authorUsername"`
+	ProgLangID       string      `json:"progLangID"`
+	ProgLangFullName string      `json:"progLangFullName"`
+	SubmissionCode   string      `json:"submissionCode"`
+	EvalResults      *Evaluation `json:"evalResults"`
+	CreatedAt        string      `json:"createdAt"`
 }
 
 type Subscription struct {
