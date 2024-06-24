@@ -31,7 +31,7 @@ func NewApplication(pgDB *sqlx.DB) Application {
 
 	return Application{
 		Commands: Commands{
-			SubmitSolution: command.NewSubmitSolutionHandler(logger, metricsClient),
+			SubmitSolution: command.NewSubmitSolutionHandler(postgresRepo, logger, metricsClient),
 		},
 		Queries: Queries{
 			AllSubmissions: query.NewAllSubmissionsHandler(postgresRepo, logger, metricsClient),

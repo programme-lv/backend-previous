@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/programme-lv/backend/internal/common/decorator"
 	"github.com/programme-lv/backend/internal/common/logs"
+	"github.com/programme-lv/backend/internal/eval"
 	"log"
 	"log/slog"
 )
@@ -17,14 +18,18 @@ type SubmitSolution struct {
 type SubmitSolutionHandler decorator.CommandHandler[SubmitSolution]
 
 type submitSolutionHandler struct {
+	repo eval.Repository
 }
 
 func NewSubmitSolutionHandler(
+	repo eval.Repository,
 	logger *slog.Logger,
 	metricsClient decorator.MetricsClient,
 ) SubmitSolutionHandler {
 	return decorator.ApplyCommandDecorators[SubmitSolution](
-		submitSolutionHandler{},
+		submitSolutionHandler{
+			repo: repo,
+		},
 		logger,
 		metricsClient,
 	)

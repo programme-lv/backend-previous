@@ -7,13 +7,23 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"github.com/programme-lv/backend/internal/eval/command"
 
 	"github.com/programme-lv/backend/internal/eval/query"
 )
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error) {
-	panic(fmt.Errorf("not implemented: EnqueueSubmissionForPublishedTaskCodeStableTaskVersion - enqueueSubmissionForPublishedTaskCodeStableTaskVersion"))
+	err := r.EvalApp.Commands.SubmitSolution.Handle(ctx, command.SubmitSolution{
+		TaskCode:   "",
+		ProgLangID: "",
+		Submission: "",
+	})
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+
+	return nil, nil
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
@@ -23,117 +33,16 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 		return nil, smartError(ctx, err)
 	}
 
-	convInt64ToIntPointer := func(i *int64) *int {
-		if i == nil {
-			return nil
-		}
-		convInt := int(*i)
-		return &convInt
-	}
-
 	var gqlSubmissions []*Submission = make([]*Submission, 0, len(submissions))
 	for _, submission := range submissions {
-		var evalResults *Evaluation = nil
-		if submission.EvaluationRes != nil {
-			evalResults = &Evaluation{
-				ID:            fmt.Sprint(submission.EvaluationRes.ID),
-				Status:        submission.EvaluationRes.Status,
-				TotalScore:    int(submission.EvaluationRes.TotalScore),
-				PossibleScore: convInt64ToIntPointer(submission.EvaluationRes.MaxScore),
-				CompileRData:  nil,
-				TestResults:   nil, // TODO
-			}
-			if submission.EvaluationRes.CompileRData != nil {
-				evalResults.CompileRData = &RuntimeData{
-					TimeMs:   submission.EvaluationRes.CompileRData.TimeMillis,
-					MemoryKb: submission.EvaluationRes.CompileRData.MemoryKB,
-					ExitCode: submission.EvaluationRes.CompileRData.ExitCode,
-					Stdout:   submission.EvaluationRes.CompileRData.Stdout,
-					Stderr:   submission.EvaluationRes.CompileRData.Stderr,
-				}
-			}
-
-		}
-		marshalledTime, err := submission.CreatedAt.MarshalText()
+		gqlSubm, err := mapSubmissionQueryToGQL(submission)
 		if err != nil {
 			return nil, err
 		}
-		gqlSubmissions = append(gqlSubmissions, &Submission{
-			ID:               fmt.Sprint(submission.ID),
-			TaskFullName:     submission.TaskFullName,
-			TaskCode:         submission.TaskCode,
-			AuthorUsername:   submission.AuthorUsername,
-			ProgLangID:       fmt.Sprint(submission.ProgLangID),
-			ProgLangFullName: fmt.Sprint(submission.ProgLangFullName),
-			SubmissionCode:   submission.SubmissionCode,
-			EvalResults:      evalResults,
-			CreatedAt:        string(marshalledTime),
-		})
+		gqlSubmissions = append(gqlSubmissions, gqlSubm)
 	}
 
 	return gqlSubmissions, nil
-	//submRecords, err := submissions.ListVisibleTaskSubmissionRowsWithEvaluation(r.PostgresDB)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//var gqlSubmissions []*SubmissionOverview = make([]*SubmissionOverview, 0, len(submRecords))
-	//for _, submission := range submRecords {
-	//	task, err := tasks.GetTaskObjByTaskID(r.PostgresDB, submission.TaskID, 0, 1)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	user, err := users.GetUserObj(r.PostgresDB, submission.UserID)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	lang, err := langs.GetLangObj(r.PostgresDB, submission.ProgrammingLangID)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	if submission.VisibleEvalID == nil {
-	//		return nil, fmt.Errorf("submission %d has no visible evaluation", submission.ID)
-	//	}
-	//	evalObj, err := submissions.GetEvaluationObj(r.PostgresDB, *submission.VisibleEvalID, false)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	var possibleScore int = 100
-	//	if evalObj.PossibleScore != nil {
-	//		possibleScore = int(*evalObj.PossibleScore)
-	//	}
-	//	marshalledCreatedAt, err := submission.CreatedAt.MarshalText()
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	gqlSubm := &SubmissionOverview{
-	//		ID:         fmt.Sprint(submission.ID),
-	//		Submission: submission.Submission,
-	//		Task: &TaskOverview{
-	//			TaskID: strconv.FormatInt(task.ID, 10),
-	//			Name:   task.Stable.Name,
-	//			Code:   task.Stable.Code,
-	//		},
-	//		Language: &ProgrammingLanguage{
-	//			ID:       fmt.Sprint(lang.ID),
-	//			FullName: lang.Name,
-	//			MonacoID: lang.MonacoID,
-	//			Enabled:  lang.Enabled,
-	//		},
-	//		Evaluation: &ShallowEvaluation{
-	//			ID:            fmt.Sprint(evalObj.ID),
-	//			Status:        evalObj.StatusID,
-	//			TotalScore:    int(evalObj.ReceivedScore),
-	//			PossibleScore: &possibleScore,
-	//		},
-	//		Username:  user.Username,
-	//		CreatedAt: string(marshalledCreatedAt),
-	//	}
-	//
-	//	gqlSubmissions = append(gqlSubmissions, gqlSubm)
-	//}
-	//
-	//return gqlSubmissions, nil
 }
 
 // GetSubmission is the resolver for the getSubmission field.

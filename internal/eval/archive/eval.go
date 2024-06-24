@@ -1,4 +1,4 @@
-package eval
+package archive
 
 type TestDownloadURLProvider interface {
 	GetTestDownloadURL(testSHA256 string) (string, error)
@@ -13,7 +13,7 @@ type TestDownloadURLProvider interface {
 //)
 //
 //type TestRes struct {
-//	ID           int64
+//	id           int64
 //	EvaluationID int64
 //	EvalStatusID string
 //	TaskVTestID  int64
@@ -22,7 +22,7 @@ type TestDownloadURLProvider interface {
 //}
 //
 //type Evaluation struct {
-//	ID            int64
+//	id            int64
 //	TaskVersionID int64
 //
 //	StatusID      string
@@ -37,7 +37,7 @@ type TestDownloadURLProvider interface {
 //}
 //
 //type TaskSubmission struct {
-//	ID          int64
+//	id          int64
 //	Author      *user.User
 //	Language    *lang.ProgrammingLanguage
 //	Content     string
@@ -48,7 +48,7 @@ type TestDownloadURLProvider interface {
 //}
 //
 //type RuntimeData struct {
-//	ID int64
+//	id int64
 //
 //	Stdout *string
 //	Stderr *string

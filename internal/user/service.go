@@ -127,7 +127,7 @@ func (s service) Register(username, password, email, firstName, lastName string)
 
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("getting user by id: %v", err))
 		return nil, err
 	}
 
@@ -137,7 +137,7 @@ func (s service) Register(username, password, email, firstName, lastName string)
 func (s service) GetUserByID(id int64) (*User, error) {
 	userExists, err := s.repo.DoesUserExistByID(id)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("checking if user exists by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("checking if user exists by id: %v", err))
 		return nil, err
 	}
 
@@ -147,7 +147,7 @@ func (s service) GetUserByID(id int64) (*User, error) {
 
 	user, err := s.repo.GetUserByID(id)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("getting user by id: %v", err))
 		return nil, err
 	}
 

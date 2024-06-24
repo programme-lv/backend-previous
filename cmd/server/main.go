@@ -9,7 +9,7 @@ import (
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/common/database/dospaces"
 	"github.com/programme-lv/backend/internal/eval"
-	submission2 "github.com/programme-lv/backend/internal/eval"
+	submission2 "github.com/programme-lv/backend/internal/eval/archive"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/lang"
 	"github.com/programme-lv/backend/internal/task"

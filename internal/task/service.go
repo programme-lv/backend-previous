@@ -14,7 +14,7 @@ type Service interface {
 	// by an administrator. Usually it is quality checked and reviewed before being.
 	ListPublishedTasks() ([]*Task, error)
 
-	// GetTaskByID returns the task with the given ID with both the
+	// GetTaskByID returns the task with the given id with both the
 	// current and the stable version populated. Method is accessible only
 	// to the task creator or an administrator since it may contain sensitive information.
 	GetTaskByID(actingUserID, taskID int64) (*Task, error)
@@ -86,12 +86,12 @@ func (s service) ListPublishedTasks() ([]*Task, error) {
 func (s service) GetTaskByID(actingUserID, taskID int64) (*Task, error) {
 	actingUser, err := s.userSrv.GetUserByID(actingUserID)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("getting user by id: %v", err))
 		return nil, err
 	}
 	task, err := s.repo.GetTaskByID(taskID)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting task by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("getting task by id: %v", err))
 		return nil, err
 	}
 	if task.OwnerID != actingUser.ID && !actingUser.IsAdmin {
@@ -129,7 +129,7 @@ func (s service) ListEditableTasks(actingUserID int64) ([]*Task, error) {
 
 	actingUser, err := s.userSrv.GetUserByID(actingUserID)
 	if err != nil {
-		s.logger.Error(fmt.Sprintf("getting user by ID: %v", err))
+		s.logger.Error(fmt.Sprintf("getting user by id: %v", err))
 		return nil, err
 	}
 

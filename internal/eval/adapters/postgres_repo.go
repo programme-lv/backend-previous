@@ -6,6 +6,7 @@ import (
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/programme-lv/backend/internal/common/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/common/database/proglv/public/table"
+	eval2 "github.com/programme-lv/backend/internal/eval"
 	"github.com/programme-lv/backend/internal/eval/query"
 )
 
@@ -13,8 +14,26 @@ type EvaluationPostgresRepo struct {
 	db qrm.DB
 }
 
+func (e EvaluationPostgresRepo) AddSubmission(ctx context.Context, submission eval2.Submission) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewEvaluationPostgresRepo(db qrm.DB) EvaluationPostgresRepo {
 	return EvaluationPostgresRepo{db: db}
+}
+
+func (e EvaluationPostgresRepo) NextSubmissionID(ctx context.Context) (int64, error) {
+	var id struct {
+		ID int64
+	}
+	err := postgres.SELECT(postgres.Raw("nextval('task_submissions_id_seq'::regclass)").AS("id")).
+		Query(e.db, &id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id.ID, nil
 }
 
 func (e EvaluationPostgresRepo) allEvaluationRecords(ctx context.Context) ([]model.Evaluations, error) {
@@ -226,3 +245,4 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 }
 
 var _ query.AllSubmissionsReadModel = (*EvaluationPostgresRepo)(nil)
+var _ eval2.Repository = (*EvaluationPostgresRepo)(nil)

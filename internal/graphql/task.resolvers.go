@@ -34,7 +34,7 @@ func (r *mutationResolver) CreateTask(ctx context.Context, name string, code str
 	//	}
 	//}
 	//
-	//taskID, err := tasks.CreateTask(r.PostgresDB, name, code, user.ID)
+	//taskID, err := tasks.CreateTask(r.PostgresDB, name, code, user.id)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -67,7 +67,7 @@ func (r *mutationResolver) UpdateCurrentTaskVersionStatementByTaskID(ctx context
 	//	return nil, err
 	//}
 	//
-	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.id, taskIDInt64)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -117,7 +117,7 @@ func (r *mutationResolver) UpdateCurrentTaskVersionNameAndCodeByTaskID(ctx conte
 	//	return nil, err
 	//}
 	//
-	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDInt64)
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.id, taskIDInt64)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -159,7 +159,7 @@ func (r *mutationResolver) DeleteTask(ctx context.Context, taskID string) (bool,
 	//	return false, err
 	//}
 	//
-	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.ID, taskIDint64)
+	//canEdit, err := tasks.CanUserEditTask(r.PostgresDB, user.id, taskIDint64)
 	//if err != nil {
 	//	return false, err
 	//}
@@ -243,7 +243,7 @@ func (r *queryResolver) ListEditableTasks(ctx context.Context) ([]*Task, error) 
 	//	return nil, err
 	//}
 	//
-	//taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, user.ID)
+	//taskIds, err := tasks.ListEditableTaskIDs(r.PostgresDB, user.id)
 	//if err != nil {
 	//	return nil, err
 	//}
