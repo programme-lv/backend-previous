@@ -57,14 +57,14 @@ func main() {
 
 	userSrv := user.NewService(pgDB)
 	taskSrv := task.NewService(userSrv, pgDB)
-	submSrv := eval.NewService(pgDB, taskSrv)
+	evalApp := eval.NewApplication(pgDB)
 	languages := lang.NewService(pgDB)
 
 	gqlResolver := &mygraphql.Resolver{
 		Languages:      languages,
 		UserSrv:        userSrv,
 		TaskSrv:        taskSrv,
-		SubmSrv:        submSrv,
+		EvalApp:        evalApp,
 		SessionManager: sessions,
 		Logger:         logger,
 		TestURLs:       spaces,

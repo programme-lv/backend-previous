@@ -157,6 +157,30 @@ func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submissi
 	//return gqlSubm, nil
 }
 
+// ListSolvedPublishedTaskCodesByUsername is the resolver for the listSolvedPublishedTaskCodesByUsername field.
+func (r *queryResolver) ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error) {
+	userID := r.SessionManager.GetInt64(ctx, "user_id")
+	if userID == 0 {
+		return nil, newErrorUnauthorized()
+	}
+
+	panic("not implemented")
+	//tasks, err := r.SubmSrv.ListUserSolvedPublishedTasks(userID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//taskCodes := make([]string, 0, len(tasks))
+	//for _, task := range tasks {
+	//	if task.Stable == nil {
+	//		continue
+	//	}
+	//	taskCodes = append(taskCodes, task.Stable.Code)
+	//}
+	//
+	//return taskCodes, nil
+}
+
 // OnNewPublicSubmission is the resolver for the onNewPublicSubmission field.
 func (r *subscriptionResolver) OnNewPublicSubmission(ctx context.Context) (<-chan *Submission, error) {
 	// TODO: implement OnNewPublicSubmission endpoint

@@ -2,7 +2,6 @@ package dospaces
 
 import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/programme-lv/backend/internal/eval"
 )
 
 type DOSpacesS3ObjStorage struct {
@@ -10,4 +9,4 @@ type DOSpacesS3ObjStorage struct {
 	bucketName    string
 }
 
-var _ eval.TestDownloadURLProvider = &DOSpacesS3ObjStorage{}
+//var _ eval.TestDownloadURLProvider = &DOSpacesS3ObjStorage{}

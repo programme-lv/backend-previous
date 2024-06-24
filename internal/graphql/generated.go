@@ -205,10 +205,10 @@ type QueryResolver interface {
 	GetTaskByTaskID(ctx context.Context, taskID string) (*Task, error)
 	GetTaskByPublishedTaskCode(ctx context.Context, code string) (*Task, error)
 	ListEditableTasks(ctx context.Context) ([]*Task, error)
-	ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error)
 	ListLanguages(ctx context.Context, enabled *bool) ([]*ProgrammingLanguage, error)
 	ListPublicSubmissions(ctx context.Context) ([]*Submission, error)
 	GetSubmission(ctx context.Context, id string) (*Submission, error)
+	ListSolvedPublishedTaskCodesByUsername(ctx context.Context, username string) ([]string, error)
 }
 type SubscriptionResolver interface {
 	OnNewPublicSubmission(ctx context.Context) (<-chan *Submission, error)
@@ -1088,9 +1088,6 @@ type User {
     Used for rendering the editable task list in task constructor.
     """
     listEditableTasks: [Task!]!
-
-
-    listSolvedPublishedTaskCodesByUsername(username: String!): [String!]!
 }
 
 extend type Mutation {
@@ -1203,6 +1200,11 @@ extend type Query {
   listPublicSubmissions: [Submission]!
 
   getSubmission(id: ID!): Submission!
+
+  """
+  Returns a list of all published task codes for tasks that the user has solved.
+  """
+  listSolvedPublishedTaskCodesByUsername(username: String!): [String!]!
 }
 
 extend type Mutation {
@@ -1257,8 +1259,8 @@ type Evaluation {
 #}
 
 type RuntimeData {
-  timeMs: Int!
-  memoryKb: Int!
+  timeMs: Int! # milliseconds
+  memoryKb: Int! # kilobytes
   exitCode: Int!
   stdout: String!
   stderr: String!
@@ -3565,61 +3567,6 @@ func (ec *executionContext) fieldContext_Query_listEditableTasks(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_listSolvedPublishedTaskCodesByUsername(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_listSolvedPublishedTaskCodesByUsername(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ListSolvedPublishedTaskCodesByUsername(rctx, fc.Args["username"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_listSolvedPublishedTaskCodesByUsername(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_listSolvedPublishedTaskCodesByUsername_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_listLanguages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_listLanguages(ctx, field)
 	if err != nil {
@@ -3814,6 +3761,61 @@ func (ec *executionContext) fieldContext_Query_getSubmission(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_listSolvedPublishedTaskCodesByUsername(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_listSolvedPublishedTaskCodesByUsername(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ListSolvedPublishedTaskCodesByUsername(rctx, fc.Args["username"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_listSolvedPublishedTaskCodesByUsername(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_listSolvedPublishedTaskCodesByUsername_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8482,28 +8484,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "listSolvedPublishedTaskCodesByUsername":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_listSolvedPublishedTaskCodesByUsername(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "listLanguages":
 			field := field
 
@@ -8558,6 +8538,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getSubmission(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "listSolvedPublishedTaskCodesByUsername":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_listSolvedPublishedTaskCodesByUsername(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

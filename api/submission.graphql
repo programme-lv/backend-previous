@@ -46,14 +46,6 @@ type Submission {
   createdAt: String! # RFC3339
 }
 
-type ShallowEvaluation {
-  id: ID!
-  status: String!
-  
-  totalScore: Int!
-  possibleScore: Int
-}
-
 type Evaluation {
   id: ID!
   status: String!

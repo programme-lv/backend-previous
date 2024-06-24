@@ -23,10 +23,11 @@ type AuthDirectorConn struct {
 }
 
 type Resolver struct {
-	Languages      lang.Service
-	UserSrv        user.Service
-	TaskSrv        task.Service
-	SubmSrv        eval.Service
+	Languages lang.Service
+	UserSrv   user.Service
+	TaskSrv   task.Service
+	EvalApp   eval.Application
+	//SubmSrv        eval.Service
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger
 	TestURLs       *dospaces.DOSpacesS3ObjStorage
