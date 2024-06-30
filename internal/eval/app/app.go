@@ -1,4 +1,4 @@
-package eval
+package app
 
 import (
 	"github.com/jmoiron/sqlx"

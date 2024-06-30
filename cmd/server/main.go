@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/alexedwards/scs/postgresstore"
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/config"
 	"github.com/programme-lv/backend/internal/common/database/dospaces"
-	"github.com/programme-lv/backend/internal/eval"
+	"github.com/programme-lv/backend/internal/eval/app"
 	submission2 "github.com/programme-lv/backend/internal/eval/archive"
 	mygraphql "github.com/programme-lv/backend/internal/graphql"
 	"github.com/programme-lv/backend/internal/lang"
@@ -49,7 +50,9 @@ func main() {
 	pgDB := connectToPostgres(conf.Postgres.Host, conf.Postgres.User, conf.Postgres.Password,
 		conf.Postgres.DBName, conf.Postgres.SSLMode, conf.Postgres.Port)
 
-	sessions := initRedisAuthSessionStore(conf.Redis.Host, conf.Redis.Port)
+	//sessions := initRedisAuthSessionStore(conf.Redis.Host, conf.Redis.Port)
+	sessions := scs.New()
+	sessions.Store = postgresstore.New(pgDB.DB)
 
 	spaces := intS3Store(conf.S3.Endpoint, conf.S3.Key, conf.S3.Secret, conf.S3.Bucket)
 
@@ -57,7 +60,7 @@ func main() {
 
 	userSrv := user.NewService(pgDB)
 	taskSrv := task.NewService(userSrv, pgDB)
-	evalApp := eval.NewApplication(pgDB)
+	evalApp := app.NewApplication(pgDB)
 	languages := lang.NewService(pgDB)
 
 	gqlResolver := &mygraphql.Resolver{

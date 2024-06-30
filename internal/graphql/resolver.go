@@ -2,7 +2,7 @@ package graphql
 
 import (
 	"github.com/programme-lv/backend/internal/common/database/dospaces"
-	"github.com/programme-lv/backend/internal/eval"
+	"github.com/programme-lv/backend/internal/eval/app"
 	"github.com/programme-lv/backend/internal/lang"
 	"github.com/programme-lv/backend/internal/task"
 	"github.com/programme-lv/backend/internal/user"
@@ -26,7 +26,7 @@ type Resolver struct {
 	Languages lang.Service
 	UserSrv   user.Service
 	TaskSrv   task.Service
-	EvalApp   eval.Application
+	EvalApp   app.Application
 	//SubmSrv        eval.Service
 	SessionManager *scs.SessionManager
 	Logger         *slog.Logger

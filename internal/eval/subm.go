@@ -1,5 +1,7 @@
 package eval
 
+import "github.com/google/uuid"
+
 type Submission struct {
 	id       int64
 	taskID   int64
@@ -8,11 +10,7 @@ type Submission struct {
 	msgBody  string
 }
 
-func NewSubmission(submissionID, taskID, authorID int64, pLangID, msgBody string) (*Submission, error) {
-	if submissionID <= 0 {
-		return nil, newErrorInvalidSubmissionID()
-	}
-
+func NewSubmission(taskID, authorID int64, pLangID, msgBody string) (*Submission, error) {
 	if taskID <= 0 || authorID <= 0 || pLangID == "" {
 		return nil, newErrorInvalidSubmissionParams()
 	}
@@ -23,7 +21,7 @@ func NewSubmission(submissionID, taskID, authorID int64, pLangID, msgBody string
 	}
 
 	return &Submission{
-		id:       submissionID,
+		id:       uuid.New(),
 		taskID:   taskID,
 		authorID: authorID,
 		pLangID:  pLangID,
