@@ -19,7 +19,8 @@ type Commands struct {
 }
 
 type Queries struct {
-	AllSubmissions query.AllSubmissionsHandler
+	AllSubmissions    query.AllSubmissionsHandler
+	GetSubmissionByID query.GetSubmissionByIDHandler
 }
 
 func NewApplication(pgDB *sqlx.DB) Application {
@@ -34,7 +35,8 @@ func NewApplication(pgDB *sqlx.DB) Application {
 			SubmitSolution: command.NewSubmitSolutionHandler(postgresRepo, logger, metricsClient),
 		},
 		Queries: Queries{
-			AllSubmissions: query.NewAllSubmissionsHandler(postgresRepo, logger, metricsClient),
+			AllSubmissions:    query.NewAllSubmissionsHandler(postgresRepo, logger, metricsClient),
+			GetSubmissionByID: query.NewGetSubmissionByIDHandler(postgresRepo, logger, metricsClient),
 		},
 	}
 }

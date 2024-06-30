@@ -3,14 +3,14 @@ package eval
 import "github.com/google/uuid"
 
 type Submission struct {
-	id       int64
+	uuid     uuid.UUID
 	taskID   int64
 	authorID int64
 	pLangID  string
 	msgBody  string
 }
 
-func NewSubmission(taskID, authorID int64, pLangID, msgBody string) (*Submission, error) {
+func NewSubmission(uuid uuid.UUID, taskID, authorID int64, pLangID, msgBody string) (*Submission, error) {
 	if taskID <= 0 || authorID <= 0 || pLangID == "" {
 		return nil, newErrorInvalidSubmissionParams()
 	}
@@ -21,7 +21,7 @@ func NewSubmission(taskID, authorID int64, pLangID, msgBody string) (*Submission
 	}
 
 	return &Submission{
-		id:       uuid.New(),
+		uuid:     uuid,
 		taskID:   taskID,
 		authorID: authorID,
 		pLangID:  pLangID,
@@ -29,8 +29,8 @@ func NewSubmission(taskID, authorID int64, pLangID, msgBody string) (*Submission
 	}, nil
 }
 
-func (s *Submission) ID() int64 {
-	return s.id
+func (s *Submission) UUID() uuid.UUID {
+	return s.uuid
 }
 
 func (s *Submission) TaskID() int64 {

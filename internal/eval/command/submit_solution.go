@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/programme-lv/backend/internal/common/decorator"
 	"github.com/programme-lv/backend/internal/common/logs"
 	"github.com/programme-lv/backend/internal/eval"
@@ -10,7 +11,10 @@ import (
 )
 
 type SubmitSolution struct {
-	TaskCode   string
+	SubmissionUUID uuid.UUID
+	//TaskCode   string
+	TaskID     int64
+	AuthorID   int64
 	ProgLangID string
 	Submission string
 }
@@ -39,6 +43,16 @@ func (h submitSolutionHandler) Handle(ctx context.Context, cmd SubmitSolution) (
 	defer func() {
 		logs.LogCommandExecution("SubmitSolution", cmd, err)
 	}()
+
+	subm, err := eval.NewSubmission(cmd.SubmissionUUID, cmd.TaskID, cmd.AuthorID, cmd.ProgLangID, cmd.Submission)
+	if err != nil {
+		return err
+	}
+
+	err = h.repo.AddSubmission(ctx, *subm)
+	if err != nil {
+		return err
+	}
 
 	log.Println("submitting solution")
 

@@ -7,23 +7,44 @@ package graphql
 import (
 	"context"
 	"fmt"
-	"github.com/programme-lv/backend/internal/eval/command"
 
+	"github.com/google/uuid"
+	"github.com/programme-lv/backend/internal/eval/command"
 	"github.com/programme-lv/backend/internal/eval/query"
 )
 
 // EnqueueSubmissionForPublishedTaskCodeStableTaskVersion is the resolver for the enqueueSubmissionForPublishedTaskCodeStableTaskVersion field.
 func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersion(ctx context.Context, taskCode string, languageID string, submissionCode string) (*Submission, error) {
-	err := r.EvalApp.Commands.SubmitSolution.Handle(ctx, command.SubmitSolution{
-		TaskCode:   "",
-		ProgLangID: "",
-		Submission: "",
+	user, err := r.getUserFromContext(ctx)
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+
+	task, err := r.TaskSrv.GetTaskByPublishedCode(taskCode)
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+
+	newSubmissionUUID := uuid.New()
+	err = r.EvalApp.Commands.SubmitSolution.Handle(ctx, command.SubmitSolution{
+		SubmissionUUID: newSubmissionUUID,
+		TaskID:         task.ID,
+		AuthorID:       user.ID,
+		ProgLangID:     languageID,
+		Submission:     submissionCode,
 	})
 	if err != nil {
 		return nil, smartError(ctx, err)
 	}
 
-	return nil, nil
+	subm, err := r.EvalApp.Queries.GetSubmissionByID.Handle(ctx, query.GetSubmissionByUUID{
+		UUID: newSubmissionUUID,
+	})
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+
+	return mapSubmissionQueryToGQL(subm)
 }
 
 // ListPublicSubmissions is the resolver for the listPublicSubmissions field.
@@ -47,7 +68,14 @@ func (r *queryResolver) ListPublicSubmissions(ctx context.Context) ([]*Submissio
 
 // GetSubmission is the resolver for the getSubmission field.
 func (r *queryResolver) GetSubmission(ctx context.Context, id string) (*Submission, error) {
-	panic(fmt.Errorf("not implemented: GetSubmission - getSubmission"))
+	subm, err := r.EvalApp.Queries.GetSubmissionByID.Handle(ctx, query.GetSubmissionByUUID{
+		UUID: uuid.MustParse(id),
+	})
+	if err != nil {
+		return nil, smartError(ctx, err)
+	}
+
+	return mapSubmissionQueryToGQL(subm)
 }
 
 // ListSolvedPublishedTaskCodesByUsername is the resolver for the listSolvedPublishedTaskCodesByUsername field.

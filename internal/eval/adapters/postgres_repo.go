@@ -2,21 +2,55 @@ package adapters
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
+	"github.com/google/uuid"
 	"github.com/programme-lv/backend/internal/common/database/proglv/public/model"
 	"github.com/programme-lv/backend/internal/common/database/proglv/public/table"
 	eval2 "github.com/programme-lv/backend/internal/eval"
 	"github.com/programme-lv/backend/internal/eval/query"
+	"time"
 )
 
 type EvaluationPostgresRepo struct {
 	db qrm.DB
 }
 
+func (e EvaluationPostgresRepo) GetSubmissionByID(ctx context.Context, uuid uuid.UUID) (*query.Submission, error) {
+	submissions, err := e.AllSubmissions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if submissions == nil {
+		return nil, fmt.Errorf("no submissions found")
+	}
+
+	for _, submission := range submissions {
+		if submission.UUID == uuid {
+			return submission, nil
+		}
+	}
+	return nil, fmt.Errorf("submission not found")
+}
+
 func (e EvaluationPostgresRepo) AddSubmission(ctx context.Context, submission eval2.Submission) error {
-	//TODO implement me
-	panic("implement me")
+	stmt := table.TaskSubmissions.INSERT(table.TaskSubmissions.AllColumns).
+		MODEL(&model.TaskSubmissions{
+			UserID:            submission.AuthorID(),
+			TaskID:            submission.TaskID(),
+			ProgrammingLangID: submission.ProgrammingLanguageID(),
+			Submission:        submission.MessageBody(),
+			CreatedAt:         time.Now(),
+			Hidden:            false,
+			VisibleEvalID:     nil,
+			ID:                submission.UUID(),
+		})
+	_, err := stmt.ExecContext(ctx, e.db)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewEvaluationPostgresRepo(db qrm.DB) EvaluationPostgresRepo {
@@ -106,7 +140,7 @@ func (e EvaluationPostgresRepo) allRuntimeDataRecords(ctx context.Context) ([]mo
 	return records, nil
 }
 
-func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Submission, error) {
+func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]*query.Submission, error) {
 	var err error
 
 	var submissionRecords []model.TaskSubmissions
@@ -176,7 +210,7 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 		mapEvalIDToRuntimeData[runtimeDataRecord.ID] = &runtimeDataRecord
 	}
 
-	var submissions []query.Submission
+	var submissions []*query.Submission
 	for _, submission := range submissionRecords {
 		task, taskFound := mapTaskIDToTask[submission.TaskID]
 		if !taskFound {
@@ -228,8 +262,8 @@ func (e EvaluationPostgresRepo) AllSubmissions(ctx context.Context) ([]query.Sub
 			continue
 		}
 
-		submissions = append(submissions, query.Submission{
-			ID:               submission.ID,
+		submissions = append(submissions, &query.Submission{
+			UUID:             submission.ID,
 			TaskFullName:     taskVersion.FullName,
 			TaskCode:         taskVersion.ShortCode,
 			AuthorUsername:   username,

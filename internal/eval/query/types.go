@@ -1,9 +1,12 @@
 package query
 
-import "time"
+import (
+	"github.com/google/uuid"
+	"time"
+)
 
 type Submission struct {
-	ID               int64
+	UUID             uuid.UUID
 	TaskFullName     string
 	TaskCode         string
 	AuthorUsername   string

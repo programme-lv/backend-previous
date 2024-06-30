@@ -8,7 +8,7 @@ import (
 
 type AllSubmissions struct{}
 
-type AllSubmissionsHandler decorator.QueryHandler[AllSubmissions, []Submission]
+type AllSubmissionsHandler decorator.QueryHandler[AllSubmissions, []*Submission]
 
 type allSubmissionsHandler struct {
 	readModel AllSubmissionsReadModel
@@ -23,7 +23,7 @@ func NewAllSubmissionsHandler(
 		panic("nil readModel")
 	}
 
-	return decorator.ApplyQueryDecorators[AllSubmissions, []Submission](
+	return decorator.ApplyQueryDecorators[AllSubmissions, []*Submission](
 		allSubmissionsHandler{readModel: readModel},
 		logger,
 		metricsClient,
@@ -31,9 +31,9 @@ func NewAllSubmissionsHandler(
 }
 
 type AllSubmissionsReadModel interface {
-	AllSubmissions(ctx context.Context) ([]Submission, error)
+	AllSubmissions(ctx context.Context) ([]*Submission, error)
 }
 
-func (h allSubmissionsHandler) Handle(ctx context.Context, _ AllSubmissions) ([]Submission, error) {
+func (h allSubmissionsHandler) Handle(ctx context.Context, _ AllSubmissions) ([]*Submission, error) {
 	return h.readModel.AllSubmissions(ctx)
 }
