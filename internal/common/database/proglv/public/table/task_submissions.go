@@ -17,7 +17,6 @@ type taskSubmissionsTable struct {
 	postgres.Table
 
 	// Columns
-	ID                postgres.ColumnInteger
 	UserID            postgres.ColumnInteger
 	TaskID            postgres.ColumnInteger
 	ProgrammingLangID postgres.ColumnString
@@ -25,6 +24,7 @@ type taskSubmissionsTable struct {
 	CreatedAt         postgres.ColumnTimestampz
 	Hidden            postgres.ColumnBool
 	VisibleEvalID     postgres.ColumnInteger
+	ID                postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -65,7 +65,6 @@ func newTaskSubmissionsTable(schemaName, tableName, alias string) *TaskSubmissio
 
 func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmissionsTable {
 	var (
-		IDColumn                = postgres.IntegerColumn("id")
 		UserIDColumn            = postgres.IntegerColumn("user_id")
 		TaskIDColumn            = postgres.IntegerColumn("task_id")
 		ProgrammingLangIDColumn = postgres.StringColumn("programming_lang_id")
@@ -73,7 +72,8 @@ func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmis
 		CreatedAtColumn         = postgres.TimestampzColumn("created_at")
 		HiddenColumn            = postgres.BoolColumn("hidden")
 		VisibleEvalIDColumn     = postgres.IntegerColumn("visible_eval_id")
-		allColumns              = postgres.ColumnList{IDColumn, UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn, HiddenColumn, VisibleEvalIDColumn}
+		IDColumn                = postgres.StringColumn("id")
+		allColumns              = postgres.ColumnList{UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn, HiddenColumn, VisibleEvalIDColumn, IDColumn}
 		mutableColumns          = postgres.ColumnList{UserIDColumn, TaskIDColumn, ProgrammingLangIDColumn, SubmissionColumn, CreatedAtColumn, HiddenColumn, VisibleEvalIDColumn}
 	)
 
@@ -81,7 +81,6 @@ func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmis
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:                IDColumn,
 		UserID:            UserIDColumn,
 		TaskID:            TaskIDColumn,
 		ProgrammingLangID: ProgrammingLangIDColumn,
@@ -89,6 +88,7 @@ func newTaskSubmissionsTableImpl(schemaName, tableName, alias string) taskSubmis
 		CreatedAt:         CreatedAtColumn,
 		Hidden:            HiddenColumn,
 		VisibleEvalID:     VisibleEvalIDColumn,
+		ID:                IDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

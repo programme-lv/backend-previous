@@ -9,7 +9,7 @@ export SCRIPT_DIR=$PWD
 echo $SCRIPT_DIR
 popd
 
-pushd $SCRIPT_DIR/../internal/database
+pushd $SCRIPT_DIR/../internal/common/database
 
 jet -dsn="postgresql://proglv:proglv@localhost:5432/proglv?sslmode=disable" -path=.
 

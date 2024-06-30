@@ -8,11 +8,11 @@
 package model
 
 import (
-	"github.com/google/uuid"
+	"time"
 )
 
-type SubmissionEvaluations struct {
-	ID           int64 `sql:"primary_key"`
-	EvaluationID int64
-	SubmissionID uuid.UUID
+type Sessions struct {
+	Token  string `sql:"primary_key"`
+	Data   []byte
+	Expiry time.Time
 }

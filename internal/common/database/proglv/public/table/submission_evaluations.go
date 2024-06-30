@@ -18,8 +18,8 @@ type submissionEvaluationsTable struct {
 
 	// Columns
 	ID           postgres.ColumnInteger
-	SubmissionID postgres.ColumnInteger
 	EvaluationID postgres.ColumnInteger
+	SubmissionID postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -61,10 +61,10 @@ func newSubmissionEvaluationsTable(schemaName, tableName, alias string) *Submiss
 func newSubmissionEvaluationsTableImpl(schemaName, tableName, alias string) submissionEvaluationsTable {
 	var (
 		IDColumn           = postgres.IntegerColumn("id")
-		SubmissionIDColumn = postgres.IntegerColumn("submission_id")
 		EvaluationIDColumn = postgres.IntegerColumn("evaluation_id")
-		allColumns         = postgres.ColumnList{IDColumn, SubmissionIDColumn, EvaluationIDColumn}
-		mutableColumns     = postgres.ColumnList{SubmissionIDColumn, EvaluationIDColumn}
+		SubmissionIDColumn = postgres.StringColumn("submission_id")
+		allColumns         = postgres.ColumnList{IDColumn, EvaluationIDColumn, SubmissionIDColumn}
+		mutableColumns     = postgres.ColumnList{EvaluationIDColumn, SubmissionIDColumn}
 	)
 
 	return submissionEvaluationsTable{
@@ -72,8 +72,8 @@ func newSubmissionEvaluationsTableImpl(schemaName, tableName, alias string) subm
 
 		//Columns
 		ID:           IDColumn,
-		SubmissionID: SubmissionIDColumn,
 		EvaluationID: EvaluationIDColumn,
+		SubmissionID: SubmissionIDColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

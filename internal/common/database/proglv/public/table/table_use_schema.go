@@ -10,17 +10,18 @@ package table
 // UseSchema sets a new schema name for all generated table SQL builder types. It is recommended to invoke
 // this method only once at the beginning of the program.
 func UseSchema(schema string) {
+	AtlasTest = AtlasTest.FromSchema(schema)
 	EvaluationStatuses = EvaluationStatuses.FromSchema(schema)
 	EvaluationTestResults = EvaluationTestResults.FromSchema(schema)
 	Evaluations = Evaluations.FromSchema(schema)
 	ExampleSets = ExampleSets.FromSchema(schema)
-	FlywaySchemaHistory = FlywaySchemaHistory.FromSchema(schema)
 	MarkdownStatements = MarkdownStatements.FromSchema(schema)
 	ProblemTags = ProblemTags.FromSchema(schema)
 	ProgrammingLanguages = ProgrammingLanguages.FromSchema(schema)
 	PublishedTaskCodes = PublishedTaskCodes.FromSchema(schema)
 	RuntimeData = RuntimeData.FromSchema(schema)
 	RuntimeStatistics = RuntimeStatistics.FromSchema(schema)
+	Sessions = Sessions.FromSchema(schema)
 	StatementExamples = StatementExamples.FromSchema(schema)
 	SubmissionEvaluations = SubmissionEvaluations.FromSchema(schema)
 	TaskOrigins = TaskOrigins.FromSchema(schema)

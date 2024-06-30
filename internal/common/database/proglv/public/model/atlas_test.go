@@ -7,12 +7,7 @@
 
 package model
 
-import (
-	"github.com/google/uuid"
-)
-
-type SubmissionEvaluations struct {
-	ID           int64 `sql:"primary_key"`
-	EvaluationID int64
-	SubmissionID uuid.UUID
+type AtlasTest struct {
+	ID   int64 `sql:"primary_key"`
+	Name string
 }
