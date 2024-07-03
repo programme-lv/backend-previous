@@ -4,7 +4,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/programme-lv/backend/internal/common/metrics"
 	"github.com/programme-lv/backend/internal/eval/adapters"
-	"github.com/programme-lv/backend/internal/eval/command"
+	"github.com/programme-lv/backend/internal/eval/process"
 	"github.com/programme-lv/backend/internal/eval/query"
 	"log/slog"
 )
@@ -15,7 +15,7 @@ type Application struct {
 }
 
 type Commands struct {
-	SubmitSolution command.SubmitSolutionHandler
+	SubmitSolution process.SubmitSolutionHandler
 }
 
 type Queries struct {
@@ -32,7 +32,7 @@ func NewApplication(pgDB *sqlx.DB) Application {
 
 	return Application{
 		Commands: Commands{
-			SubmitSolution: command.NewSubmitSolutionHandler(postgresRepo, logger, metricsClient),
+			SubmitSolution: process.NewSubmitSolutionHandler(postgresRepo, logger, metricsClient),
 		},
 		Queries: Queries{
 			AllSubmissions:    query.NewAllSubmissionsHandler(postgresRepo, logger, metricsClient),

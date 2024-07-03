@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/programme-lv/backend/internal/eval/command"
+	"github.com/programme-lv/backend/internal/eval/process"
 	"github.com/programme-lv/backend/internal/eval/query"
 )
 
@@ -26,7 +26,7 @@ func (r *mutationResolver) EnqueueSubmissionForPublishedTaskCodeStableTaskVersio
 	}
 
 	newSubmissionUUID := uuid.New()
-	err = r.EvalApp.Commands.SubmitSolution.Handle(ctx, command.SubmitSolution{
+	err = r.EvalApp.Commands.SubmitSolution.Handle(ctx, process.SubmitSolution{
 		SubmissionUUID: newSubmissionUUID,
 		TaskID:         task.ID,
 		AuthorID:       user.ID,

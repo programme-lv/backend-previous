@@ -1,13 +1,13 @@
-package command
+package process
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/google/uuid"
 	"github.com/programme-lv/backend/internal/common/decorator"
 	"github.com/programme-lv/backend/internal/common/logs"
 	"github.com/programme-lv/backend/internal/eval"
-	"log"
-	"log/slog"
 )
 
 type SubmitSolution struct {
@@ -49,12 +49,16 @@ func (h submitSolutionHandler) Handle(ctx context.Context, cmd SubmitSolution) (
 		return err
 	}
 
-	err = h.repo.AddSubmission(ctx, *subm)
+	newEvalID, err := h.repo.ReserveEvaluationID(ctx)
 	if err != nil {
 		return err
 	}
 
-	log.Println("submitting solution")
+	h.repo.AddSubmission(ctx, *subm)
+
+	go func() {
+		subm.Evaluate(newEvalID)
+	}()
 
 	return nil
 }
